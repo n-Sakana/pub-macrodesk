@@ -509,7 +509,18 @@ namespace MacroDesk.Tests
                         "'.diff-gap').length," +
                         "pressed:document.querySelector(" +
                         "'[data-action=\"toggle-diff-context\"]')" +
-                        ".getAttribute('aria-pressed')" +
+                        ".getAttribute('aria-pressed')," +
+                        "clientHeight:document.querySelector(" +
+                        "'.diff-table-scroller').clientHeight," +
+                        "scrollHeight:document.querySelector(" +
+                        "'.diff-table-scroller').scrollHeight," +
+                        "canScroll:document.querySelector(" +
+                        "'.diff-table-scroller').scrollHeight>" +
+                        "document.querySelector(" +
+                        "'.diff-table-scroller').clientHeight," +
+                        "hostDisplay:getComputedStyle(" +
+                        "document.querySelector(" +
+                        "'.diff-table-host')).display" +
                         "})");
                     await Execute(
                         "document.querySelector(" +

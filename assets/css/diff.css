@@ -246,6 +246,11 @@
   flex: 1 1 auto;
 }
 
+.diff-table-host {
+  display: flex;
+  flex-direction: column;
+}
+
 .diff-table-scroller {
   overflow: auto;
 }

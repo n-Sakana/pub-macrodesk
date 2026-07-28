@@ -328,6 +328,15 @@ try {
         'Large-module full view must not contain gaps.'
     Assert-True ($largeFull.pressed -eq 'false') `
         'Changes-only toggle must default off.'
+    Assert-True ($largeFull.clientHeight -gt 0) `
+        'Large diff scroller has no visible height.'
+    Assert-True (
+        $largeFull.scrollHeight -gt $largeFull.clientHeight) `
+        'Large diff content does not overflow its scroller.'
+    Assert-True ($largeFull.canScroll) `
+        'Large diff cannot scroll vertically.'
+    Assert-True ($largeFull.hostDisplay -eq 'flex') `
+        'Diff table host does not provide a flex context.'
     Assert-True ($largeContext.rows -eq 21) `
         'Changes-only view must retain plus/minus ten lines.'
     Assert-True ($largeContext.gaps -eq 2) `
