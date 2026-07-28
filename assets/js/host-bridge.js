@@ -1,0 +1,166 @@
+(function (global) {
+  "use strict";
+
+  var nextId = 0;
+  var pending = {};
+  var eventHandlers = {};
+  var timeoutMilliseconds = 120000;
+  var webview = global.chrome && global.chrome.webview
+    ? global.chrome.webview
+    : null;
+
+  function makeError(code, message, data, action) {
+    var error = new Error(message || "Host request failed.");
+    error.code = code || "E-SYS-02";
+    error.data = data === undefined ? null : data;
+    error.action = action || "";
+    return error;
+  }
+
+  function removePending(id) {
+    var entry = pending[id];
+    if (!entry) {
+      return null;
+    }
+
+    delete pending[id];
+    global.clearTimeout(entry.timer);
+    return entry;
+  }
+
+  function handleMessage(event) {
+    var message = event.data || {};
+    if (message.id !== undefined && message.id !== null) {
+      var entry = removePending(String(message.id));
+      if (!entry) {
+        return;
+      }
+
+      if (message.status === "error") {
+        entry.reject(makeError(
+          message.code,
+          message.message,
+          message.data,
+          entry.action
+        ));
+      } else {
+        entry.resolve(message.data);
+      }
+      return;
+    }
+
+    if (!message.event) {
+      return;
+    }
+
+    var handlers = eventHandlers[message.event];
+    if (!handlers) {
+      return;
+    }
+
+    handlers.slice().forEach(function (handler) {
+      try {
+        handler(message.data);
+      } catch (error) {
+        global.console.error("Host event handler failed:", error);
+      }
+    });
+  }
+
+  if (webview) {
+    webview.addEventListener("message", handleMessage);
+  }
+
+  function request(action, params) {
+    return new Promise(function (resolve, reject) {
+      if (!webview) {
+        reject(makeError(
+          "E-SYS-02",
+          "The MacroDesk host is not available.",
+          null,
+          action
+        ));
+        return;
+      }
+      if (!action) {
+        reject(makeError(
+          "E-SYS-02",
+          "The host action is empty.",
+          null,
+          ""
+        ));
+        return;
+      }
+
+      nextId += 1;
+      var id = nextId;
+      var key = String(id);
+      var timer = global.setTimeout(function () {
+        var entry = removePending(key);
+        if (entry) {
+          entry.reject(makeError(
+            "E-SYS-02",
+            "Host request timed out: " + action,
+            null,
+            action
+          ));
+        }
+      }, timeoutMilliseconds);
+
+      pending[key] = {
+        action: action,
+        resolve: resolve,
+        reject: reject,
+        timer: timer
+      };
+
+      try {
+        webview.postMessage({
+          id: id,
+          action: action,
+          params: params || {}
+        });
+      } catch (error) {
+        removePending(key);
+        reject(makeError(
+          "E-SYS-02",
+          error.message,
+          null,
+          action
+        ));
+      }
+    });
+  }
+
+  function on(eventName, handler) {
+    if (!eventHandlers[eventName]) {
+      eventHandlers[eventName] = [];
+    }
+    eventHandlers[eventName].push(handler);
+
+    return function () {
+      off(eventName, handler);
+    };
+  }
+
+  function off(eventName, handler) {
+    var handlers = eventHandlers[eventName];
+    if (!handlers) {
+      return;
+    }
+
+    var index = handlers.indexOf(handler);
+    if (index >= 0) {
+      handlers.splice(index, 1);
+    }
+    if (handlers.length === 0) {
+      delete eventHandlers[eventName];
+    }
+  }
+
+  global.hostBridge = {
+    request: request,
+    on: on,
+    off: off
+  };
+}(window));

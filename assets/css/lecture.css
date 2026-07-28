@@ -1,0 +1,117 @@
+.lecture-region {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: var(--lecture-collapsed-height) minmax(0, 1fr);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.lecture-region.is-collapsed {
+  grid-template-rows: var(--lecture-collapsed-height) 0;
+}
+
+.lecture-region.is-error {
+  border-top-color: #7f4148;
+}
+
+.lecture-toggle {
+  display: flex;
+  width: 100%;
+  height: var(--lecture-collapsed-height);
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-3);
+  border: 0;
+  background: #1a1e25;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.lecture-toggle:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.lecture-heading-group {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.lecture-icon,
+.lecture-chevron {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.lecture-icon {
+  color: var(--color-accent);
+}
+
+.lecture-label {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.lecture-branch {
+  display: inline-flex;
+  height: 17px;
+  align-items: center;
+  padding: 0 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
+  font-family: var(--font-code);
+  font-size: 9px;
+}
+
+.lecture-chevron {
+  transition: transform var(--transition-normal);
+}
+
+.lecture-region.is-collapsed .lecture-chevron {
+  transform: rotate(-90deg);
+}
+
+.lecture-content {
+  min-width: 0;
+  min-height: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4) 36px;
+  overflow: auto;
+}
+
+.lecture-content h2 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--font-size-md);
+  line-height: 1.4;
+}
+
+.lecture-content p {
+  max-width: 860px;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.lecture-region.is-error .lecture-icon,
+.lecture-region.is-error .lecture-branch {
+  color: #f09aa2;
+}
+
+.lecture-region.is-error .lecture-branch {
+  border-color: #7f4148;
+  background: rgba(224, 108, 117, 0.1);
+}

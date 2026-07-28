@@ -1,0 +1,390 @@
+param(
+    [string]$BookPath
+)
+
+$ErrorActionPreference = 'Stop'
+
+if ([string]::IsNullOrEmpty($BookPath)) {
+    $BookPath = Join-Path $PSScriptRoot '..\testdata\test_large.xlsm'
+}
+
+function Assert-True {
+    param(
+        [bool]$Condition,
+        [string]$Message
+    )
+
+    if (-not $Condition) {
+        throw $Message
+    }
+}
+
+function Assert-Bytes {
+    param(
+        [byte[]]$Actual,
+        [byte[]]$Expected,
+        [string]$Message
+    )
+
+    Assert-True ($Actual.Length -eq $Expected.Length) `
+        ($Message + ' Length mismatch.')
+    for ($index = 0; $index -lt $Expected.Length; $index++) {
+        Assert-True ($Actual[$index] -eq $Expected[$index]) `
+            ($Message + " Byte mismatch at $index.")
+    }
+}
+
+function Assert-InvalidData {
+    param(
+        [ScriptBlock]$Action,
+        [string]$Message
+    )
+
+    $threw = $false
+    try {
+        & $Action
+    } catch [IO.InvalidDataException] {
+        $threw = $true
+    }
+    Assert-True $threw $Message
+}
+
+function Get-EngineSource {
+    $names = @(
+        '05_Ole2.cs',
+        '06_VbaCompression.cs',
+        '07_VbaProject.cs',
+        '08_BookIO.cs'
+    )
+    $combined = ($names | ForEach-Object {
+        $path = Join-Path (Join-Path $PSScriptRoot '..\src') $_
+        [IO.File]::ReadAllText(
+            (Resolve-Path -LiteralPath $path),
+            [Text.Encoding]::UTF8)
+    }) -join "`n"
+
+    $usingPattern = '(?m)^\s*using\s+[\w][\w.]*\s*;'
+    $usings = [regex]::Matches($combined, $usingPattern) |
+        ForEach-Object { $_.Value.Trim() } |
+        Sort-Object -Unique
+    $body = $combined -replace $usingPattern, ''
+    return ($usings -join "`n") + "`n`n" + $body
+}
+
+function Find-PatternOffsets {
+    param(
+        [byte[]]$Data,
+        [byte[]]$Pattern
+    )
+
+    $result = New-Object System.Collections.ArrayList
+    for ($offset = 0;
+        $offset -le $Data.Length - $Pattern.Length;
+        $offset++) {
+        $match = $true
+        for ($index = 0; $index -lt $Pattern.Length; $index++) {
+            if ($Data[$offset + $index] -ne $Pattern[$index]) {
+                $match = $false
+                break
+            }
+        }
+        if ($match) {
+            [void]$result.Add($offset)
+        }
+    }
+    return ,$result
+}
+
+function Set-UInt16 {
+    param(
+        [byte[]]$Data,
+        [int]$Offset,
+        [UInt16]$Value
+    )
+
+    [byte[]]$bytes = [BitConverter]::GetBytes($Value)
+    [Buffer]::BlockCopy($bytes, 0, $Data, $Offset, 2)
+}
+
+function Set-UInt32 {
+    param(
+        [byte[]]$Data,
+        [int]$Offset,
+        [UInt32]$Value
+    )
+
+    [byte[]]$bytes = [BitConverter]::GetBytes($Value)
+    [Buffer]::BlockCopy($bytes, 0, $Data, $Offset, 4)
+}
+
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$references = @(
+    'System.IO.Compression',
+    'System.IO.Compression.FileSystem'
+)
+Add-Type -TypeDefinition (Get-EngineSource) `
+    -ReferencedAssemblies $references `
+    -Language CSharp
+
+$project = [MacroDesk.BookIO]::ReadProject(
+    (Resolve-Path -LiteralPath $BookPath))
+Assert-True ($project.CodePage -eq 932) 'Code page mismatch.'
+Assert-True ($project.Modules.Count -eq 6) 'Module count mismatch.'
+
+$expected = @(
+    @('Sheet1', 'Document', 'cls', 819),
+    @('ThisWorkbook', 'Document', 'cls', 819),
+    @('AppController', 'Standard', 'bas', 779),
+    @('SystemInfo', 'Standard', 'bas', 1443),
+    @('TimerUtils', 'Standard', 'bas', 1115),
+    @('WindowUtils', 'Standard', 'bas', 2259)
+)
+
+for ($index = 0; $index -lt $expected.Count; $index++) {
+    $module = $project.Modules[$index]
+    Assert-True ($module.Name -eq $expected[$index][0]) `
+        "Module order mismatch at $index."
+    Assert-True ($module.StreamName -eq $expected[$index][0]) `
+        "Module stream mismatch at $index."
+    Assert-True ($module.Kind.ToString() -eq $expected[$index][1]) `
+        "Module kind mismatch at $index."
+    Assert-True ($module.Extension -eq $expected[$index][2]) `
+        "Module extension mismatch at $index."
+    Assert-True ($module.SourceOffset -eq $expected[$index][3]) `
+        "MODULEOFFSET mismatch at $index."
+    Assert-True (
+        $module.StreamData[$module.SourceOffset] -eq 0x01) `
+        "Compressed container signature mismatch at $index."
+    Assert-True (
+        $module.FullCode.StartsWith(
+            'Attribute VB_',
+            [StringComparison]::OrdinalIgnoreCase)) `
+        "Full source has no leading Attribute block at $index."
+    Assert-True (
+        -not $module.Code.StartsWith(
+            'Attribute VB_',
+            [StringComparison]::OrdinalIgnoreCase)) `
+        "Visible code still has a leading Attribute block at $index."
+}
+
+$codePage = 0
+$dirModules = [MacroDesk.VbaProjectReader]::ReadDirModules(
+    $project.DirDecompressed,
+    [ref]$codePage)
+Assert-True ($codePage -eq 932) 'dir code page mismatch.'
+Assert-True ($dirModules.Count -eq 6) 'dir module count mismatch.'
+
+[byte[]]$projectModulesHeader = 0x0F, 0x00, 0x02, 0x00, 0x00, 0x00
+$projectModulesOffsets = Find-PatternOffsets `
+    $project.DirDecompressed `
+    $projectModulesHeader
+Assert-True ($projectModulesOffsets.Count -eq 1) `
+    'PROJECTMODULES test fixture offset was not unique.'
+$projectModulesOffset = [int]$projectModulesOffsets[0]
+Assert-True ($projectModulesOffset -ge 24) `
+    'PROJECTMODULES test fixture has no injection space.'
+
+[byte[]]$duplicateModulesDir = $project.DirDecompressed.Clone()
+$falseModulesOffset = $projectModulesOffset - 24
+Assert-True (
+    [Text.Encoding]::ASCII.GetString(
+        $duplicateModulesDir,
+        $falseModulesOffset,
+        16) -eq '6.0 Object Libra') `
+    'PROJECTMODULES candidate was not injected into string data.'
+Set-UInt16 $duplicateModulesDir $falseModulesOffset 0x000F
+Set-UInt32 $duplicateModulesDir ($falseModulesOffset + 2) 2
+Set-UInt16 $duplicateModulesDir ($falseModulesOffset + 6) 0x7FFF
+Set-UInt16 $duplicateModulesDir ($falseModulesOffset + 8) 0x0013
+Set-UInt32 $duplicateModulesDir ($falseModulesOffset + 10) 2
+Set-UInt16 $duplicateModulesDir ($falseModulesOffset + 14) 0
+$duplicateModulesCodePage = 0
+$duplicateModules = [MacroDesk.VbaProjectReader]::ReadDirModules(
+    $duplicateModulesDir,
+    [ref]$duplicateModulesCodePage)
+Assert-True ($duplicateModulesCodePage -eq 932) `
+    'False PROJECTMODULES candidate changed the code page.'
+Assert-True ($duplicateModules.Count -eq 6) `
+    'False PROJECTMODULES candidate rejected a valid dir stream.'
+
+[byte[]]$duplicateCodePageDir = $project.DirDecompressed.Clone()
+$falseCodePageOffset = $projectModulesOffset - 32
+Assert-True (
+    [Text.Encoding]::ASCII.GetString(
+        $duplicateCodePageDir,
+        $falseCodePageOffset,
+        8) -eq 'Office 1') `
+    'PROJECTCODEPAGE candidate was not injected into string data.'
+Set-UInt16 $duplicateCodePageDir $falseCodePageOffset 0x0003
+Set-UInt32 $duplicateCodePageDir ($falseCodePageOffset + 2) 2
+Set-UInt16 $duplicateCodePageDir ($falseCodePageOffset + 6) 0xFFFF
+$duplicateCodePage = 0
+$duplicateCodePageModules =
+    [MacroDesk.VbaProjectReader]::ReadDirModules(
+        $duplicateCodePageDir,
+        [ref]$duplicateCodePage)
+Assert-True ($duplicateCodePage -eq 932) `
+    'False PROJECTCODEPAGE candidate changed the code page.'
+Assert-True ($duplicateCodePageModules.Count -eq 6) `
+    'False PROJECTCODEPAGE candidate rejected a valid dir stream.'
+
+[byte[]]$ambiguousCodePageDir = $project.DirDecompressed.Clone()
+Set-UInt16 $ambiguousCodePageDir $falseCodePageOffset 0x0003
+Set-UInt32 $ambiguousCodePageDir ($falseCodePageOffset + 2) 2
+Set-UInt16 $ambiguousCodePageDir ($falseCodePageOffset + 6) 932
+$ambiguousCodePage = 0
+Assert-InvalidData {
+    [MacroDesk.VbaProjectReader]::ReadDirModules(
+        $ambiguousCodePageDir,
+        [ref]$ambiguousCodePage)
+} 'Ambiguous valid PROJECTCODEPAGE candidates were accepted.'
+
+[byte[]]$mutatedDir = $project.DirDecompressed.Clone()
+$encoding = [Text.Encoding]::GetEncoding(932)
+[byte[]]$oldAnsi = $encoding.GetBytes('AppController')
+[byte[]]$newAnsi = $encoding.GetBytes('PhysicalMod01')
+[byte[]]$oldUnicode = [Text.Encoding]::Unicode.GetBytes('AppController')
+[byte[]]$newUnicode = [Text.Encoding]::Unicode.GetBytes('PhysicalMod01')
+Assert-True ($oldAnsi.Length -eq $newAnsi.Length) `
+    'Rename test MBCS lengths differ.'
+Assert-True ($oldUnicode.Length -eq $newUnicode.Length) `
+    'Rename test Unicode lengths differ.'
+
+$ansiOffsets = Find-PatternOffsets $mutatedDir $oldAnsi
+$unicodeOffsets = Find-PatternOffsets $mutatedDir $oldUnicode
+Assert-True ($ansiOffsets.Count -eq 2) `
+    'Rename test did not find both MBCS names.'
+Assert-True ($unicodeOffsets.Count -eq 2) `
+    'Rename test did not find both Unicode names.'
+[Buffer]::BlockCopy(
+    $newAnsi,
+    0,
+    $mutatedDir,
+    $ansiOffsets[1],
+    $newAnsi.Length)
+[Buffer]::BlockCopy(
+    $newUnicode,
+    0,
+    $mutatedDir,
+    $unicodeOffsets[1],
+    $newUnicode.Length)
+
+$mutatedCodePage = 0
+$mutatedModules = [MacroDesk.VbaProjectReader]::ReadDirModules(
+    $mutatedDir,
+    [ref]$mutatedCodePage)
+$renamed = $mutatedModules |
+    Where-Object { $_.Name -eq 'AppController' } |
+    Select-Object -First 1
+Assert-True ($null -ne $renamed) 'Renamed logical module was not found.'
+Assert-True ($renamed.StreamName -eq 'PhysicalMod01') `
+    'MODULESTREAMNAME was not kept separate from MODULENAME.'
+
+$headerInput = (
+    "Attribute VB_Name = `"Demo`"`r`n" +
+    "Attribute VB_Description = `"Header`"`r`n" +
+    "Option Explicit`r`n" +
+    "Sub Test()`r`n" +
+    "Attribute Test.VB_UserMemId = 0`r`n" +
+    "End Sub`r`n")
+$attributeHeader = ''
+$visibleCode = ''
+[MacroDesk.VbaProjectReader]::SplitAttributeHeader(
+    $headerInput,
+    [ref]$attributeHeader,
+    [ref]$visibleCode)
+$expectedHeader = (
+    "Attribute VB_Name = `"Demo`"`r`n" +
+    "Attribute VB_Description = `"Header`"`r`n")
+Assert-True ($attributeHeader -eq $expectedHeader) `
+    'Leading Attribute block split mismatch.'
+Assert-True (
+    $visibleCode.Contains('Attribute Test.VB_UserMemId = 0')) `
+    'Procedure Attribute line was removed.'
+
+$writeModule = $project.Modules |
+    Where-Object { $_.Name -eq 'AppController' } |
+    Select-Object -First 1
+$newFullCode = [regex]::Replace(
+    $writeModule.FullCode,
+    '(\r\n|\r|\n)+$',
+    '') + "`r`n' T2.3 stream replacement`r`n"
+$writeChanges = New-Object `
+    'System.Collections.Generic.Dictionary[string,string]'
+$writeChanges.Add($writeModule.Name, $newFullCode)
+
+$originalStreamName = $writeModule.StreamName
+$writeModule.StreamName = 'PhysicalMod01'
+$streamChanges = [MacroDesk.VbaProjectWriter]::CreateStreamChanges(
+    $project,
+    $writeChanges)
+$writeModule.StreamName = $originalStreamName
+Assert-True ($streamChanges.Count -eq 1) `
+    'Module stream change count mismatch.'
+Assert-True ($streamChanges.ContainsKey($writeModule.StreamEntry.Id)) `
+    'Module change did not target the physical stream entry.'
+
+$newStream = $streamChanges[$writeModule.StreamEntry.Id]
+for ($index = 0; $index -lt $writeModule.SourceOffset; $index++) {
+    Assert-True (
+        $newStream[$index] -eq $writeModule.StreamData[$index]) `
+        "PerformanceCache prefix mismatch at $index."
+}
+$newSourceBytes = [MacroDesk.VbaCompression]::Decompress(
+    $newStream,
+    [int]$writeModule.SourceOffset)
+$expectedSourceBytes = $project.Encoding.GetBytes($newFullCode)
+Assert-Bytes $newSourceBytes $expectedSourceBytes `
+    'Rebuilt module source'
+$expectedCompressed = [MacroDesk.VbaCompression]::Compress(
+    $expectedSourceBytes)
+Assert-True (
+    $newStream.Length -eq
+        $writeModule.SourceOffset + $expectedCompressed.Length) `
+    'Rebuilt module stream contains padding.'
+
+$rebuiltProjectBytes = [MacroDesk.VbaProjectWriter]::RebuildProject(
+    $project,
+    $writeChanges)
+$rebuiltProject = [MacroDesk.VbaProjectReader]::Read(
+    $rebuiltProjectBytes)
+$rebuiltModule = $rebuiltProject.Modules |
+    Where-Object { $_.Name -eq $writeModule.Name } |
+    Select-Object -First 1
+Assert-True ($null -ne $rebuiltModule) `
+    'Rebuilt logical module was not found.'
+Assert-True ($rebuiltModule.StreamName -eq $originalStreamName) `
+    'Rebuilt physical stream name changed.'
+Assert-True ($rebuiltModule.FullCode -ceq $newFullCode) `
+    'Rebuilt module code mismatch.'
+
+$unknownChanges = New-Object `
+    'System.Collections.Generic.Dictionary[string,string]'
+$unknownChanges.Add('NotAModule', "Option Explicit`r`n")
+Assert-InvalidData {
+    [MacroDesk.VbaProjectWriter]::CreateStreamChanges(
+        $project,
+        $unknownChanges)
+} 'Unknown module change was accepted.'
+
+Write-Output 'test-vbaproject: PASS'
+foreach ($module in $project.Modules) {
+    Write-Output (
+        '{0}: kind={1}, stream={2}, offset={3}, code={4}' -f `
+        $module.Name,
+        $module.Kind,
+        $module.StreamName,
+        $module.SourceOffset,
+        $module.Code.Length)
+}
+Write-Output (
+    'rename: logical={0}, stream={1}' -f `
+    $renamed.Name,
+    $renamed.StreamName)
+Write-Output (
+    'write: logical={0}, stream={1}, old={2}, new={3}' -f `
+    $writeModule.Name,
+    $writeModule.StreamName,
+    $writeModule.StreamData.Length,
+    $newStream.Length)

@@ -1,0 +1,296 @@
+.module-header {
+  display: flex;
+  min-height: 66px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.region-kicker {
+  margin: 0 0 1px;
+  color: var(--color-text-muted);
+  font-family: var(--font-code);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.module-header h1 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  line-height: 1.25;
+}
+
+.module-count {
+  display: inline-grid;
+  min-width: 26px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  font-family: var(--font-code);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.book-summary {
+  display: flex;
+  min-height: 34px;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: #14171c;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  gap: var(--space-2);
+}
+
+.book-indicator {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #626b78;
+}
+
+.module-region.has-book .book-indicator {
+  background: var(--color-badge-changed);
+  box-shadow: 0 0 0 3px rgba(106, 153, 85, 0.12);
+}
+
+.book-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.module-list {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  margin: 0;
+  padding: var(--space-2) 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.module-item {
+  min-width: 0;
+  margin: 1px var(--space-2);
+}
+
+.module-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.module-button {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  text-align: left;
+  gap: var(--space-2);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.module-button:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.module-button[aria-pressed="true"] {
+  background: var(--color-surface-active);
+  color: var(--color-text);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.module-status-button,
+.module-status-static {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+}
+
+.module-status-button {
+  color: inherit;
+  cursor: pointer;
+}
+
+.module-status-button:hover {
+  background: var(--color-surface-hover);
+}
+
+.module-item.is-next-target .module-row,
+.module-item.is-guided-target .module-row {
+  border-color: #4779a4;
+  background: rgba(98, 169, 232, 0.07);
+  box-shadow:
+    inset 3px 0 0 var(--color-accent),
+    0 0 0 3px rgba(98, 169, 232, 0.08);
+}
+
+.module-type-icon {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+}
+
+.module-type-icon svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.45;
+}
+
+.module-type-icon--document {
+  color: #86b9e6;
+}
+
+.module-type-icon--form {
+  color: #cf9ce8;
+}
+
+.module-type-icon--standard {
+  color: #87c996;
+}
+
+.module-type-icon--class {
+  color: #e2b56c;
+}
+
+.module-name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.module-lines {
+  color: var(--color-text-muted);
+  font-family: var(--font-code);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.module-badge {
+  display: inline-flex;
+  min-width: 25px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.module-badge--pending {
+  background: var(--color-badge-pending);
+}
+
+.module-badge--changed {
+  background: var(--color-badge-changed);
+}
+
+.module-badge--unchanged {
+  border-color: rgba(140, 185, 119, 0.42);
+  background: var(--color-badge-unchanged);
+  color: #bad9aa;
+}
+
+.module-badge--excluded {
+  border-color: rgba(202, 207, 215, 0.2);
+  background: var(--color-badge-excluded);
+  color: #b8bec7;
+}
+
+.module-badge--written {
+  background: var(--color-badge-written);
+}
+
+.module-item.is-excluded .module-name {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.module-empty {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.module-empty[hidden] {
+  display: none;
+}
+
+.module-empty-mark {
+  display: inline-grid;
+  width: 54px;
+  height: 54px;
+  margin-bottom: var(--space-3);
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: #65707e;
+  font-family: var(--font-code);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.module-empty p {
+  max-width: 190px;
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
