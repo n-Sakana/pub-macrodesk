@@ -21,10 +21,29 @@ namespace MacroDesk
             AppDomain.CurrentDomain.AssemblyResolve += delegate(object sender, ResolveEventArgs args)
             {
                 string assemblyName = new AssemblyName(args.Name).Name;
+
+                // macrodesk.ps1 loads the WebView2 assemblies from their bytes,
+                // which leaves them outside the default binding context. Hand
+                // back the copy that is already loaded rather than loading a
+                // second one, otherwise the same type would exist twice.
+                Assembly[] loaded = AppDomain.CurrentDomain.GetAssemblies();
+                for (int i = 0; i < loaded.Length; i++)
+                {
+                    if (string.Equals(
+                        loaded[i].GetName().Name,
+                        assemblyName,
+                        StringComparison.OrdinalIgnoreCase))
+                    {
+                        return loaded[i];
+                    }
+                }
+
                 string assemblyPath = Path.Combine(libDir, assemblyName + ".dll");
                 if (File.Exists(assemblyPath))
                 {
-                    return Assembly.LoadFrom(assemblyPath);
+                    // Bytes rather than the path, so a Mark of the Web on a
+                    // zip-downloaded copy cannot block the load.
+                    return Assembly.Load(File.ReadAllBytes(assemblyPath));
                 }
 
                 return null;

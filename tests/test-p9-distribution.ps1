@@ -264,8 +264,18 @@ try {
         [Text.Encoding]::ASCII)
     Assert-True (
         $launchText -match
-        '(?i)shell\.Run\s+command\s*,\s*0\s*,\s*False') `
-        'launch.vbs does not request a hidden launcher window.'
+        '(?i)shell\.Run\(\s*command\s*,\s*0\s*,\s*True\s*\)') `
+        'launch.vbs does not wait for a hidden launcher window.'
+
+    # wscript.exe reads a .vbs as the system ANSI code page unless it starts
+    # with a UTF-16 byte order mark, so a single non-ASCII byte saved as UTF-8
+    # makes the launcher fail to compile before it can report anything.
+    $launchNonAscii = @(
+        [IO.File]::ReadAllBytes($launchPath) |
+        Where-Object { $_ -gt 127 }
+    ).Count
+    Assert-True ($launchNonAscii -eq 0) `
+        'launch.vbs contains non-ASCII bytes; wscript.exe cannot compile it.'
 
     $baseline = @{}
     foreach ($item in Get-CimInstance Win32_Process) {
