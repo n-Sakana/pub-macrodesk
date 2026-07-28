@@ -95,7 +95,7 @@ macrodesk/
 │   ├── 01_App.cs            # エントリ。AssemblyResolve、STA スレッド、WebView2 ランタイム確認
 │   ├── 02_MainWindow.cs     # WPF 窓 + WebView2 + 仮想ホスト + D&D 受け
 │   ├── 03_MessageRouter.cs  # JS⇔C# の id 付き request/response IPC
-│   ├── 04_HostServices.cs   # ダイアログ、クリップボード、explorer /select、依頼ファイル出力、presets 読み、ログ
+│   ├── 04_HostServices.cs   # ダイアログ、クリップボード、explorer /select、依頼・差分ファイル出力、presets 読み、ログ
 │   ├── 05_Ole2.cs           # OLE2(CFB) リーダ/ライタ（自前実装）
 │   ├── 06_VbaCompression.cs # MS-OVBA 2.4.1 展開・圧縮（自前実装）
 │   ├── 07_VbaProject.cs     # dir の MODULE レコードを正本とするモジュール一覧・コード取得・コードページ・書き戻し計画
@@ -103,8 +103,8 @@ macrodesk/
 ├── assets/                  # UI 実体（日本語 OK）
 │   ├── index.html
 │   ├── css/  (variables / layout / steps / module-list / diff / lecture)
-│   ├── js/   (app / state / host-bridge / diff / diff-view / vba-highlight /
-│   │          lecture / prompt-template)
+│   ├── js/   (app / state / host-bridge / diff / diff-report / diff-view /
+│   │          vba-highlight / lecture / prompt-template)
 │   └── messages/ (ホスト(C#)が表示する日本語文言 *.txt。src/ は ASCII のまま)
 ├── presets/                 # 改修マニュアル（*.md、1 ファイル = 1 ボタン）
 ├── lib/                     # WebView2 DLL 同梱（4 本）
@@ -318,11 +318,19 @@ diff 描画は自前実装（Monaco 不使用）。§13.1 参照。
 2. **実行**: §9 の手順。実行中はプログレス表示（通常 1〜2 秒想定）。
 3. **成功画面**: 出力パス表示 + ［出力フォルダを開く］（explorer /select）。
    「Excel で開いてマクロの動作を確認してください」の案内（L4-2）。
-   モジュール一覧の書き戻し済みモジュールに「書込済」バッジ。
+   モジュール一覧の書き戻し済みモジュールに「書込済」バッジ。出力フォルダで
+   explorer が選択するのは改修済みブックのまま維持する。
 4. **失敗画面**: モジュール別の結果表（§9.4）。出力ファイルは残さない。
    レクチャー欄に復帰手順（§12）。
 
 ビルドは**元ファイルを上書きせず別名保存**。
+ビルド成功後、同じフォルダへ
+`<ブック名>_改修差分_<yyyyMMdd_HHmmss>.html` も `FileMode.CreateNew` で出力する。
+改修済みブックと同じタイムスタンプを使い、今回書き戻した全モジュール
+（新規標準モジュールを含む）の左右差分を 1 ファイルにまとめる。
+HTML はインライン CSS のみを持つ自己完結ファイルとし、差分計算は画面と同じ
+`assets/js/diff.js` を使う。HTML の生成・書き込みだけが失敗した場合はログと
+エラートーストに通知するが、完成済みブックの成功は取り消さない。
 ④ の後も ③② に戻って続きの改修 → 再ビルドできる（出力はその都度新しい日時名）。
 
 ---
@@ -491,7 +499,7 @@ WebView2 (JS)  … host-bridge.js が id で Promise 解決
 | `readPreset` | `{file}` | `{content}` | presets/ 内のみ許可 |
 | `writeRequestFile` | `{content}` | `{path}` | 命名・保存先・/select は §5.2。ブックは attach 済み前提 |
 | `readClipboard` | — | `{text}` | 空なら `{text:""}` |
-| `buildBook` | `{modules:[{name, code, isNew?}]}` | `{outputPath, results:[{name, result, message}]}` | 既存 code は Attribute 再付与済み。新規は `isNew:true` と可視コードを渡し、C# 側で標準モジュールの Attribute を生成。§9 |
+| `buildBook` | `{outputTimestamp, modules:[{name, code, isNew?}], diffHtml}` | `{outputPath, results:[{name, result, message}], diffPath?, diffError?}` | 既存 code は Attribute 再付与済み。新規は `isNew:true` と可視コードを渡し、C# 側で標準モジュールの Attribute を生成。HTML 出力失敗時もブックは成功。§5.4, §9 |
 | `revealPath` | `{path}` | — | explorer /select |
 | `writeLog` | `{level, message}` | — | UI 側の要所ログ |
 
@@ -770,6 +778,7 @@ Monaco Editor は**使わない**。diff は MacroDesk 自身の JS 実装とす
 |---|---|
 | 貪欲法の行 diff（先読み窓 100 行、changed ペアリング） | `assets/js/diff.js` |
 | 左右比較テーブルの構造と配色（equal/changed/removed/added、行番号列、中央セパレータ、ダークテーマ） | `assets/js/diff-view.js` + `assets/css/diff.css` |
+| ビルド後の自己完結 HTML（全変更モジュールの左右比較） | `assets/js/diff-report.js`（計算は `diff.js` を直接利用） |
 
 追加設計（③ の要件への適合）:
 

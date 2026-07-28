@@ -21,7 +21,8 @@ namespace MacroDesk.Tests
             string diffScreenshot,
             string buildScreenshot,
             string failureScreenshot,
-            string successScreenshot)
+            string successScreenshot,
+            string reportScreenshot)
         {
             SmokeRunner runner = new SmokeRunner(
                 baseDir,
@@ -31,7 +32,8 @@ namespace MacroDesk.Tests
                 diffScreenshot,
                 buildScreenshot,
                 failureScreenshot,
-                successScreenshot);
+                successScreenshot,
+                reportScreenshot);
             Thread thread = new Thread(runner.Run);
             thread.IsBackground = true;
             thread.SetApartmentState(ApartmentState.STA);
@@ -61,6 +63,7 @@ namespace MacroDesk.Tests
             private readonly string buildScreenshot;
             private readonly string failureScreenshot;
             private readonly string successScreenshot;
+            private readonly string reportScreenshot;
 
             private Application application;
             private Window window;
@@ -72,6 +75,7 @@ namespace MacroDesk.Tests
             private bool clipboardCaptured;
             private bool clipboardChanged;
             private string buildOutputPath;
+            private string diffOutputPath;
 
             public string Result;
             public Exception Error;
@@ -84,7 +88,8 @@ namespace MacroDesk.Tests
                 string diffScreenshot,
                 string buildScreenshot,
                 string failureScreenshot,
-                string successScreenshot)
+                string successScreenshot,
+                string reportScreenshot)
             {
                 this.baseDir = Path.GetFullPath(baseDir);
                 this.bookPath = Path.GetFullPath(bookPath);
@@ -99,6 +104,8 @@ namespace MacroDesk.Tests
                     failureScreenshot);
                 this.successScreenshot = Path.GetFullPath(
                     successScreenshot);
+                this.reportScreenshot = Path.GetFullPath(
+                    reportScreenshot);
                 serializer = new JavaScriptSerializer();
                 serializer.MaxJsonLength = int.MaxValue;
                 Result = string.Empty;
@@ -723,6 +730,9 @@ namespace MacroDesk.Tests
                     buildOutputPath = await ReadString(
                         "MacroDeskState.getState()" +
                         ".buildResult.outputPath");
+                    diffOutputPath = await ReadString(
+                        "MacroDeskState.getState()" +
+                        ".buildResult.diffPath");
                     if (!string.Equals(
                         Path.GetDirectoryName(buildOutputPath),
                         Path.GetDirectoryName(bookPath),
@@ -730,6 +740,19 @@ namespace MacroDesk.Tests
                     {
                         throw new InvalidOperationException(
                             "The P7 output path is outside testdata.");
+                    }
+                    if (!string.Equals(
+                        Path.GetDirectoryName(diffOutputPath),
+                        Path.GetDirectoryName(bookPath),
+                        StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "The diff report path is outside testdata.");
+                    }
+                    if (!File.Exists(diffOutputPath))
+                    {
+                        throw new InvalidOperationException(
+                            "The diff report file was not created.");
                     }
                     string buildSuccess = await ReadJson(
                         "({" +
@@ -744,6 +767,10 @@ namespace MacroDesk.Tests
                         "results:MacroDeskState.getState()" +
                         ".buildResult.results.filter(function(r){" +
                         "return r.result==='written';}).length," +
+                        "diff:MacroDeskState.getState()" +
+                        ".buildResult.diffPath," +
+                        "diffError:MacroDeskState.getState()" +
+                        ".buildResult.diffError," +
                         "reveal:document.querySelector(" +
                         "'[data-action=\"reveal-build-output\"]')" +
                         "!==null," +
@@ -765,6 +792,42 @@ namespace MacroDesk.Tests
                         "MacroDeskState.getState().busyAction===null");
                     string buildReveal = await ReadString(
                         "window.__p7RevealedPath");
+
+                    await Execute(
+                        "(function(){" +
+                        "var result=MacroDeskState.getState()" +
+                        ".buildResult;" +
+                        "window.__p6DiffErrorBuildResult={" +
+                        "outputPath:result.outputPath," +
+                        "results:result.results," +
+                        "diffError:'Report write failed.'};" +
+                        "MacroDeskState.setBuildResult(null);" +
+                        "window.__p6DiffErrorNextBuild=true;" +
+                        "MacroDeskApp.buildBook();" +
+                        "}());");
+                    await WaitFor(
+                        "MacroDeskState.getState().buildResult && " +
+                        "MacroDeskState.getState().buildResult" +
+                        ".status==='success' && " +
+                        "MacroDeskState.getState().buildResult" +
+                        ".diffError && " +
+                        "MacroDeskState.getState().busyAction===null && " +
+                        "document.querySelector('.toast--error')!==null");
+                    string diffFailure = await ReadJson(
+                        "({" +
+                        "view:document.querySelector(" +
+                        "'[data-build-view]').getAttribute(" +
+                        "'data-build-view')," +
+                        "output:document.querySelector(" +
+                        "'.build-result-path').textContent," +
+                        "toast:document.querySelector(" +
+                        "'.toast--error .toast-message').textContent," +
+                        "announce:document.getElementById(" +
+                        "'status-announcer').textContent," +
+                        "reveal:document.querySelector(" +
+                        "'[data-action=\"reveal-build-output\"]')" +
+                        "!==null" +
+                        "})");
 
                     await Execute(
                         "(async function(){" +
@@ -807,6 +870,52 @@ namespace MacroDesk.Tests
                         ".classList.contains('is-ready')" +
                         "})");
 
+                    await NavigateTo(diffOutputPath);
+                    await WaitFor(
+                        "document.readyState==='complete' && " +
+                        "document.querySelectorAll(" +
+                        "'.module-report').length===4");
+                    string diffReport = await ReadJson(
+                        "({" +
+                        "title:document.title," +
+                        "book:document.querySelector('h1').textContent," +
+                        "modules:document.querySelectorAll(" +
+                        "'.module-report').length," +
+                        "tables:document.querySelectorAll(" +
+                        "'.diff-table').length," +
+                        "newModule:Array.prototype.some.call(" +
+                        "document.querySelectorAll('.module-report h2')," +
+                        "function(node){return node.textContent===" +
+                        "'CommonHelpers';})," +
+                        "external:document.querySelectorAll(" +
+                        "'link[href],script[src],img[src],iframe[src]')" +
+                        ".length," +
+                        "scripts:document.querySelectorAll('script').length," +
+                        "styles:document.querySelectorAll('style').length," +
+                        "vertical:document.body.scrollHeight>innerHeight && " +
+                        "getComputedStyle(document.documentElement)" +
+                        ".overflowY!=='hidden' && " +
+                        "getComputedStyle(document.body)" +
+                        ".overflowY!=='hidden'," +
+                        "horizontal:document.documentElement.scrollWidth>" +
+                        "innerWidth," +
+                        "scrollers:document.querySelectorAll(" +
+                        "'.diff-scroll').length," +
+                        "changedRows:document.querySelectorAll(" +
+                        "'.diff-row--changed,.diff-row--added," +
+                        ".diff-row--removed').length," +
+                        "pathLeak:document.documentElement.outerHTML" +
+                        ".indexOf(" + serializer.Serialize(bookPath) +
+                        ")>=0 || document.documentElement.outerHTML" +
+                        ".indexOf(" +
+                        serializer.Serialize(buildOutputPath) +
+                        ")>=0 || document.documentElement.outerHTML" +
+                        ".indexOf(" +
+                        serializer.Serialize(diffOutputPath) +
+                        ")>=0" +
+                        "})");
+                    await Capture(reportScreenshot);
+
                     RestoreClipboard();
 
                     Dictionary<string, object> result =
@@ -834,8 +943,11 @@ namespace MacroDesk.Tests
                     result.Add("buildProgress", buildProgress);
                     result.Add("buildSuccess", buildSuccess);
                     result.Add("buildReveal", buildReveal);
+                    result.Add("diffFailure", diffFailure);
+                    result.Add("diffReport", diffReport);
                     result.Add("selfLoop", selfLoop);
                     result.Add("buildOutputPath", buildOutputPath);
+                    result.Add("diffOutputPath", diffOutputPath);
                     result.Add("originalCode", originalCode);
                     result.Add("changedCode", changedCode);
                     result.Add("additionCode", additionCode);
@@ -855,6 +967,8 @@ namespace MacroDesk.Tests
                     "window.__p7FailNextBuild=false;" +
                     "window.__p7DelayNextBuild=false;" +
                     "window.__p7RevealedPath=null;" +
+                    "window.__p6DiffErrorNextBuild=false;" +
+                    "window.__p6DiffErrorBuildResult=null;" +
                     "window.__p6RealRequest=hostBridge.request;" +
                     "hostBridge.request=function(action,params){" +
                     "if(action==='writeLog'){" +
@@ -875,6 +989,12 @@ namespace MacroDesk.Tests
                     "result:'verify_failed'," +
                     "message:'Verification failed.'}]};" +
                     "return Promise.reject(e);" +
+                    "}" +
+                    "if(action==='buildBook'&&" +
+                    "window.__p6DiffErrorNextBuild){" +
+                    "window.__p6DiffErrorNextBuild=false;" +
+                    "return Promise.resolve(" +
+                    "window.__p6DiffErrorBuildResult);" +
                     "}" +
                     "if(action==='buildBook'&&" +
                     "window.__p7DelayNextBuild){" +
@@ -959,6 +1079,34 @@ namespace MacroDesk.Tests
                     expression);
             }
 
+            private async Task NavigateTo(string path)
+            {
+                TaskCompletionSource<bool> completion =
+                    new TaskCompletionSource<bool>();
+                EventHandler<CoreWebView2NavigationCompletedEventArgs>
+                    handler = null;
+                handler = delegate(
+                    object sender,
+                    CoreWebView2NavigationCompletedEventArgs e)
+                {
+                    webView.CoreWebView2.NavigationCompleted -= handler;
+                    if (e.IsSuccess)
+                    {
+                        completion.TrySetResult(true);
+                    }
+                    else
+                    {
+                        completion.TrySetException(
+                            new InvalidOperationException(
+                                "The diff report navigation failed."));
+                    }
+                };
+                webView.CoreWebView2.NavigationCompleted += handler;
+                webView.CoreWebView2.Navigate(
+                    new Uri(Path.GetFullPath(path)).AbsoluteUri);
+                await completion.Task;
+            }
+
             private async Task Capture(string path)
             {
                 await Task.Delay(150);
@@ -1006,20 +1154,40 @@ namespace MacroDesk.Tests
 
             private void RestoreClipboard()
             {
+                int attempt;
+                Exception lastError = null;
+
                 if (!clipboardCaptured || !clipboardChanged)
                 {
                     return;
                 }
 
-                if (originalClipboard == null)
+                for (attempt = 0; attempt < 40; attempt++)
                 {
-                    Clipboard.Clear();
+                    try
+                    {
+                        if (originalClipboard == null)
+                        {
+                            Clipboard.Clear();
+                        }
+                        else
+                        {
+                            Clipboard.SetDataObject(
+                                originalClipboard,
+                                true);
+                        }
+                        clipboardChanged = false;
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        lastError = ex;
+                        Thread.Sleep(50);
+                    }
                 }
-                else
-                {
-                    Clipboard.SetDataObject(originalClipboard, true);
-                }
-                clipboardChanged = false;
+                throw new InvalidOperationException(
+                    "The P6 test could not restore clipboard data.",
+                    lastError);
             }
 
             private void OnTimeout(object sender, EventArgs e)
@@ -1082,6 +1250,11 @@ namespace MacroDesk.Tests
                         File.Exists(buildOutputPath))
                     {
                         File.Delete(buildOutputPath);
+                    }
+                    if (!string.IsNullOrEmpty(diffOutputPath) &&
+                        File.Exists(diffOutputPath))
+                    {
+                        File.Delete(diffOutputPath);
                     }
                 }
                 catch

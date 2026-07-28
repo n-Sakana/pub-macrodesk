@@ -263,6 +263,115 @@ try {
     }
 }
 
+$diffLabel = [IO.File]::ReadAllText(
+    (Join-Path $repoRoot 'assets\messages\diff-file-label.txt'),
+    [Text.Encoding]::UTF8).Trim()
+$diffHtml = (
+    '<!doctype html><html lang="ja"><head>' +
+    '<meta charset="utf-8"><style>body{color:#fff}</style>' +
+    '</head><body><h1>diff</h1></body></html>')
+$noAdditions = New-Object `
+    'System.Collections.Generic.List[MacroDesk.VbaModuleAddition]'
+$diffBuildOutput = ''
+$diffPath = ''
+try {
+    $diffTimestamp = [DateTime]::Now.AddSeconds(
+        2).ToString('yyyyMMdd_HHmmss')
+    $diffBuild = $service.BuildBook(
+        $identityChanges,
+        $noAdditions,
+        $diffTimestamp,
+        $diffHtml)
+    $diffBuildOutput = $diffBuild['outputPath']
+    $diffPath = $diffBuild['diffPath']
+    Assert-InsideDirectory $diffBuildOutput $testdataRoot
+    Assert-InsideDirectory $diffPath $testdataRoot
+    Assert-True ([IO.File]::Exists($diffBuildOutput)) `
+        'Diff-report build output was not created.'
+    Assert-True ([IO.File]::Exists($diffPath)) `
+        'Diff report was not created.'
+    Assert-True (
+        [IO.Path]::GetFileName($diffPath) -ceq
+        (
+            'test_large_' +
+            $diffLabel +
+            '_' +
+            $diffTimestamp +
+            '.html')) `
+        'Diff report file name mismatch.'
+    $diffBytes = [IO.File]::ReadAllBytes($diffPath)
+    Assert-True (
+        $diffBytes.Length -ge 3 -and
+        $diffBytes[0] -eq 0xEF -and
+        $diffBytes[1] -eq 0xBB -and
+        $diffBytes[2] -eq 0xBF) `
+        'Diff report does not have a UTF-8 BOM.'
+    Assert-True (
+        [IO.File]::ReadAllText(
+            $diffPath,
+            [Text.Encoding]::UTF8) -ceq
+        $diffHtml) `
+        'Diff report content mismatch.'
+    Assert-True (-not $diffBuild.ContainsKey('diffError')) `
+        'Successful diff output reported an error.'
+} finally {
+    foreach ($path in @($diffBuildOutput, $diffPath)) {
+        if (-not [string]::IsNullOrEmpty($path)) {
+            Assert-InsideDirectory $path $testdataRoot
+            if ([IO.File]::Exists($path)) {
+                [IO.File]::Delete($path)
+            }
+        }
+    }
+}
+
+$collisionOutput = ''
+$collisionPath = ''
+try {
+    $collisionTimestamp = [DateTime]::Now.AddSeconds(
+        4).ToString('yyyyMMdd_HHmmss')
+    $collisionPath = Join-Path $testdataRoot (
+        'test_large_' +
+        $diffLabel +
+        '_' +
+        $collisionTimestamp +
+        '.html')
+    [IO.File]::WriteAllText(
+        $collisionPath,
+        'existing report',
+        (New-Object Text.UTF8Encoding($false)))
+    $collisionBuild = $service.BuildBook(
+        $identityChanges,
+        $noAdditions,
+        $collisionTimestamp,
+        $diffHtml)
+    $collisionOutput = $collisionBuild['outputPath']
+    Assert-InsideDirectory $collisionOutput $testdataRoot
+    Assert-True ([IO.File]::Exists($collisionOutput)) `
+        'A diff-report failure cancelled the workbook build.'
+    Assert-True (
+        -not [string]::IsNullOrEmpty(
+            $collisionBuild['diffError'])) `
+        'A diff-report failure was not returned.'
+    Assert-True (-not $collisionBuild.ContainsKey('diffPath')) `
+        'A failed diff report returned a path.'
+    Assert-True (
+        [IO.File]::ReadAllText(
+            $collisionPath,
+            [Text.Encoding]::UTF8) -ceq
+        'existing report') `
+        'A pre-existing diff report was overwritten or removed.'
+} finally {
+    foreach ($path in @($collisionOutput, $collisionPath)) {
+        if (-not [string]::IsNullOrEmpty($path)) {
+            Assert-InsideDirectory $path $testdataRoot
+            if ([IO.File]::Exists($path)) {
+                [IO.File]::Delete($path)
+            }
+        }
+    }
+}
+
 $invalidChanges = New-Object `
     'System.Collections.Generic.Dictionary[string,string]' `
     ([StringComparer]::OrdinalIgnoreCase)

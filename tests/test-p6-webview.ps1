@@ -5,7 +5,8 @@ param(
     [string]$DiffScreenshotPath,
     [string]$BuildScreenshotPath,
     [string]$FailureScreenshotPath,
-    [string]$SuccessScreenshotPath
+    [string]$SuccessScreenshotPath,
+    [string]$ReportScreenshotPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -63,7 +64,8 @@ $preserveScreenshots =
     -not [string]::IsNullOrEmpty($DiffScreenshotPath) -and
     -not [string]::IsNullOrEmpty($BuildScreenshotPath) -and
     -not [string]::IsNullOrEmpty($FailureScreenshotPath) -and
-    -not [string]::IsNullOrEmpty($SuccessScreenshotPath)
+    -not [string]::IsNullOrEmpty($SuccessScreenshotPath) -and
+    -not [string]::IsNullOrEmpty($ReportScreenshotPath)
 
 if ([string]::IsNullOrEmpty($WaitingScreenshotPath)) {
     $WaitingScreenshotPath = Join-Path $testdataRoot (
@@ -85,6 +87,10 @@ if ([string]::IsNullOrEmpty($SuccessScreenshotPath)) {
     $SuccessScreenshotPath = Join-Path $testdataRoot (
         'p7-success-' + [Guid]::NewGuid().ToString('N') + '.png')
 }
+if ([string]::IsNullOrEmpty($ReportScreenshotPath)) {
+    $ReportScreenshotPath = Join-Path $testdataRoot (
+        'p6-report-' + [Guid]::NewGuid().ToString('N') + '.png')
+}
 
 $waitingScreenshot = [IO.Path]::GetFullPath(
     $WaitingScreenshotPath)
@@ -96,12 +102,15 @@ $failureScreenshot = [IO.Path]::GetFullPath(
     $FailureScreenshotPath)
 $successScreenshot = [IO.Path]::GetFullPath(
     $SuccessScreenshotPath)
+$reportScreenshot = [IO.Path]::GetFullPath(
+    $ReportScreenshotPath)
 Assert-InsideDirectory $cacheDir $testdataRoot
 Assert-InsideDirectory $waitingScreenshot $testdataRoot
 Assert-InsideDirectory $diffScreenshot $testdataRoot
 Assert-InsideDirectory $buildScreenshot $testdataRoot
 Assert-InsideDirectory $failureScreenshot $testdataRoot
 Assert-InsideDirectory $successScreenshot $testdataRoot
+Assert-InsideDirectory $reportScreenshot $testdataRoot
 Assert-True (-not [IO.File]::Exists($waitingScreenshot)) `
     "Waiting screenshot already exists: $waitingScreenshot"
 Assert-True (-not [IO.File]::Exists($diffScreenshot)) `
@@ -112,6 +121,8 @@ Assert-True (-not [IO.File]::Exists($failureScreenshot)) `
     "Failure screenshot already exists: $failureScreenshot"
 Assert-True (-not [IO.File]::Exists($successScreenshot)) `
     "Success screenshot already exists: $successScreenshot"
+Assert-True (-not [IO.File]::Exists($reportScreenshot)) `
+    "Report screenshot already exists: $reportScreenshot"
 
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
@@ -172,7 +183,8 @@ try {
             $diffScreenshot,
             $buildScreenshot,
             $failureScreenshot,
-            $successScreenshot)
+            $successScreenshot,
+            $reportScreenshot)
     } catch {
         throw $_.Exception.ToString()
     }
@@ -199,6 +211,8 @@ try {
     $buildRetry = $result.buildRetry | ConvertFrom-Json
     $buildProgress = $result.buildProgress | ConvertFrom-Json
     $buildSuccess = $result.buildSuccess | ConvertFrom-Json
+    $diffFailure = $result.diffFailure | ConvertFrom-Json
+    $diffReport = $result.diffReport | ConvertFrom-Json
     $selfLoop = $result.selfLoop | ConvertFrom-Json
 
     Assert-True ($initial.modules -eq 6) `
@@ -435,6 +449,10 @@ try {
         $buildSuccess.results -eq 4) `
         'Written badges or build results are incomplete.'
     Assert-True (
+        $buildSuccess.diff -eq $result.diffOutputPath -and
+        [string]::IsNullOrEmpty($buildSuccess.diffError)) `
+        'Diff report success data is incomplete.'
+    Assert-True (
         $buildSuccess.reveal -and
         $buildSuccess.excel -match 'Excel' -and
         $buildSuccess.branch -eq 'L4-2') `
@@ -443,6 +461,18 @@ try {
         'Build success has document-level horizontal scroll.'
     Assert-True ($result.buildReveal -eq $result.buildOutputPath) `
         'Reveal action did not receive the output path.'
+    Assert-True (
+        $diffFailure.view -eq 'success' -and
+        $diffFailure.output -eq $result.buildOutputPath -and
+        $diffFailure.reveal) `
+        'Diff report failure incorrectly cancelled build success.'
+    Assert-True (
+        $diffFailure.toast -match 'HTML' -and
+        $diffFailure.toast.Length -gt 20) `
+        ("Diff report failure toast does not preserve build success: " +
+        $diffFailure.toast)
+    Assert-True ($diffFailure.announce -match 'HTML') `
+        'Diff report failure was not announced.'
 
     Assert-True (
         $selfLoop.targets -eq 4 -and
@@ -453,8 +483,30 @@ try {
         $selfLoop.changed -eq 0 -and
         -not $selfLoop.step4) `
         'Self-verification loop still reports a changed module.'
+    Assert-True (
+        $diffReport.modules -eq 4 -and
+        $diffReport.tables -eq 4 -and
+        $diffReport.scrollers -eq 4) `
+        'Generated diff report does not contain all changed modules.'
+    Assert-True (
+        $diffReport.newModule -and
+        $diffReport.changedRows -gt 0) `
+        'Generated diff report omitted a new module or changed rows.'
+    Assert-True (
+        $diffReport.external -eq 0 -and
+        $diffReport.scripts -eq 0 -and
+        $diffReport.styles -eq 1) `
+        'Generated diff report is not self-contained.'
+    Assert-True (
+        $diffReport.vertical -and
+        -not $diffReport.horizontal) `
+        'Generated diff report scrolling is incorrect.'
+    Assert-True (-not $diffReport.pathLeak) `
+        'Generated diff report contains an absolute test path.'
     Assert-True (-not [IO.File]::Exists($result.buildOutputPath)) `
         'P7 smoke output was not removed.'
+    Assert-True (-not [IO.File]::Exists($result.diffOutputPath)) `
+        'Diff report smoke output was not removed.'
 
     Assert-True ([IO.File]::Exists($waitingScreenshot)) `
         'Waiting screenshot was not created.'
@@ -466,6 +518,8 @@ try {
         'Build failure screenshot was not created.'
     Assert-True ([IO.File]::Exists($successScreenshot)) `
         'Build success screenshot was not created.'
+    Assert-True ([IO.File]::Exists($reportScreenshot)) `
+        'Diff report screenshot was not created.'
 
     Write-Host 'test-p6-webview: PASS'
     Write-Host (
@@ -473,7 +527,7 @@ try {
         'diff=count-A, undo/unchanged/excluded/state=PASS')
     Write-Host (
         'wrong-module=conspicuous, 5001-lines=context+/-10, ' +
-        'build/self-loop=PASS, screenshots=created')
+        'build/diff-report/self-loop=PASS, screenshots=created')
 } finally {
     [GC]::Collect()
     [GC]::WaitForPendingFinalizers()
@@ -499,7 +553,8 @@ try {
             $diffScreenshot,
             $buildScreenshot,
             $failureScreenshot,
-            $successScreenshot)) {
+            $successScreenshot,
+            $reportScreenshot)) {
             if ([IO.File]::Exists($path)) {
                 [IO.File]::Delete($path)
             }

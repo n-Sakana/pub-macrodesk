@@ -39,7 +39,7 @@ macrodesk/
 │   ├── 01_App.cs            # エントリ。AssemblyResolve、STA スレッド、WebView2 ランタイム確認
 │   ├── 02_MainWindow.cs     # WPF 窓 + WebView2 + 仮想ホスト + D&D 受け
 │   ├── 03_MessageRouter.cs  # JS⇔C# の id 付き request/response IPC
-│   ├── 04_HostServices.cs   # ダイアログ、クリップボード、explorer /select、依頼ファイル出力、presets 読み、ログ
+│   ├── 04_HostServices.cs   # ダイアログ、クリップボード、explorer /select、依頼・差分ファイル出力、presets 読み、ログ
 │   ├── 05_Ole2.cs           # OLE2(CFB) リーダ/ライタ
 │   ├── 06_VbaCompression.cs # MS-OVBA 2.4.1 展開・圧縮
 │   ├── 07_VbaProject.cs     # dir の MODULE レコードを正本とするモジュール一覧・コード取得・コードページ・書き戻し計画
@@ -100,6 +100,7 @@ Node test（UI ロジックの単体検証）:
 ```powershell
 node tests\test-build-payload.js
 node tests\test-diff.js
+node tests\test-diff-report.js
 node tests\test-host-bridge.js
 node tests\test-p4-state.js
 node tests\test-p6-state.js

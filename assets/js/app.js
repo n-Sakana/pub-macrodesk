@@ -96,6 +96,9 @@
       "出力ファイルを書き込めませんでした。同名ファイルを開いていないか、保存先の権限を確認してください。"
   };
 
+  var diffReportErrorMessage =
+    "差分 HTML ファイルを作成できませんでした。改修版ブックは正常に作成されています。";
+
   var buildResultLabels = {
     written: "書き込み・検証 OK",
     verify_failed: "読み直し検証で不一致",
@@ -1781,6 +1784,8 @@
     var state = global.MacroDeskState.getState();
     var modules;
     var outputName;
+    var diffHtml = null;
+    var diffGenerationError = null;
 
     if (state.currentStep !== 4 || state.busyAction) {
       return Promise.resolve(null);
@@ -1797,6 +1802,16 @@
       }));
     }
 
+    try {
+      diffHtml = global.MacroDeskDiffReport.buildReport({
+        bookName: state.book.name,
+        buildTimestamp: state.buildTimestamp,
+        modules: state.modules
+      });
+    } catch (error) {
+      diffGenerationError = error;
+    }
+
     outputName = createBuildOutputName(
       state.book,
       state.buildTimestamp,
@@ -1808,15 +1823,21 @@
     recordInfo(
       "build start: " + outputName +
       " (" + modules.length + " modules)");
+    if (diffGenerationError) {
+      recordClientError(diffGenerationError, "");
+    }
 
     return global.hostBridge.request("buildBook", {
       outputTimestamp: state.buildTimestamp,
-      modules: modules
+      modules: modules,
+      diffHtml: diffHtml
     }).then(function (result) {
       var viewResult = {
         status: "success",
         outputPath: result.outputPath,
-        results: result.results || []
+        results: result.results || [],
+        diffPath: result.diffPath || "",
+        diffError: result.diffError || ""
       };
 
       global.MacroDeskState.setLastError(null);
@@ -1825,7 +1846,15 @@
         viewResult.results);
       global.MacroDeskState.setBusyAction(null);
       clearToast();
-      announce("改修版ブックを作成しました。");
+      if (viewResult.diffError) {
+        showToast(diffReportErrorMessage, "error");
+        announce(
+          "改修版ブックを作成しました。" +
+          "差分 HTML ファイルは作成できませんでした。");
+      } else {
+        announce(
+          "改修版ブックと差分 HTML ファイルを作成しました。");
+      }
       recordInfo(
         "build success: " + result.outputPath +
         " (" + viewResult.results.length + " results)");

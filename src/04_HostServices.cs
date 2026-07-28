@@ -328,6 +328,35 @@ namespace MacroDesk
             IList<VbaModuleAddition> newModules,
             string outputTimestamp)
         {
+            return BuildBookCore(
+                moduleChanges,
+                newModules,
+                outputTimestamp,
+                null,
+                false);
+        }
+
+        public Dictionary<string, object> BuildBook(
+            IDictionary<string, string> moduleChanges,
+            IList<VbaModuleAddition> newModules,
+            string outputTimestamp,
+            string diffHtml)
+        {
+            return BuildBookCore(
+                moduleChanges,
+                newModules,
+                outputTimestamp,
+                diffHtml,
+                true);
+        }
+
+        private Dictionary<string, object> BuildBookCore(
+            IDictionary<string, string> moduleChanges,
+            IList<VbaModuleAddition> newModules,
+            string outputTimestamp,
+            string diffHtml,
+            bool createDiffReport)
+        {
             if (moduleChanges == null)
             {
                 throw new HostActionException(
@@ -384,6 +413,25 @@ namespace MacroDesk
                     data);
             }
 
+            if (createDiffReport)
+            {
+                try
+                {
+                    data.Add(
+                        "diffPath",
+                        WriteDiffReport(
+                            sourcePath,
+                            diffHtml,
+                            outputTimestamp));
+                }
+                catch (Exception ex)
+                {
+                    data.Add(
+                        "diffError",
+                        "The diff report file could not be created.");
+                    WriteDiffReportError(ex);
+                }
+            }
             return data;
         }
 
@@ -524,6 +572,70 @@ namespace MacroDesk
             return Path.Combine(
                 directory,
                 name + "_" + label + "_" + timestamp + extension);
+        }
+
+        private string WriteDiffReport(
+            string sourcePath,
+            string content,
+            string outputTimestamp)
+        {
+            if (content == null)
+            {
+                throw new InvalidDataException(
+                    "The diff report content is missing.");
+            }
+
+            string outputPath = CreateAdjacentOutputPath(
+                sourcePath,
+                "diff-file-label.txt",
+                ".html",
+                outputTimestamp);
+            bool created = false;
+            try
+            {
+                using (FileStream output = new FileStream(
+                    outputPath,
+                    FileMode.CreateNew,
+                    FileAccess.Write,
+                    FileShare.None))
+                {
+                    created = true;
+                    using (StreamWriter writer = new StreamWriter(
+                        output,
+                        new UTF8Encoding(true)))
+                    {
+                        writer.Write(content);
+                    }
+                }
+            }
+            catch
+            {
+                try
+                {
+                    if (created && File.Exists(outputPath))
+                    {
+                        File.Delete(outputPath);
+                    }
+                }
+                catch
+                {
+                }
+                throw;
+            }
+            return outputPath;
+        }
+
+        private void WriteDiffReportError(Exception error)
+        {
+            try
+            {
+                WriteLog(
+                    "ERROR",
+                    "diff report: " + error.ToString());
+            }
+            catch
+            {
+            }
         }
 
         private static void ValidateOutputTimestamp(string value)

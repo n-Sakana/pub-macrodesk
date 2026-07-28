@@ -147,7 +147,8 @@ namespace MacroDesk
                     return services.BuildBook(
                         buildModules.Changes,
                         buildModules.Additions,
-                        GetString(parameters, "outputTimestamp"));
+                        GetString(parameters, "outputTimestamp"),
+                        GetString(parameters, "diffHtml"));
                 case "revealPath":
                     services.RevealPath(
                         GetString(parameters, "path"));
