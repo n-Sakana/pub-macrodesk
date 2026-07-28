@@ -2,42 +2,27 @@
   "use strict";
 
   var CRLF = "\r\n";
-  var SECTION_LINE =
-    "==================================================";
   var MODULE_LINE =
     "--------------------------------------------------";
   var EMPTY_MODULE_NOTE =
     "（このモジュールは現在空です。コードの省略ではありません）";
+  var PLACEHOLDER_NAMES = [
+    "REQUEST_TEXT",
+    "BOOK_NAME",
+    "MODULE_COUNT",
+    "TOTAL_LINE_COUNT",
+    "MODULE_LIST",
+    "MODULE_SOURCE_BLOCKS"
+  ];
+  var REQUIRED_PLACEHOLDER_NAMES = [
+    "REQUEST_TEXT",
+    "MODULE_SOURCE_BLOCKS"
+  ];
+  var KNOWN_PLACEHOLDERS = {};
 
-  var FIXED_INSTRUCTIONS = [
-    SECTION_LINE,
-    "【出力形式の指定】※ここから下はツールが自動で付けた指定です",
-    SECTION_LINE,
-    "回答は、必ず次の形式・順序で出力してください。",
-    "",
-    "1. 最初に「■ 改修サマリー」という見出しを置き、改修したモジュール名と",
-    "   変更内容の要点を箇条書きで書いてください。",
-    "   これは、読んだ人がこのあと取り込み作業をするための指示書を兼ねます。",
-    "",
-    "2. 続けて、改修したモジュールごとに、モジュール名だけの見出し",
-    "   （例: ■ Module1）を置き、その直後にそのモジュールの改修後コードの",
-    "   全文を 1 つのコードブロックで出力してください。",
-    "",
-    "守ってください:",
-    "- コードは必ずモジュールの先頭から末尾までの全文を出力する。一部だけの",
-    "  出力や「'（以下変更なし）」のような省略はしない。",
-    "- 変更していないモジュールは出力しない。",
-    "- 「このモジュールは現在空です」という注記は VBA コードへ含めない。空の",
-    "  モジュールも、改修対象なら改修後コードの全文を出し、未変更なら出力しない。",
-    "- コードブロックの中には VBA コード以外の文章（説明・注釈・見出し）を",
-    "  入れない。",
-    "- モジュール先頭に「Attribute VB_」で始まる行を付けない（渡したコードにも",
-    "  付いていない。コードの途中に Attribute 行がある場合だけ、そのまま残す）。",
-    "- 複数のモジュールに同じ処理を入れる場合は、新しい標準モジュールを 1 つ作って",
-    "  そこに共通の処理を置き、既存モジュールからは呼び出すだけにしてください。",
-    "  新しいモジュールは「■ <新しいモジュール名>（新規）」の見出しで出力してください。",
-    "- モジュール名の変更と、モジュールの削除はしない。"
-  ].join(CRLF);
+  PLACEHOLDER_NAMES.forEach(function (name) {
+    KNOWN_PLACEHOLDERS[name] = true;
+  });
 
   function normalizeCrLf(value) {
     return value
@@ -105,17 +90,8 @@
     return value;
   }
 
-  function buildTargetSection(book, modules) {
-    var lines = [
-      SECTION_LINE,
-      "【対象ブック】",
-      SECTION_LINE,
-      "ファイル名: " + requireString(book.name, "Book name"),
-      "モジュール数: " + modules.length +
-        "（合計 " + book.totalLines + " 行）" +
-        "※以下に全モジュールの全文を掲載しています。省略はありません。",
-      ""
-    ];
+  function buildModuleList(modules) {
+    var lines = [];
 
     modules.forEach(function (module) {
       lines.push(
@@ -131,7 +107,7 @@
     return lines.join(CRLF);
   }
 
-  function buildSourceSection(modules) {
+  function buildSourceBlocks(modules) {
     var blocks = [];
 
     modules.forEach(function (module) {
@@ -149,53 +125,108 @@
       ].join(CRLF));
     });
 
-    return [
-      SECTION_LINE,
-      "【ソースコード】",
-      SECTION_LINE,
-      "",
-      joinWithBlankLine(blocks)
-    ].join(CRLF);
+    return joinWithBlankLine(blocks);
+  }
+
+  function validateTemplate(template) {
+    var placeholderPattern = /\{\{([^{}\r\n]*)\}\}/g;
+    var seen = {};
+    var match;
+    var withoutPlaceholders;
+
+    while ((match = placeholderPattern.exec(template)) !== null) {
+      if (!Object.prototype.hasOwnProperty.call(
+        KNOWN_PLACEHOLDERS,
+        match[1])) {
+        throw new Error(
+          "Unknown request template placeholder: " + match[0]);
+      }
+      seen[match[1]] = true;
+    }
+
+    withoutPlaceholders = template.replace(
+      /\{\{([^{}\r\n]*)\}\}/g,
+      "");
+    if (withoutPlaceholders.indexOf("{{") >= 0 ||
+        withoutPlaceholders.indexOf("}}") >= 0) {
+      throw new Error("The request template has a malformed placeholder.");
+    }
+
+    REQUIRED_PLACEHOLDER_NAMES.forEach(function (name) {
+      if (!seen[name]) {
+        throw new Error(
+          "The request template is missing {{" + name + "}}.");
+      }
+    });
+  }
+
+  function renderTemplate(template, variables) {
+    var text = normalizeCrLf(template);
+    var placeholderPattern = /\{\{([^{}\r\n]*)\}\}/g;
+    var result = "";
+    var searchIndex = 0;
+    var match;
+    var value;
+    var afterToken;
+    var followingBreaks;
+    var trailingBreaks;
+    var overlap;
+
+    while ((match = placeholderPattern.exec(text)) !== null) {
+      value = normalizeCrLf(variables[match[1]]);
+      trailingBreaks = countLineBreaks(value, false);
+      afterToken = match.index + match[0].length;
+      followingBreaks = 0;
+      while (text.substr(
+        afterToken + (followingBreaks * CRLF.length),
+        CRLF.length) === CRLF) {
+        followingBreaks++;
+      }
+      overlap = Math.min(trailingBreaks, followingBreaks);
+      result += text.slice(searchIndex, match.index) +
+        value +
+        new Array(followingBreaks - overlap + 1).join(CRLF);
+      searchIndex =
+        afterToken + (followingBreaks * CRLF.length);
+      placeholderPattern.lastIndex = searchIndex;
+    }
+    result += text.slice(searchIndex);
+    return result.replace(/(?:(?:\r\n))+$/, "") + CRLF;
   }
 
   function buildRequestFile(options) {
+    var template;
     var requestText;
     var book;
     var modules;
-    var intro;
-    var requestSection;
+    var variables;
 
     if (!options || !options.book ||
         !Array.isArray(options.modules)) {
       throw new Error("Prompt source data is missing.");
     }
 
+    template = requireString(
+      options.template,
+      "Request template");
+    validateTemplate(template);
     requestText = normalizeCrLf(
       requireString(options.requestText, "Request text"));
     book = options.book;
     modules = options.modules;
-    intro = [
-      "このファイルは Excel マクロ改修支援ツール「MacroDesk」が生成した、Excel マクロの改修依頼です。",
-      "下の【依頼】に従って、【ソースコード】にある VBA コードを改修してください。"
-    ].join(CRLF);
-    requestSection = [
-      SECTION_LINE,
-      "【依頼】",
-      SECTION_LINE,
-      requestText
-    ].join(CRLF);
+    variables = {
+      REQUEST_TEXT: requestText,
+      BOOK_NAME: requireString(book.name, "Book name"),
+      MODULE_COUNT: String(modules.length),
+      TOTAL_LINE_COUNT: String(book.totalLines),
+      MODULE_LIST: buildModuleList(modules),
+      MODULE_SOURCE_BLOCKS: buildSourceBlocks(modules)
+    };
 
-    return joinWithBlankLine([
-      intro,
-      requestSection,
-      buildTargetSection(book, modules),
-      buildSourceSection(modules),
-      FIXED_INSTRUCTIONS
-    ]) + CRLF;
+    return renderTemplate(template, variables);
   }
 
   global.MacroDeskPrompt = {
-    fixedInstructions: FIXED_INSTRUCTIONS,
     appendPreset: appendPreset,
     buildRequestFile: buildRequestFile
   };

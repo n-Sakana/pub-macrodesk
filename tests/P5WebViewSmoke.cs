@@ -283,6 +283,10 @@ namespace MacroDesk.Tests
                         "'[data-action=\"load-preset\"]').length," +
                         "fixedOpen:document.querySelector(" +
                         "'.fixed-preview').open," +
+                        "templateSummary:document.querySelector(" +
+                        "'.fixed-preview summary').textContent," +
+                        "templateText:document.querySelector(" +
+                        "'.fixed-preview-text').textContent," +
                         "branch:document.getElementById(" +
                         "'lecture-panel').dataset.branch," +
                         "horizontal:document.documentElement" +
@@ -291,14 +295,19 @@ namespace MacroDesk.Tests
                     await Capture(stepTwoScreenshot);
 
                     await webView.CoreWebView2.ExecuteScriptAsync(
+                        "window.__p5ExpectedContent=null;" +
+                        "window.__p5CreateDone=false;" +
+                        "hostBridge.request('readRequestTemplate')" +
+                        ".then(function(templateResult){" +
                         "window.__p5ExpectedContent=" +
                         "MacroDeskPrompt.buildRequestFile({" +
+                        "template:templateResult.content," +
                         "requestText:MacroDeskState.getState()" +
                         ".requestText," +
                         "book:MacroDeskState.getState().book," +
                         "modules:MacroDeskState.getState().modules});" +
-                        "window.__p5CreateDone=false;" +
-                        "MacroDeskApp.createRequestFile()" +
+                        "return MacroDeskApp.createRequestFile();" +
+                        "})" +
                         ".then(function(){window.__p5CreateDone=true;});");
                     await WaitFor(
                         "window.__p5CreateDone === true && " +

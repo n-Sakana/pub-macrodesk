@@ -79,6 +79,8 @@
   var generalErrorMessages = {
     "E-GEN-01":
       "依頼ファイルを作成できませんでした。保存先の書き込み権限と空き容量を確認してください。",
+    "E-GEN-02":
+      "依頼テンプレートを読み込めませんでした。templates\\request-template.txt の存在、UTF-8 形式、差し込み変数を確認してください。",
     "E-PASTE-01":
       "貼り付けるコードがありません。Copilot のコードブロックをコピーして、もう一度お試しください。",
     "E-SYS-01":
@@ -601,18 +603,19 @@
     return section;
   }
 
-  function createFixedPreview() {
+  function createTemplateNotice() {
     var details = createElement("details", "fixed-preview");
     var summary = createElement(
       "summary",
       "",
-      "末尾に自動で付く指定（編集不可）");
+      "依頼ファイルのテンプレート");
     var pre = createElement(
       "pre",
       "fixed-preview-text",
-      global.MacroDeskPrompt.fixedInstructions);
+      "依頼ファイルはテンプレートから生成されます。\n" +
+        "内容を変えたい場合は templates\\request-template.txt を編集してください。");
 
-    pre.setAttribute("aria-label", "自動で付く出力形式の指定");
+    pre.setAttribute("aria-label", "依頼ファイルテンプレートの案内");
     details.appendChild(summary);
     details.appendChild(pre);
     return details;
@@ -693,7 +696,7 @@
     if (presets.length > 0) {
       workspace.appendChild(createPresetSection(state));
     }
-    workspace.appendChild(createFixedPreview());
+    workspace.appendChild(createTemplateNotice());
 
     if (state.requestFilePath) {
       workspace.appendChild(createRequestSuccess(state));
@@ -2005,7 +2008,6 @@
 
   function createRequestFile() {
     var state = global.MacroDeskState.getState();
-    var content;
     var textarea;
 
     if (state.busyAction) {
@@ -2023,32 +2025,44 @@
       return Promise.resolve(null);
     }
 
-    try {
-      content = global.MacroDeskPrompt.buildRequestFile({
-        requestText: state.requestText,
-        book: state.book,
-        modules: state.modules
-      });
-    } catch (error) {
-      handleHostError({
-        code: "E-SYS-02",
-        message: error.message
-      }, "");
-      return Promise.resolve(null);
-    }
-
     global.MacroDeskState.setBusyAction("writeRequestFile");
     return global.hostBridge.request(
-      "writeRequestFile",
-      { content: content }
-    ).then(function (result) {
-      global.MacroDeskState.setLastError(null);
-      global.MacroDeskState.setRequestFilePath(result.path);
-      global.MacroDeskState.setBusyAction(null);
-      showToast("依頼ファイルを作成しました。", "success");
-      announce("依頼ファイルを作成しました。");
-      recordInfo("request created: " + result.path);
-      return result;
+      "readRequestTemplate"
+    ).then(function (templateResult) {
+      var content;
+
+      try {
+        content = global.MacroDeskPrompt.buildRequestFile({
+          template: templateResult.content,
+          requestText: state.requestText,
+          book: state.book,
+          modules: state.modules
+        });
+      } catch (error) {
+        handleHostError({
+          code: "E-GEN-02",
+          message: error.message
+        }, "");
+        global.MacroDeskState.setBusyAction(null);
+        return null;
+      }
+
+      return global.hostBridge.request(
+        "writeRequestFile",
+        { content: content }
+      ).then(function (result) {
+        global.MacroDeskState.setLastError(null);
+        global.MacroDeskState.setRequestFilePath(result.path);
+        global.MacroDeskState.setBusyAction(null);
+        showToast("依頼ファイルを作成しました。", "success");
+        announce("依頼ファイルを作成しました。");
+        recordInfo("request created: " + result.path);
+        return result;
+      }, function (error) {
+        handleHostError(error, "");
+        global.MacroDeskState.setBusyAction(null);
+        return null;
+      });
     }, function (error) {
       handleHostError(error, "");
       global.MacroDeskState.setBusyAction(null);

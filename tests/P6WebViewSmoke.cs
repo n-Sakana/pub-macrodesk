@@ -284,6 +284,7 @@ namespace MacroDesk.Tests
 
                     CaptureClipboard();
                     SetClipboardText(fencedCode);
+                    await Task.Delay(250);
                     await Execute(
                         "document.querySelector(" +
                         "'[data-action=\"paste-response\"]').click();");
@@ -533,6 +534,7 @@ namespace MacroDesk.Tests
                         "End Sub\r\n";
                     CaptureClipboard();
                     SetClipboardText(additionCode);
+                    await Task.Delay(250);
                     await Execute(
                         "(function(){" +
                         "var i=document.getElementById(" +

@@ -252,6 +252,34 @@ namespace MacroDesk
             return result;
         }
 
+        public Dictionary<string, object> ReadRequestTemplate()
+        {
+            string path = Path.Combine(
+                baseDir,
+                "templates",
+                "request-template.txt");
+            string content;
+            try
+            {
+                content = File.ReadAllText(
+                    path,
+                    new UTF8Encoding(false, true));
+            }
+            catch (Exception ex)
+            {
+                throw new HostActionException(
+                    "E-GEN-02",
+                    "The request template could not be read.",
+                    null,
+                    ex);
+            }
+
+            Dictionary<string, object> result =
+                new Dictionary<string, object>();
+            result.Add("content", content);
+            return result;
+        }
+
         public Dictionary<string, object> WriteRequestFile(
             string content)
         {

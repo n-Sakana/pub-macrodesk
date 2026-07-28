@@ -39,13 +39,14 @@ macrodesk/
 │   ├── 01_App.cs            # エントリ。AssemblyResolve、STA スレッド、WebView2 ランタイム確認
 │   ├── 02_MainWindow.cs     # WPF 窓 + WebView2 + 仮想ホスト + D&D 受け
 │   ├── 03_MessageRouter.cs  # JS⇔C# の id 付き request/response IPC
-│   ├── 04_HostServices.cs   # ダイアログ、クリップボード、explorer /select、依頼・差分ファイル出力、presets 読み、ログ
+│   ├── 04_HostServices.cs   # ダイアログ、クリップボード、explorer /select、依頼・差分ファイル出力、template / presets 読み、ログ
 │   ├── 05_Ole2.cs           # OLE2(CFB) リーダ/ライタ
 │   ├── 06_VbaCompression.cs # MS-OVBA 2.4.1 展開・圧縮
 │   ├── 07_VbaProject.cs     # dir の MODULE レコードを正本とするモジュール一覧・コード取得・コードページ・書き戻し計画
 │   └── 08_BookIO.cs         # xlsm/xlam/xlsb(zip) の入出力、コピー生成、ビルド、検証
 ├── assets/                  # UI 実体
 ├── presets/                 # 改修マニュアル（*.md、1 ファイル = 1 ボタン）
+├── templates/               # 依頼ファイル全体の編集可能なテンプレート
 ├── lib/                     # WebView2 DLL（4 本）
 ├── docs/                    # SPEC.md / DEVELOPMENT.md（本書）
 └── tests/                   # ヘッドレス検証スクリプト

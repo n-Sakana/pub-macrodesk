@@ -136,6 +136,8 @@ namespace MacroDesk
                 case "readPreset":
                     return services.ReadPreset(
                         GetString(parameters, "file"));
+                case "readRequestTemplate":
+                    return services.ReadRequestTemplate();
                 case "writeRequestFile":
                     return services.WriteRequestFile(
                         GetString(parameters, "content"));

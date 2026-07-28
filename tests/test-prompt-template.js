@@ -52,6 +52,9 @@ vm.runInContext(
   { filename: "prompt-template.js" });
 
 var promptApi = windowObject.MacroDeskPrompt;
+var defaultTemplate = fs.readFileSync(
+  path.join(root, "templates", "request-template.txt"),
+  "utf8");
 var crlf = "\r\n";
 var sectionLine =
   "==================================================";
@@ -87,11 +90,8 @@ var expectedFixed = [
   "- モジュール名の変更と、モジュールの削除はしない。"
 ].join(crlf);
 
-assert(
-  promptApi.fixedInstructions === expectedFixed,
-  "Fixed output instructions do not match SPEC 6.3.");
-
 var options = {
+  template: defaultTemplate,
   requestText: "一行目\n二行目",
   book: {
     name: "台帳.xlsm",
@@ -166,6 +166,11 @@ var expected = joinWithBlankLine([
 var actual = promptApi.buildRequestFile(options);
 assert(actual === expected, "Generated request template mismatch.");
 assert(
+  !Object.prototype.hasOwnProperty.call(
+    promptApi,
+    "fixedInstructions"),
+  "The external template must be the only request text source.");
+assert(
   actual.indexOf("Attribute VB_Name") < 0,
   "Attribute header leaked into the request file.");
 assert(
@@ -184,6 +189,26 @@ assert(
 assert(
   actual.replace(/\r\n/g, "").indexOf("\r") < 0,
   "Generated request contains a lone CR.");
+
+var boundaryActual = promptApi.buildRequestFile({
+  template: defaultTemplate,
+  requestText: "末尾改行あり\n",
+  book: options.book,
+  modules: [
+    options.modules[1],
+    options.modules[0]
+  ]
+});
+assert(
+  boundaryActual.indexOf(
+    "末尾改行あり\r\n\r\n" +
+    sectionLine + "\r\n【対象ブック】") >= 0,
+  "A request trailing newline changed the default section boundary.");
+assert(
+  boundaryActual.indexOf(
+    "End Sub\r\n\r\n" +
+    sectionLine + "\r\n【出力形式の指定】") >= 0,
+  "A module trailing newline changed the default section boundary.");
 
 assert(
   promptApi.appendPreset("", "preset") === "preset",
@@ -213,5 +238,81 @@ try {
 }
 assert(rejected, "Missing prompt data must raise an error.");
 
+function buildWithTemplate(template, requestText) {
+  return promptApi.buildRequestFile({
+    template: template,
+    requestText: requestText === undefined
+      ? options.requestText
+      : requestText,
+    book: options.book,
+    modules: options.modules
+  });
+}
+
+var minimal = buildWithTemplate(
+  "{{REQUEST_TEXT}}\n{{MODULE_SOURCE_BLOCKS}}\n");
+assert(
+  minimal.indexOf("一行目\r\n二行目\r\n") === 0,
+  "A template may omit optional placeholders.");
+assert(
+  minimal.slice(-2) === crlf &&
+    minimal.slice(-4) !== crlf + crlf,
+  "Rendered requests must end with exactly one CRLF.");
+
+var repeated = buildWithTemplate(
+  "{{BOOK_NAME}}|{{BOOK_NAME}}\n" +
+    "{{REQUEST_TEXT}}\n{{MODULE_SOURCE_BLOCKS}}");
+assert(
+  repeated.indexOf("台帳.xlsm|台帳.xlsm\r\n") === 0,
+  "Known placeholders may be repeated.");
+
+var dollarText = buildWithTemplate(
+  "{{REQUEST_TEXT}}\n{{MODULE_SOURCE_BLOCKS}}",
+  "$&\n$1");
+assert(
+  dollarText.indexOf("$&\r\n$1\r\n") === 0,
+  "Placeholder values must not use replacement-string semantics.");
+
+var literalPlaceholderText = buildWithTemplate(
+  "{{REQUEST_TEXT}}\n{{MODULE_SOURCE_BLOCKS}}",
+  "{{BOOK_NAME}}\n{{MODULE_COUNT}}");
+assert(
+  literalPlaceholderText.indexOf(
+    "{{BOOK_NAME}}\r\n{{MODULE_COUNT}}\r\n") === 0,
+  "Placeholder-like text inside a value must remain literal.");
+
+[
+  {
+    template: "{{REQUEST_TEXT}}",
+    label: "MODULE_SOURCE_BLOCKS"
+  },
+  {
+    template: "{{MODULE_SOURCE_BLOCKS}}",
+    label: "REQUEST_TEXT"
+  },
+  {
+    template:
+      "{{REQUEST_TEXT}}\n{{MODULE_SOURCE_BLOCKS}}\n{{BOOK_NAM}}",
+    label: "unknown"
+  },
+  {
+    template:
+      "{{REQUEST_TEXT}}\n{{MODULE_SOURCE_BLOCKS}}\n{{BOOK_NAME}",
+    label: "malformed"
+  }
+].forEach(function (testCase) {
+  var didReject = false;
+
+  try {
+    buildWithTemplate(testCase.template);
+  } catch (error) {
+    didReject = true;
+  }
+  assert(
+    didReject,
+    "The " + testCase.label + " template error was accepted.");
+});
+
 console.log("test-prompt-template: PASS");
-console.log("SPEC 6.2/6.3 exact text, CRLF, all modules, append 2A: PASS");
+console.log(
+  "external template, exact default, variables, CRLF, append 2A: PASS");

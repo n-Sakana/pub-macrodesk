@@ -271,7 +271,16 @@ try {
     Assert-True ($preset.presetCount -eq 1) `
         'Preset button count mismatch.'
     Assert-True ($preset.fixedOpen -eq $false) `
-        'Fixed instruction preview must start collapsed.'
+        'Template notice must start collapsed.'
+    Assert-True (
+        -not [string]::IsNullOrEmpty(
+            [string]$preset.templateSummary)) `
+        'Template notice summary is missing.'
+    Assert-True (
+        $preset.templateText.Contains(
+            'templates\request-template.txt') -and
+        -not $preset.templateText.Contains('{{')) `
+        'Template notice is stale or exposes raw placeholders.'
     Assert-True ($preset.branch -eq 'L2-2') `
         'Step 2 lecture branch mismatch before creation.'
     Assert-True ($preset.horizontal -eq $false) `

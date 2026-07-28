@@ -77,6 +77,7 @@ var errorCodes = [
   "E-ATTACH-04",
   "E-ATTACH-05",
   "E-GEN-01",
+  "E-GEN-02",
   "E-PASTE-01",
   "E-BUILD-01",
   "E-BUILD-02",
@@ -161,4 +162,4 @@ assert(
   "Unknown errors must use E-SYS-02 guidance.");
 
 console.log("test-p8-lecture: PASS");
-console.log("branches=16, errors=12, body-lines=2-4, L3-6=dynamic");
+console.log("branches=16, errors=13, body-lines=2-4, L3-6=dynamic");

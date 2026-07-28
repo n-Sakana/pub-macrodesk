@@ -235,6 +235,7 @@ try {
         'E-ATTACH-04',
         'E-ATTACH-05',
         'E-GEN-01',
+        'E-GEN-02',
         'E-PASTE-01',
         'E-SYS-01',
         'E-SYS-02')) {
@@ -287,7 +288,7 @@ try {
 
     Assert-True (
         $lecture.branches -eq 16 -and
-        $lecture.errors -eq 12 -and
+        $lecture.errors -eq 13 -and
         $lecture.branchLines -and
         $lecture.errorLines) `
         'Lecture branch/error table is incomplete.'
@@ -302,7 +303,7 @@ try {
 
     Write-Host 'test-p8-webview: PASS'
     Write-Host (
-        'lecture=16 branches/12 errors, glow=exclusive, ' +
+        'lecture=16 branches/13 errors, glow=exclusive, ' +
         'focus/font/logging=PASS')
     Write-Host (
         'errors=toast/card/build-screen, screenshots=created')

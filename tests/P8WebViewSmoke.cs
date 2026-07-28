@@ -281,6 +281,7 @@ namespace MacroDesk.Tests
                         "E-ATTACH-04",
                         "E-ATTACH-05",
                         "E-GEN-01",
+                        "E-GEN-02",
                         "E-SYS-01",
                         "E-SYS-02"
                     };

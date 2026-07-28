@@ -95,6 +95,13 @@ $expectedBuildFileLabel = [IO.File]::ReadAllText(
 Assert-True (
     $appInfo['buildFileLabel'] -eq $expectedBuildFileLabel) `
     'Build file label mismatch.'
+$expectedRequestTemplate = [IO.File]::ReadAllText(
+    (Join-Path $repoRoot 'templates\request-template.txt'),
+    [Text.Encoding]::UTF8)
+Assert-True (
+    $service.ReadRequestTemplate()['content'] -ceq
+    $expectedRequestTemplate) `
+    'Request template content mismatch.'
 
 $attached = $service.AttachBook($resolvedBookPath)
 $book = $attached['book']
@@ -158,9 +165,11 @@ Assert-True ($lockErrorCode -eq 'E-ATTACH-02') `
 $tempBase = Join-Path $testdataRoot (
     'p3-host-' + [Guid]::NewGuid().ToString('N'))
 $presetRoot = Join-Path $tempBase 'presets'
+$templateRoot = Join-Path $tempBase 'templates'
 $messageRoot = Join-Path $tempBase 'assets\messages'
 Assert-InsideDirectory $tempBase $testdataRoot
 [IO.Directory]::CreateDirectory($presetRoot) | Out-Null
+[IO.Directory]::CreateDirectory($templateRoot) | Out-Null
 [IO.Directory]::CreateDirectory($messageRoot) | Out-Null
 [IO.File]::Copy(
     (Join-Path $repoRoot 'assets\messages\build-file-label.txt'),
@@ -176,6 +185,11 @@ Assert-InsideDirectory $tempBase $testdataRoot
     (Join-Path $presetRoot 'A.md'),
     'first',
     (New-Object Text.UTF8Encoding($true)))
+$requestTemplatePath = Join-Path $templateRoot 'request-template.txt'
+[IO.File]::WriteAllText(
+    $requestTemplatePath,
+    'first template',
+    (New-Object Text.UTF8Encoding($false)))
 
 try {
     $presetService = New-Object MacroDesk.HostServices($null, $tempBase)
@@ -187,6 +201,18 @@ try {
     Assert-True (
         $presetService.ReadPreset('A.md')['content'] -eq 'first') `
         'Preset content mismatch.'
+    Assert-True (
+        $presetService.ReadRequestTemplate()['content'] -ceq
+        'first template') `
+        'Initial request template content mismatch.'
+    [IO.File]::WriteAllText(
+        $requestTemplatePath,
+        'second template',
+        (New-Object Text.UTF8Encoding($false)))
+    Assert-True (
+        $presetService.ReadRequestTemplate()['content'] -ceq
+        'second template') `
+        'Request template was not read again after editing.'
 
     $presetErrorCode = ''
     try {
@@ -222,6 +248,28 @@ try {
     Assert-True (
         $presetEncodingUserMessage -eq $expectedEncodingMessage) `
         'Preset encoding user message mismatch.'
+
+    [IO.File]::Delete($requestTemplatePath)
+    $missingTemplateErrorCode = ''
+    try {
+        $presetService.ReadRequestTemplate()
+    } catch [MacroDesk.HostActionException] {
+        $missingTemplateErrorCode = $_.Exception.ErrorCode
+    }
+    Assert-True ($missingTemplateErrorCode -eq 'E-GEN-02') `
+        "Missing template error mismatch: $missingTemplateErrorCode"
+
+    [IO.File]::WriteAllBytes(
+        $requestTemplatePath,
+        [byte[]](0x83, 0x76))
+    $templateEncodingErrorCode = ''
+    try {
+        $presetService.ReadRequestTemplate()
+    } catch [MacroDesk.HostActionException] {
+        $templateEncodingErrorCode = $_.Exception.ErrorCode
+    }
+    Assert-True ($templateEncodingErrorCode -eq 'E-GEN-02') `
+        "Template encoding error mismatch: $templateEncodingErrorCode"
 } finally {
     Assert-InsideDirectory $tempBase $testdataRoot
     if ([IO.Directory]::Exists($tempBase)) {

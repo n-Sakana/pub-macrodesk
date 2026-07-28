@@ -184,6 +184,7 @@ try {
         $stagedScript,
         (Join-Path $stageRoot 'assets\index.html'),
         (Join-Path $stageRoot 'src\01_App.cs'),
+        (Join-Path $stageRoot 'templates\request-template.txt'),
         (Join-Path $stageRoot `
             'lib\Microsoft.Web.WebView2.Wpf.dll'))) {
         Assert-True ([IO.File]::Exists($requiredPath)) `
@@ -195,6 +196,8 @@ try {
             Join-Path $stageRoot 'src') -Filter '*.cs' -File
         Get-ChildItem -LiteralPath (
             Join-Path $stageRoot 'assets') -Recurse -File
+        Get-ChildItem -LiteralPath (
+            Join-Path $stageRoot 'templates') -Recurse -File
         Get-Item -LiteralPath $launchPath
         Get-Item -LiteralPath $stagedScript
         Get-Item -LiteralPath (Join-Path $stageRoot 'launch.bat')
@@ -217,6 +220,7 @@ try {
         'launch.vbs',
         'WebView2',
         '%LOCALAPPDATA%\MacroDesk\logs\',
+        'templates\request-template.txt',
         '.xlsm',
         '.xlam',
         '.xlsb')) {
