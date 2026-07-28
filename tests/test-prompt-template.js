@@ -75,6 +75,8 @@ var expectedFixed = [
   "- コードは必ずモジュールの先頭から末尾までの全文を出力する。一部だけの",
   "  出力や「'（以下変更なし）」のような省略はしない。",
   "- 変更していないモジュールは出力しない。",
+  "- 「このモジュールは現在空です」という注記は VBA コードへ含めない。空の",
+  "  モジュールも、改修対象なら改修後コードの全文を出し、未変更なら出力しない。",
   "- コードブロックの中には VBA コード以外の文章（説明・注釈・見出し）を",
   "  入れない。",
   "- モジュール先頭に「Attribute VB_」で始まる行を付けない（渡したコードにも",
@@ -128,7 +130,7 @@ var expectedSource = [
     [
       "■ ThisWorkbook（ドキュメントモジュール）",
       moduleLine,
-      ""
+      "（このモジュールは現在空です。コードの省略ではありません）"
     ].join(crlf)
   ])
 ].join(crlf);
@@ -150,7 +152,7 @@ var expected = joinWithBlankLine([
     "【対象ブック】",
     sectionLine,
     "ファイル名: 台帳.xlsm",
-    "モジュール数: 2（合計 3 行）",
+    "モジュール数: 2（合計 3 行）※以下に全モジュールの全文を掲載しています。省略はありません。",
     "",
     "  - Module1 （標準モジュール, 3 行）",
     "  - ThisWorkbook （ドキュメントモジュール, 0 行）"
@@ -164,6 +166,12 @@ assert(actual === expected, "Generated request template mismatch.");
 assert(
   actual.indexOf("Attribute VB_Name") < 0,
   "Attribute header leaked into the request file.");
+assert(
+  actual.indexOf(
+    "■ ThisWorkbook（ドキュメントモジュール）\r\n" +
+    moduleLine + "\r\n" +
+    "（このモジュールは現在空です。コードの省略ではありません）") >= 0,
+  "An empty module must be identified as complete, not omitted.");
 assert(
   actual.indexOf(
     "End Sub\r\n\r\n■ ThisWorkbook") >= 0,

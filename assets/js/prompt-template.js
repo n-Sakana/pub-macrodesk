@@ -6,6 +6,8 @@
     "==================================================";
   var MODULE_LINE =
     "--------------------------------------------------";
+  var EMPTY_MODULE_NOTE =
+    "（このモジュールは現在空です。コードの省略ではありません）";
 
   var FIXED_INSTRUCTIONS = [
     SECTION_LINE,
@@ -25,6 +27,8 @@
     "- コードは必ずモジュールの先頭から末尾までの全文を出力する。一部だけの",
     "  出力や「'（以下変更なし）」のような省略はしない。",
     "- 変更していないモジュールは出力しない。",
+    "- 「このモジュールは現在空です」という注記は VBA コードへ含めない。空の",
+    "  モジュールも、改修対象なら改修後コードの全文を出し、未変更なら出力しない。",
     "- コードブロックの中には VBA コード以外の文章（説明・注釈・見出し）を",
     "  入れない。",
     "- モジュール先頭に「Attribute VB_」で始まる行を付けない（渡したコードにも",
@@ -106,7 +110,8 @@
       SECTION_LINE,
       "ファイル名: " + requireString(book.name, "Book name"),
       "モジュール数: " + modules.length +
-        "（合計 " + book.totalLines + " 行）",
+        "（合計 " + book.totalLines + " 行）" +
+        "※以下に全モジュールの全文を掲載しています。省略はありません。",
       ""
     ];
 
@@ -128,6 +133,9 @@
     var blocks = [];
 
     modules.forEach(function (module) {
+      var code = normalizeCrLf(
+        requireString(module.code, "Module code"));
+
       blocks.push([
         "■ " +
           requireString(module.name, "Module name") +
@@ -135,7 +143,7 @@
           requireString(module.typeLabel, "Module type label") +
           "）",
         MODULE_LINE,
-        normalizeCrLf(requireString(module.code, "Module code"))
+        code || EMPTY_MODULE_NOTE
       ].join(CRLF));
     });
 
