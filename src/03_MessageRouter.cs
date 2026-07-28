@@ -10,6 +10,19 @@ namespace MacroDesk
 {
     public sealed class MessageRouter
     {
+        private sealed class BuildModulePayload
+        {
+            public Dictionary<string, string> Changes;
+            public List<VbaModuleAddition> Additions;
+
+            public BuildModulePayload()
+            {
+                Changes = new Dictionary<string, string>(
+                    StringComparer.OrdinalIgnoreCase);
+                Additions = new List<VbaModuleAddition>();
+            }
+        }
+
         private readonly WebView2 webView;
         private readonly HostServices services;
         private readonly JavaScriptSerializer serializer;
@@ -129,8 +142,11 @@ namespace MacroDesk
                 case "readClipboard":
                     return services.ReadClipboard();
                 case "buildBook":
+                    BuildModulePayload buildModules =
+                        GetModuleChanges(parameters);
                     return services.BuildBook(
-                        GetModuleChanges(parameters),
+                        buildModules.Changes,
+                        buildModules.Additions,
                         GetString(parameters, "outputTimestamp"));
                 case "revealPath":
                     services.RevealPath(
@@ -175,7 +191,7 @@ namespace MacroDesk
             return parameters;
         }
 
-        private static Dictionary<string, string> GetModuleChanges(
+        private static BuildModulePayload GetModuleChanges(
             Dictionary<string, object> parameters)
         {
             object value;
@@ -195,8 +211,10 @@ namespace MacroDesk
                     "The build module list is invalid.");
             }
 
-            Dictionary<string, string> changes =
-                new Dictionary<string, string>(
+            BuildModulePayload result =
+                new BuildModulePayload();
+            HashSet<string> names =
+                new HashSet<string>(
                     StringComparer.OrdinalIgnoreCase);
             foreach (object itemValue in items)
             {
@@ -217,17 +235,41 @@ namespace MacroDesk
                         "E-BUILD-01",
                         "A build module name or code is missing.");
                 }
-                if (changes.ContainsKey(name))
+                if (!names.Add(name))
                 {
                     throw new HostActionException(
                         "E-BUILD-01",
                         "A build module is duplicated: " + name);
                 }
 
-                changes.Add(name, code);
+                object isNewValue;
+                bool isNew = false;
+                if (item.TryGetValue(
+                    "isNew",
+                    out isNewValue) &&
+                    isNewValue != null)
+                {
+                    if (!(isNewValue is bool))
+                    {
+                        throw new HostActionException(
+                            "E-BUILD-01",
+                            "A build module type is invalid.");
+                    }
+                    isNew = (bool)isNewValue;
+                }
+
+                if (isNew)
+                {
+                    result.Additions.Add(
+                        new VbaModuleAddition(name, code));
+                }
+                else
+                {
+                    result.Changes.Add(name, code);
+                }
             }
 
-            return changes;
+            return result;
         }
 
         private static string GetString(

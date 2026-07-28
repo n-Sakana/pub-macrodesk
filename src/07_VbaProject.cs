@@ -60,9 +60,16 @@ namespace MacroDesk
         public Ole2File Ole2;
         public int CodePage;
         public Encoding Encoding;
+        public byte[] ProjectBytes;
         public string ProjectText;
+        public byte[] ProjectWmBytes;
+        public List<string> ProjectWmNames;
         public byte[] DirCompressed;
         public byte[] DirDecompressed;
+        public int ProjectModulesOffset;
+        public Ole2DirectoryEntry ProjectEntry;
+        public Ole2DirectoryEntry ProjectWmEntry;
+        public Ole2DirectoryEntry DirEntry;
         public Ole2DirectoryEntry VbaStorage;
         public List<VbaModule> Modules;
         public string FilePath;
@@ -71,7 +78,10 @@ namespace MacroDesk
         public VbaProjectData()
         {
             Ole2Bytes = new byte[0];
+            ProjectBytes = new byte[0];
             ProjectText = string.Empty;
+            ProjectWmBytes = new byte[0];
+            ProjectWmNames = new List<string>();
             DirCompressed = new byte[0];
             DirDecompressed = new byte[0];
             Modules = new List<VbaModule>();
@@ -97,6 +107,10 @@ namespace MacroDesk
                 ole2.RootEntry,
                 "VBA",
                 1);
+            Ole2DirectoryEntry projectWmEntry = ole2.FindChild(
+                ole2.RootEntry,
+                "PROJECTwm",
+                2);
             if (projectEntry == null)
             {
                 throw new InvalidDataException(
@@ -121,9 +135,11 @@ namespace MacroDesk
             byte[] dirCompressed = ole2.ReadStream(dirEntry);
             byte[] dirDecompressed = VbaCompression.Decompress(dirCompressed);
             int codePage;
+            int projectModulesOffset;
             List<VbaDirModule> dirModules = ReadDirModules(
                 dirDecompressed,
-                out codePage);
+                out codePage,
+                out projectModulesOffset);
             Encoding encoding = GetStrictEncoding(codePage);
 
             byte[] projectBytes = ole2.ReadStream(projectEntry);
@@ -136,14 +152,51 @@ namespace MacroDesk
                     "PROJECT and dir module counts do not match.");
             }
 
+            byte[] projectWmBytes = new byte[0];
+            List<string> projectWmNames = new List<string>();
+            if (projectWmEntry != null)
+            {
+                projectWmBytes = ole2.ReadStream(projectWmEntry);
+                projectWmNames = ReadProjectWmNames(
+                    projectWmBytes,
+                    encoding);
+                if (projectWmNames.Count != dirModules.Count)
+                {
+                    throw new InvalidDataException(
+                        "PROJECTwm and dir module counts do not match.");
+                }
+
+                int nameIndex;
+                for (nameIndex = 0;
+                    nameIndex < dirModules.Count;
+                    nameIndex++)
+                {
+                    if (!string.Equals(
+                        projectWmNames[nameIndex],
+                        dirModules[nameIndex].Name,
+                        StringComparison.Ordinal))
+                    {
+                        throw new InvalidDataException(
+                            "PROJECTwm and dir module names do not match.");
+                    }
+                }
+            }
+
             VbaProjectData project = new VbaProjectData();
             project.Ole2Bytes = ole2Bytes;
             project.Ole2 = ole2;
             project.CodePage = codePage;
             project.Encoding = encoding;
+            project.ProjectBytes = projectBytes;
             project.ProjectText = projectText;
+            project.ProjectWmBytes = projectWmBytes;
+            project.ProjectWmNames = projectWmNames;
             project.DirCompressed = dirCompressed;
             project.DirDecompressed = dirDecompressed;
+            project.ProjectModulesOffset = projectModulesOffset;
+            project.ProjectEntry = projectEntry;
+            project.ProjectWmEntry = projectWmEntry;
+            project.DirEntry = dirEntry;
             project.VbaStorage = vbaStorage;
 
             HashSet<int> usedStreamIds = new HashSet<int>();
@@ -234,6 +287,18 @@ namespace MacroDesk
             byte[] dirDecompressed,
             out int codePage)
         {
+            int projectModulesOffset;
+            return ReadDirModules(
+                dirDecompressed,
+                out codePage,
+                out projectModulesOffset);
+        }
+
+        private static List<VbaDirModule> ReadDirModules(
+            byte[] dirDecompressed,
+            out int codePage,
+            out int projectModulesOffset)
+        {
             if (dirDecompressed == null)
             {
                 throw new ArgumentNullException("dirDecompressed");
@@ -249,6 +314,7 @@ namespace MacroDesk
 
             int successfulCount = 0;
             int successfulCodePage = 932;
+            int successfulModulesOffset = -1;
             List<VbaDirModule> successfulModules = null;
             InvalidDataException lastFailure = null;
             int moduleIndex;
@@ -280,6 +346,7 @@ namespace MacroDesk
                         if (successfulCount == 1)
                         {
                             successfulCodePage = candidateCodePage;
+                            successfulModulesOffset = modulesOffset;
                             successfulModules = modules;
                         }
                     }
@@ -299,6 +366,7 @@ namespace MacroDesk
             if (successfulCount == 1)
             {
                 codePage = successfulCodePage;
+                projectModulesOffset = successfulModulesOffset;
                 return successfulModules;
             }
             if (successfulCount > 1)
@@ -328,6 +396,87 @@ namespace MacroDesk
             int headerLength = FindAttributeHeaderLength(fullCode);
             attributeHeader = fullCode.Substring(0, headerLength);
             code = fullCode.Substring(headerLength);
+        }
+
+        public static List<string> ReadProjectWmNames(
+            byte[] data,
+            Encoding encoding)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException("data");
+            }
+            if (encoding == null)
+            {
+                throw new ArgumentNullException("encoding");
+            }
+            if (data.Length < 2 ||
+                data[data.Length - 2] != 0 ||
+                data[data.Length - 1] != 0)
+            {
+                throw new InvalidDataException(
+                    "PROJECTwm terminator is missing.");
+            }
+
+            List<string> result = new List<string>();
+            int limit = data.Length - 2;
+            int position = 0;
+            while (position < limit)
+            {
+                int ansiStart = position;
+                while (position < limit && data[position] != 0)
+                {
+                    position++;
+                }
+                if (position == ansiStart || position >= limit)
+                {
+                    throw new InvalidDataException(
+                        "PROJECTwm contains an invalid module name.");
+                }
+
+                string ansiName = encoding.GetString(
+                    data,
+                    ansiStart,
+                    position - ansiStart);
+                position++;
+
+                int unicodeStart = position;
+                while (position + 1 < limit &&
+                    (data[position] != 0 ||
+                     data[position + 1] != 0))
+                {
+                    position += 2;
+                }
+                if (position == unicodeStart ||
+                    position + 1 >= limit ||
+                    ((position - unicodeStart) & 1) != 0)
+                {
+                    throw new InvalidDataException(
+                        "PROJECTwm contains an invalid Unicode name.");
+                }
+
+                string unicodeName = Encoding.Unicode.GetString(
+                    data,
+                    unicodeStart,
+                    position - unicodeStart);
+                position += 2;
+                if (!string.Equals(
+                    ansiName,
+                    unicodeName,
+                    StringComparison.Ordinal))
+                {
+                    throw new InvalidDataException(
+                        "PROJECTwm module name encodings do not match.");
+                }
+                result.Add(unicodeName);
+            }
+
+            if (position != limit)
+            {
+                throw new InvalidDataException(
+                    "PROJECTwm module names are misaligned.");
+            }
+            return result;
         }
 
         private static List<int> FindProjectModulesOffsets(byte[] data)
@@ -891,6 +1040,18 @@ namespace MacroDesk
         }
     }
 
+    public sealed class VbaModuleAddition
+    {
+        public string Name;
+        public string Code;
+
+        public VbaModuleAddition(string name, string code)
+        {
+            Name = name;
+            Code = code;
+        }
+    }
+
     public static class VbaProjectWriter
     {
         public static Dictionary<int, byte[]> CreateStreamChanges(
@@ -1031,9 +1192,499 @@ namespace MacroDesk
             VbaProjectData project,
             IDictionary<string, string> moduleChanges)
         {
+            return RebuildProject(
+                project,
+                moduleChanges,
+                new List<VbaModuleAddition>());
+        }
+
+        public static byte[] RebuildProject(
+            VbaProjectData project,
+            IDictionary<string, string> moduleChanges,
+            IList<VbaModuleAddition> newModules)
+        {
+            if (project == null)
+            {
+                throw new ArgumentNullException("project");
+            }
+            if (moduleChanges == null)
+            {
+                throw new ArgumentNullException("moduleChanges");
+            }
+            if (newModules == null)
+            {
+                throw new ArgumentNullException("newModules");
+            }
+
             Dictionary<int, byte[]> streamChanges =
                 CreateStreamChanges(project, moduleChanges);
-            return Ole2Writer.Rebuild(project.Ole2, streamChanges);
+            if (newModules.Count == 0)
+            {
+                return Ole2Writer.Rebuild(
+                    project.Ole2,
+                    streamChanges);
+            }
+            if (project.Ole2 == null ||
+                project.Encoding == null ||
+                project.VbaStorage == null ||
+                project.ProjectEntry == null ||
+                project.ProjectWmEntry == null ||
+                project.DirEntry == null)
+            {
+                throw new InvalidDataException(
+                    "The VBA project addition streams are missing.");
+            }
+
+            HashSet<string> names = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+            int index;
+            for (index = 0; index < project.Modules.Count; index++)
+            {
+                names.Add(project.Modules[index].Name);
+            }
+
+            byte[] dirBytes = project.DirDecompressed;
+            string projectText = project.ProjectText;
+            byte[] projectWmBytes = project.ProjectWmBytes;
+            List<Ole2StreamAddition> streamAdditions =
+                new List<Ole2StreamAddition>();
+            for (index = 0; index < newModules.Count; index++)
+            {
+                VbaModuleAddition addition = newModules[index];
+                if (addition == null)
+                {
+                    throw new ArgumentException(
+                        "A VBA module addition is null.",
+                        "newModules");
+                }
+                ValidateNewModuleName(addition.Name);
+                if (addition.Code == null)
+                {
+                    throw new ArgumentException(
+                        "A VBA module addition code is null.",
+                        "newModules");
+                }
+                if (!names.Add(addition.Name) ||
+                    project.Ole2.FindChild(
+                        project.VbaStorage,
+                        addition.Name,
+                        0) != null)
+                {
+                    throw new InvalidDataException(
+                        "Duplicate VBA module name: " +
+                        addition.Name);
+                }
+
+                streamAdditions.Add(
+                    new Ole2StreamAddition(
+                        project.VbaStorage.Id,
+                        addition.Name,
+                        CreateNewModuleStream(
+                            project,
+                            addition.Name,
+                            addition.Code)));
+                dirBytes = AddDirModule(
+                    project,
+                    dirBytes,
+                    addition.Name,
+                    project.Modules.Count + index);
+                projectText = AddProjectModuleLine(
+                    projectText,
+                    addition.Name);
+                projectWmBytes = AddProjectWmName(
+                    project,
+                    projectWmBytes,
+                    addition.Name);
+            }
+
+            streamChanges.Add(
+                project.DirEntry.Id,
+                VbaCompression.Compress(dirBytes));
+            streamChanges.Add(
+                project.ProjectEntry.Id,
+                project.Encoding.GetBytes(projectText));
+            streamChanges.Add(
+                project.ProjectWmEntry.Id,
+                projectWmBytes);
+            return Ole2Writer.Rebuild(
+                project.Ole2,
+                streamChanges,
+                streamAdditions);
+        }
+
+        public static void ValidateNewModuleName(string name)
+        {
+            if (string.IsNullOrEmpty(name) ||
+                name.Length > 31 ||
+                !char.IsLetter(name[0]))
+            {
+                throw new InvalidDataException(
+                    "The VBA module name is not a valid identifier.");
+            }
+
+            int index;
+            for (index = 1; index < name.Length; index++)
+            {
+                if (!char.IsLetterOrDigit(name[index]) &&
+                    name[index] != '_')
+                {
+                    throw new InvalidDataException(
+                        "The VBA module name is not a valid identifier.");
+                }
+            }
+        }
+
+        public static string CreateNewModuleFullCode(
+            string name,
+            string code)
+        {
+            ValidateNewModuleName(name);
+            if (code == null)
+            {
+                throw new ArgumentNullException("code");
+            }
+            return "Attribute VB_Name = \"" +
+                name +
+                "\"\r\n" +
+                code;
+        }
+
+        public static byte[] CreateNewModuleStream(
+            VbaProjectData project,
+            string name,
+            string code)
+        {
+            if (project == null)
+            {
+                throw new ArgumentNullException("project");
+            }
+            if (project.Encoding == null)
+            {
+                throw new InvalidDataException(
+                    "The VBA project encoding is missing.");
+            }
+
+            string fullCode = CreateNewModuleFullCode(name, code);
+            byte[] sourceBytes =
+                project.Encoding.GetBytes(fullCode);
+            return VbaCompression.Compress(sourceBytes);
+        }
+
+        private static byte[] AddDirModule(
+            VbaProjectData project,
+            byte[] source,
+            string name,
+            int expectedCount)
+        {
+            if (source == null ||
+                project.ProjectModulesOffset < 0 ||
+                project.ProjectModulesOffset + 8 > source.Length)
+            {
+                throw new InvalidDataException(
+                    "The PROJECTMODULES record is missing.");
+            }
+
+            int countOffset =
+                project.ProjectModulesOffset + 6;
+            ushort count = BitConverter.ToUInt16(
+                source,
+                countOffset);
+            if (count != expectedCount)
+            {
+                throw new InvalidDataException(
+                    "The PROJECTMODULES count is inconsistent.");
+            }
+            if (count == ushort.MaxValue)
+            {
+                throw new InvalidDataException(
+                    "The VBA project has too many modules.");
+            }
+
+            int terminatorOffset = source.Length - 6;
+            if (terminatorOffset < 0 ||
+                BitConverter.ToUInt16(
+                    source,
+                    terminatorOffset) != 0x0010)
+            {
+                throw new InvalidDataException(
+                    "The PROJECTTERMINATOR record is missing.");
+            }
+
+            byte[] record = CreateDirModuleRecord(
+                project.Encoding,
+                name);
+            byte[] result = new byte[
+                source.Length + record.Length];
+            Buffer.BlockCopy(
+                source,
+                0,
+                result,
+                0,
+                terminatorOffset);
+            Buffer.BlockCopy(
+                record,
+                0,
+                result,
+                terminatorOffset,
+                record.Length);
+            Buffer.BlockCopy(
+                source,
+                terminatorOffset,
+                result,
+                terminatorOffset + record.Length,
+                6);
+            WriteUInt16(
+                result,
+                countOffset,
+                (ushort)(count + 1));
+            return result;
+        }
+
+        private static byte[] CreateDirModuleRecord(
+            Encoding encoding,
+            string name)
+        {
+            byte[] ansiName = encoding.GetBytes(name);
+            byte[] unicodeName = Encoding.Unicode.GetBytes(name);
+            using (MemoryStream output = new MemoryStream())
+            {
+                WriteSizedRecord(
+                    output,
+                    0x0019,
+                    ansiName);
+                WriteSizedRecord(
+                    output,
+                    0x0047,
+                    unicodeName);
+                WriteSizedRecord(
+                    output,
+                    0x001A,
+                    ansiName);
+                WriteSizedRecord(
+                    output,
+                    0x0032,
+                    unicodeName);
+                WriteSizedRecord(
+                    output,
+                    0x001C,
+                    new byte[0]);
+                WriteSizedRecord(
+                    output,
+                    0x0048,
+                    new byte[0]);
+                WriteUInt16(output, 0x0031);
+                WriteUInt32(output, 4);
+                WriteUInt32(output, 0);
+                WriteUInt16(output, 0x001E);
+                WriteUInt32(output, 4);
+                WriteUInt32(output, 0);
+                WriteUInt16(output, 0x002C);
+                WriteUInt32(output, 2);
+                WriteUInt16(output, 0xFFFF);
+                WriteUInt16(output, 0x0021);
+                WriteUInt32(output, 0);
+                WriteUInt16(output, 0x002B);
+                WriteUInt32(output, 0);
+                return output.ToArray();
+            }
+        }
+
+        private static string AddProjectModuleLine(
+            string source,
+            string name)
+        {
+            string newLine = FindProjectNewLine(source);
+            int position = 0;
+            int lastModuleEnd = -1;
+            int lastDeclarationEnd = -1;
+            while (position < source.Length)
+            {
+                int contentEnd = position;
+                while (contentEnd < source.Length &&
+                    source[contentEnd] != '\r' &&
+                    source[contentEnd] != '\n')
+                {
+                    contentEnd++;
+                }
+
+                int next = contentEnd;
+                if (next < source.Length && source[next] == '\r')
+                {
+                    next++;
+                    if (next < source.Length &&
+                        source[next] == '\n')
+                    {
+                        next++;
+                    }
+                }
+                else if (next < source.Length &&
+                    source[next] == '\n')
+                {
+                    next++;
+                }
+
+                string line = source.Substring(
+                    position,
+                    contentEnd - position);
+                if (line.StartsWith(
+                    "Module=",
+                    StringComparison.Ordinal))
+                {
+                    lastModuleEnd = next;
+                }
+                if (IsProjectModuleDeclaration(line))
+                {
+                    lastDeclarationEnd = next;
+                }
+                position = next;
+            }
+
+            int insertion = lastModuleEnd >= 0 ?
+                lastModuleEnd :
+                lastDeclarationEnd;
+            if (insertion < 0)
+            {
+                throw new InvalidDataException(
+                    "PROJECT contains no module declarations.");
+            }
+
+            string lineToAdd =
+                "Module=" + name + newLine;
+            if (insertion > 0 &&
+                source[insertion - 1] != '\r' &&
+                source[insertion - 1] != '\n')
+            {
+                lineToAdd = newLine + lineToAdd;
+            }
+            return source.Insert(insertion, lineToAdd);
+        }
+
+        private static bool IsProjectModuleDeclaration(
+            string line)
+        {
+            return line.StartsWith(
+                "Document=",
+                StringComparison.Ordinal) ||
+                line.StartsWith(
+                    "BaseClass=",
+                    StringComparison.Ordinal) ||
+                line.StartsWith(
+                    "Module=",
+                    StringComparison.Ordinal) ||
+                line.StartsWith(
+                    "Class=",
+                    StringComparison.Ordinal);
+        }
+
+        private static string FindProjectNewLine(string source)
+        {
+            int index;
+            for (index = 0; index < source.Length; index++)
+            {
+                if (source[index] == '\r')
+                {
+                    return index + 1 < source.Length &&
+                        source[index + 1] == '\n' ?
+                        "\r\n" :
+                        "\r";
+                }
+                if (source[index] == '\n')
+                {
+                    return "\n";
+                }
+            }
+            return "\r\n";
+        }
+
+        private static byte[] AddProjectWmName(
+            VbaProjectData project,
+            byte[] source,
+            string name)
+        {
+            if (source == null ||
+                source.Length < 2 ||
+                source[source.Length - 2] != 0 ||
+                source[source.Length - 1] != 0)
+            {
+                throw new InvalidDataException(
+                    "PROJECTwm terminator is missing.");
+            }
+
+            byte[] ansiName =
+                project.Encoding.GetBytes(name);
+            byte[] unicodeName =
+                Encoding.Unicode.GetBytes(name);
+            int mapLength = ansiName.Length +
+                1 +
+                unicodeName.Length +
+                2;
+            byte[] result = new byte[
+                source.Length + mapLength];
+            int insertion = source.Length - 2;
+            Buffer.BlockCopy(
+                source,
+                0,
+                result,
+                0,
+                insertion);
+            Buffer.BlockCopy(
+                ansiName,
+                0,
+                result,
+                insertion,
+                ansiName.Length);
+            int position = insertion + ansiName.Length + 1;
+            Buffer.BlockCopy(
+                unicodeName,
+                0,
+                result,
+                position,
+                unicodeName.Length);
+            Buffer.BlockCopy(
+                source,
+                insertion,
+                result,
+                insertion + mapLength,
+                2);
+            return result;
+        }
+
+        private static void WriteSizedRecord(
+            Stream output,
+            ushort id,
+            byte[] data)
+        {
+            WriteUInt16(output, id);
+            WriteUInt32(output, (uint)data.Length);
+            output.Write(data, 0, data.Length);
+        }
+
+        private static void WriteUInt16(
+            Stream output,
+            ushort value)
+        {
+            output.WriteByte((byte)(value & 0xFF));
+            output.WriteByte((byte)((value >> 8) & 0xFF));
+        }
+
+        private static void WriteUInt32(
+            Stream output,
+            uint value)
+        {
+            output.WriteByte((byte)(value & 0xFF));
+            output.WriteByte((byte)((value >> 8) & 0xFF));
+            output.WriteByte((byte)((value >> 16) & 0xFF));
+            output.WriteByte((byte)((value >> 24) & 0xFF));
+        }
+
+        private static void WriteUInt16(
+            byte[] output,
+            int offset,
+            ushort value)
+        {
+            output[offset] = (byte)(value & 0xFF);
+            output[offset + 1] =
+                (byte)((value >> 8) & 0xFF);
         }
     }
 }

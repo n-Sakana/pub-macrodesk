@@ -496,6 +496,77 @@ namespace MacroDesk.Tests
                         "'.diff-row').length" +
                         "})");
 
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-new-module-intake]')" +
+                        ".click();");
+                    await WaitFor(
+                        "MacroDeskState.getState()" +
+                        ".newModuleIntake===true");
+                    string newIntake = await ReadJson(
+                        "({" +
+                        "form:document.querySelector(" +
+                        "'.new-module-intake')!==null," +
+                        "input:document.getElementById(" +
+                        "'new-module-name')!==null," +
+                        "guided:document.querySelectorAll(" +
+                        "'.is-guided-target').length," +
+                        "moduleGlow:document.querySelectorAll(" +
+                        "'.module-item.is-guided-target').length," +
+                        "step4Guided:document.querySelector(" +
+                        "'.progress-step[data-step=\"4\"]')" +
+                        ".classList.contains(" +
+                        "'is-guided-target')" +
+                        "})");
+
+                    const string additionCode =
+                        "Option Explicit\r\n\r\n" +
+                        "Public Sub RunAddedMacro()\r\n" +
+                        "    Debug.Print \"added\"\r\n" +
+                        "End Sub\r\n";
+                    CaptureClipboard();
+                    SetClipboardText(additionCode);
+                    await Execute(
+                        "(function(){" +
+                        "var i=document.getElementById(" +
+                        "'new-module-name');" +
+                        "i.value='CommonHelpers';" +
+                        "i.dispatchEvent(new Event(" +
+                        "'input',{bubbles:true}));" +
+                        "document.querySelector(" +
+                        "'[data-action=\"import-new-module\"]')" +
+                        ".click();" +
+                        "}());");
+                    await WaitFor(
+                        "MacroDeskState.findModule(" +
+                        "'CommonHelpers')!==null && " +
+                        "MacroDeskState.getState()" +
+                        ".busyAction===null");
+                    string newModule = await ReadJson(
+                        "({" +
+                        "count:MacroDeskState.getState()" +
+                        ".modules.length," +
+                        "selected:MacroDeskState.getState()" +
+                        ".selectedModuleName," +
+                        "status:MacroDeskState.findModule(" +
+                        "'CommonHelpers').status," +
+                        "isNew:MacroDeskState.findModule(" +
+                        "'CommonHelpers').isNew," +
+                        "type:MacroDeskState.findModule(" +
+                        "'CommonHelpers').type," +
+                        "code:MacroDeskState.findModule(" +
+                        "'CommonHelpers').pastedCode," +
+                        "badge:document.querySelector(" +
+                        "'[data-module-row-name=" +
+                        "\"CommonHelpers\"] " +
+                        ".module-badge').textContent," +
+                        "diff:document.querySelectorAll(" +
+                        "'.diff-row--added').length," +
+                        "step4:document.querySelector(" +
+                        "'.progress-step[data-step=\"4\"]')" +
+                        ".classList.contains('is-ready')" +
+                        "})");
+
                     await InstallLargeModule();
                     await WaitFor(
                         "document.querySelector(" +
@@ -751,6 +822,8 @@ namespace MacroDesk.Tests
                     result.Add("excludedContext", excludedContext);
                     result.Add("empty", empty);
                     result.Add("wrongModule", wrongModule);
+                    result.Add("newIntake", newIntake);
+                    result.Add("newModule", newModule);
                     result.Add("largeFull", largeFull);
                     result.Add("largeContext", largeContext);
                     result.Add(
@@ -765,6 +838,7 @@ namespace MacroDesk.Tests
                     result.Add("buildOutputPath", buildOutputPath);
                     result.Add("originalCode", originalCode);
                     result.Add("changedCode", changedCode);
+                    result.Add("additionCode", additionCode);
                     Result = serializer.Serialize(result);
                     Stop();
                 }

@@ -34,6 +34,23 @@ namespace MacroDesk
         }
     }
 
+    public sealed class Ole2StreamAddition
+    {
+        public int ParentEntryId;
+        public string Name;
+        public byte[] Data;
+
+        public Ole2StreamAddition(
+            int parentEntryId,
+            string name,
+            byte[] data)
+        {
+            ParentEntryId = parentEntryId;
+            Name = name;
+            Data = data;
+        }
+    }
+
     public sealed class Ole2File
     {
         public const int FreeSector = -1;
@@ -950,6 +967,14 @@ namespace MacroDesk
             Ole2File source,
             IDictionary<int, byte[]> streamChanges)
         {
+            return Rebuild(source, streamChanges, null);
+        }
+
+        public static byte[] Rebuild(
+            Ole2File source,
+            IDictionary<int, byte[]> streamChanges,
+            IList<Ole2StreamAddition> streamAdditions)
+        {
             if (source == null)
             {
                 throw new ArgumentNullException("source");
@@ -974,6 +999,12 @@ namespace MacroDesk
             }
 
             List<Ole2DirectoryEntry> entries = CloneEntries(source);
+            IDictionary<int, byte[]> effectiveChanges =
+                AddStreamEntries(
+                    source,
+                    entries,
+                    streamChanges,
+                    streamAdditions);
             ValidateParents(entries);
             BuildDirectoryTrees(entries);
 
@@ -981,7 +1012,7 @@ namespace MacroDesk
             List<StreamPlan> streams = BuildStreamPlans(
                 source,
                 entries,
-                streamChanges,
+                effectiveChanges,
                 usedChanges);
             ValidateChanges(streamChanges, usedChanges);
 
@@ -1243,6 +1274,99 @@ namespace MacroDesk
             }
 
             return result;
+        }
+
+        private static IDictionary<int, byte[]> AddStreamEntries(
+            Ole2File source,
+            List<Ole2DirectoryEntry> entries,
+            IDictionary<int, byte[]> streamChanges,
+            IList<Ole2StreamAddition> streamAdditions)
+        {
+            if (streamAdditions == null ||
+                streamAdditions.Count == 0)
+            {
+                return streamChanges;
+            }
+
+            Dictionary<int, byte[]> changes =
+                new Dictionary<int, byte[]>();
+            if (streamChanges != null)
+            {
+                foreach (KeyValuePair<int, byte[]> pair
+                    in streamChanges)
+                {
+                    changes.Add(pair.Key, pair.Value);
+                }
+            }
+
+            int index;
+            for (index = 0;
+                index < streamAdditions.Count;
+                index++)
+            {
+                Ole2StreamAddition addition =
+                    streamAdditions[index];
+                if (addition == null)
+                {
+                    throw new ArgumentException(
+                        "An OLE2 stream addition is null.",
+                        "streamAdditions");
+                }
+                if (addition.ParentEntryId < 0 ||
+                    addition.ParentEntryId >=
+                        source.Entries.Count)
+                {
+                    throw new ArgumentException(
+                        "An OLE2 stream addition parent is invalid.",
+                        "streamAdditions");
+                }
+
+                Ole2DirectoryEntry parent =
+                    entries[addition.ParentEntryId];
+                if (parent.ObjectType != 1 &&
+                    parent.ObjectType != 5)
+                {
+                    throw new ArgumentException(
+                        "An OLE2 stream addition parent is not a storage.",
+                        "streamAdditions");
+                }
+                if (string.IsNullOrEmpty(addition.Name))
+                {
+                    throw new ArgumentException(
+                        "An OLE2 stream addition name is empty.",
+                        "streamAdditions");
+                }
+                if (addition.Data == null)
+                {
+                    throw new ArgumentException(
+                        "An OLE2 stream addition is null.",
+                        "streamAdditions");
+                }
+
+                Ole2DirectoryEntry entry =
+                    new Ole2DirectoryEntry();
+                entry.Id = entries.Count;
+                entry.Name = addition.Name;
+                entry.ObjectType = 2;
+                entry.ColorFlag = 1;
+                entry.LeftSiblingId = Ole2File.NoStream;
+                entry.RightSiblingId = Ole2File.NoStream;
+                entry.ChildId = Ole2File.NoStream;
+                entry.ClassId = Guid.Empty;
+                entry.StateBits = 0;
+                entry.CreationTimeRaw = 0;
+                entry.ModifiedTimeRaw = 0;
+                entry.CreationTimeUtc = null;
+                entry.ModifiedTimeUtc = null;
+                entry.StartSector = Ole2File.EndOfChain;
+                entry.Size = (ulong)addition.Data.Length;
+                entry.ParentId = addition.ParentEntryId;
+                entry.DirectoryOffset = -1;
+                entries.Add(entry);
+                changes.Add(entry.Id, addition.Data);
+            }
+
+            return changes;
         }
 
         private static void ValidateParents(

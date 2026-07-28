@@ -43,6 +43,7 @@
       book: null,
       modules: [],
       selectedModuleName: null,
+      newModuleIntake: false,
       requestText: "",
       requestFilePath: null,
       returnedFromStep3: false,
@@ -116,6 +117,9 @@
     }
 
     state.currentStep = step;
+    if (step !== 3) {
+      state.newModuleIntake = false;
+    }
     if (step === 2 && fromStep === 3) {
       state.returnedFromStep3 = true;
     }
@@ -135,6 +139,7 @@
       module.showChangesOnly = false;
     });
     state.selectedModuleName = null;
+    state.newModuleIntake = false;
     state.requestText = "";
     state.requestFilePath = null;
     state.returnedFromStep3 = false;
@@ -167,6 +172,7 @@
     }
 
     state.selectedModuleName = moduleName;
+    state.newModuleIntake = false;
     notify();
     return true;
   }
@@ -203,6 +209,62 @@
     return module;
   }
 
+  function beginNewModuleIntake() {
+    if (state.currentStep !== 3 || !state.book) {
+      return false;
+    }
+
+    state.selectedModuleName = null;
+    state.newModuleIntake = true;
+    notify();
+    return true;
+  }
+
+  function cancelNewModuleIntake() {
+    if (!state.newModuleIntake) {
+      return false;
+    }
+
+    state.newModuleIntake = false;
+    notify();
+    return true;
+  }
+
+  function addNewModule(
+    name,
+    code,
+    changedLineCount,
+    lineCount
+  ) {
+    if (!state.newModuleIntake ||
+        typeof name !== "string" ||
+        typeof code !== "string" ||
+        findModule(name)) {
+      return null;
+    }
+
+    var module = {
+      name: name,
+      type: "standard",
+      typeLabel: "標準モジュール",
+      ext: "bas",
+      lineCount: lineCount || 0,
+      code: "",
+      attributes: "",
+      pastedCode: code,
+      status: "changed",
+      changedLineCount: changedLineCount || 0,
+      showChangesOnly: false,
+      written: false,
+      isNew: true
+    };
+    state.modules.push(module);
+    state.selectedModuleName = name;
+    state.newModuleIntake = false;
+    notify();
+    return module;
+  }
+
   function cancelModulePaste(moduleName) {
     var module = findModule(moduleName);
 
@@ -210,6 +272,15 @@
         (module.status !== "changed" &&
          module.status !== "unchanged")) {
       return false;
+    }
+
+    if (module.isNew === true) {
+      state.modules.splice(
+        state.modules.indexOf(module),
+        1);
+      state.selectedModuleName = null;
+      notify();
+      return true;
     }
 
     module.status = "pending";
@@ -434,6 +505,9 @@
     selectModule: selectModule,
     findModule: findModule,
     acceptModuleCode: acceptModuleCode,
+    beginNewModuleIntake: beginNewModuleIntake,
+    cancelNewModuleIntake: cancelNewModuleIntake,
+    addNewModule: addNewModule,
     cancelModulePaste: cancelModulePaste,
     toggleModuleExcluded: toggleModuleExcluded,
     setModuleShowChangesOnly: setModuleShowChangesOnly,

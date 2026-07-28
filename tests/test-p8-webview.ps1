@@ -286,7 +286,7 @@ try {
     }
 
     Assert-True (
-        $lecture.branches -eq 15 -and
+        $lecture.branches -eq 16 -and
         $lecture.errors -eq 12 -and
         $lecture.branchLines -and
         $lecture.errorLines) `
@@ -302,7 +302,7 @@ try {
 
     Write-Host 'test-p8-webview: PASS'
     Write-Host (
-        'lecture=15 branches/12 errors, glow=exclusive, ' +
+        'lecture=16 branches/12 errors, glow=exclusive, ' +
         'focus/font/logging=PASS')
     Write-Host (
         'errors=toast/card/build-screen, screenshots=created')

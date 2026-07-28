@@ -359,6 +359,76 @@ Assert-True ($rebuiltModule.StreamName -eq $originalStreamName) `
 Assert-True ($rebuiltModule.FullCode -ceq $newFullCode) `
     'Rebuilt module code mismatch.'
 
+$additionCode = (
+    "Option Explicit`r`n`r`n" +
+    "Public Sub AddedByMacroDesk()`r`n" +
+    "    Debug.Print `"added`"`r`n" +
+    "End Sub`r`n")
+$emptyChanges = New-Object `
+    'System.Collections.Generic.Dictionary[string,string]'
+$additions = New-Object `
+    'System.Collections.Generic.List[MacroDesk.VbaModuleAddition]'
+$additions.Add(
+    (New-Object MacroDesk.VbaModuleAddition(
+        'CommonHelpers',
+        $additionCode)))
+$addedBytes = [MacroDesk.VbaProjectWriter]::RebuildProject(
+    $project,
+    $emptyChanges,
+    $additions)
+$addedProject = [MacroDesk.VbaProjectReader]::Read($addedBytes)
+$addedModule = $addedProject.Modules |
+    Where-Object { $_.Name -eq 'CommonHelpers' } |
+    Select-Object -First 1
+Assert-True ($addedProject.Modules.Count -eq 7) `
+    'New module count mismatch.'
+Assert-True ($null -ne $addedModule) `
+    'New standard module was not found.'
+Assert-True ($addedModule.Kind.ToString() -eq 'Standard') `
+    'New module kind mismatch.'
+Assert-True ($addedModule.SourceOffset -eq 0) `
+    'New module must have an empty PerformanceCache.'
+Assert-True ($addedModule.StreamData[0] -eq 0x01) `
+    'New module compressed source signature mismatch.'
+Assert-True (
+    $addedModule.AttributeHeader -ceq
+        "Attribute VB_Name = `"CommonHelpers`"`r`n") `
+    'New module Attribute header mismatch.'
+Assert-True ($addedModule.Code -ceq $additionCode) `
+    'New module visible code mismatch.'
+Assert-True (
+    $addedProject.ProjectText.Contains(
+        "Module=CommonHelpers`r`n")) `
+    'PROJECT did not contain the new module.'
+Assert-True ($addedProject.ProjectWmNames.Count -eq 7) `
+    'PROJECTwm module count mismatch.'
+Assert-True (
+    $addedProject.ProjectWmNames[6] -ceq 'CommonHelpers') `
+    'PROJECTwm did not append the new module in dir order.'
+$addedStream = $addedProject.Ole2.FindChild(
+    $addedProject.VbaStorage,
+    'CommonHelpers',
+    2)
+Assert-True ($null -ne $addedStream) `
+    'OLE2 new module stream was not created.'
+
+Assert-InvalidData {
+    [MacroDesk.VbaProjectWriter]::ValidateNewModuleName('1BadName')
+} 'Invalid VBA identifier was accepted.'
+
+$duplicateAdditions = New-Object `
+    'System.Collections.Generic.List[MacroDesk.VbaModuleAddition]'
+$duplicateAdditions.Add(
+    (New-Object MacroDesk.VbaModuleAddition(
+        'AppController',
+        $additionCode)))
+Assert-InvalidData {
+    [MacroDesk.VbaProjectWriter]::RebuildProject(
+        $project,
+        $emptyChanges,
+        $duplicateAdditions)
+} 'Duplicate new module name was accepted.'
+
 $unknownChanges = New-Object `
     'System.Collections.Generic.Dictionary[string,string]'
 $unknownChanges.Add('NotAModule', "Option Explicit`r`n")
@@ -388,3 +458,9 @@ Write-Output (
     $writeModule.StreamName,
     $writeModule.StreamData.Length,
     $newStream.Length)
+Write-Output (
+    'add: logical={0}, kind={1}, offset={2}, stream={3}' -f `
+    $addedModule.Name,
+    $addedModule.Kind,
+    $addedModule.SourceOffset,
+    $addedModule.StreamData.Length)

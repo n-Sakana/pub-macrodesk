@@ -65,6 +65,7 @@ var branchKeys = [
   "L3-4",
   "L3-5",
   "L3-6",
+  "L3-7",
   "L4-1",
   "L4-2",
   "L-E*"
@@ -107,6 +108,10 @@ assert(
   lecture.contentByKey["L3-3"].body.indexOf("残りのモジュール") >= 0 &&
     lecture.contentByKey["L3-3"].body.indexOf("④") >= 0,
   "L3-3 must explain how to continue after checking the diff.");
+assert(
+  lecture.contentByKey["L3-7"].body.indexOf("標準モジュール") >= 0 &&
+    lecture.contentByKey["L3-7"].body.indexOf("モジュール名") >= 0,
+  "L3-7 must explain the fixed new-module type and name input.");
 assert(
   lecture.contentByKey["L4-1"].body.indexOf("元のブック") >= 0 &&
     lecture.contentByKey["L4-1"].body.indexOf("変更しません") >= 0,
@@ -156,4 +161,4 @@ assert(
   "Unknown errors must use E-SYS-02 guidance.");
 
 console.log("test-p8-lecture: PASS");
-console.log("branches=15, errors=12, body-lines=2-4, L3-6=dynamic");
+console.log("branches=16, errors=12, body-lines=2-4, L3-6=dynamic");

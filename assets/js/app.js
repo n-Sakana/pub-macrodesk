@@ -3,6 +3,7 @@
 
   var elements = null;
   var toastTimer = null;
+  var newModuleNameDraft = "";
 
   var typeIcons = {
     document:
@@ -43,6 +44,10 @@
     changed: {
       text: "確",
       label: "確定、変更あり"
+    },
+    "new": {
+      text: "新",
+      label: "新規、変更あり"
     },
     unchanged: {
       text: "同",
@@ -191,6 +196,7 @@
       var stepFourReady = step === 4 && !current && available;
       var stepFourGuided = stepFourReady &&
         state.currentStep === 3 &&
+        !state.newModuleIntake &&
         getFirstPendingModuleName(state) === null;
 
       button.disabled = state.busyAction !== null ||
@@ -220,7 +226,11 @@
   }
 
   function getBadge(module) {
-    var status = module.written ? "written" : module.status;
+    var status = module.written
+      ? "written"
+      : module.isNew === true
+        ? "new"
+        : module.status;
     var details = badgeDetails[status] || badgeDetails.pending;
     var text = details.text;
 
@@ -264,7 +274,8 @@
     var selected;
     var confirmedCount;
 
-    if (state.currentStep !== 3) {
+    if (state.currentStep !== 3 ||
+        state.newModuleIntake) {
       return null;
     }
 
@@ -367,6 +378,26 @@
       item.appendChild(row);
       elements.moduleList.appendChild(item);
     });
+
+    if (state.currentStep === 3 && state.book) {
+      var addItem = createElement(
+        "li",
+        "module-add-item");
+      var addButton = createElement(
+        "button",
+        "module-add-button",
+        "新規モジュールとして取り込む");
+
+      addButton.type = "button";
+      addButton.setAttribute(
+        "data-new-module-intake",
+        "true");
+      addButton.setAttribute(
+        "aria-pressed",
+        state.newModuleIntake ? "true" : "false");
+      addItem.appendChild(addButton);
+      elements.moduleList.appendChild(addItem);
+    }
   }
 
   function createScreenHeader(step, title, meta) {
@@ -826,6 +857,8 @@
     var modules = [];
 
     state.modules.forEach(function (module) {
+      var item;
+
       if (module.status !== "changed") {
         return;
       }
@@ -833,12 +866,18 @@
         throw new Error(
           "Changed module has no accepted code: " + module.name);
       }
-      modules.push({
+      item = {
         name: module.name,
-        code: joinFinalCode(
-          module.attributes,
-          module.pastedCode)
-      });
+        code: module.isNew === true
+          ? module.pastedCode
+          : joinFinalCode(
+            module.attributes,
+            module.pastedCode)
+      };
+      if (module.isNew === true) {
+        item.isNew = true;
+      }
+      modules.push(item);
     });
     return modules;
   }
@@ -1065,6 +1104,103 @@
     return empty;
   }
 
+  function getNewModuleNameError(state, name) {
+    var identifierPattern =
+      /^\p{L}[\p{L}\p{Nd}_]*$/u;
+    var duplicate = false;
+
+    if (typeof name !== "string" ||
+        name.length === 0 ||
+        name.length > 31 ||
+        /[\uD800-\uDFFF]/.test(name) ||
+        !identifierPattern.test(name)) {
+      return "モジュール名は31文字以内のVBA識別子で入力してください。";
+    }
+
+    state.modules.some(function (module) {
+      if (module.name.toLowerCase() ===
+          name.toLowerCase()) {
+        duplicate = true;
+        return true;
+      }
+      return false;
+    });
+    if (duplicate) {
+      return "同じ名前のモジュールが既にあります。";
+    }
+    return "";
+  }
+
+  function createNewModuleIntake(state) {
+    var intake = createElement(
+      "div",
+      "new-module-intake");
+    var field = createElement(
+      "div",
+      "new-module-field");
+    var label = createElement(
+      "label",
+      "",
+      "モジュール名");
+    var input = createElement("input", "new-module-input");
+    var actions = createElement(
+      "div",
+      "new-module-actions");
+    var cancel = createActionButton(
+      "キャンセル",
+      "action-button--secondary",
+      "cancel-new-module");
+    var importButton = createActionButton(
+      state.busyAction === "readClipboard"
+        ? "クリップボードを読み取っています"
+        : "新規モジュールとして取り込む",
+      "action-button--primary is-guided-target",
+      "import-new-module");
+
+    intake.appendChild(createElement(
+      "p",
+      "region-kicker",
+      "NEW STANDARD MODULE"));
+    intake.appendChild(createElement(
+      "h3",
+      "",
+      "新しい標準モジュールを取り込む"));
+    intake.appendChild(createElement(
+      "p",
+      "new-module-lead",
+      "コードブロックをコピーし、追加するモジュール名だけを入力します。"));
+    label.htmlFor = "new-module-name";
+    input.id = "new-module-name";
+    input.type = "text";
+    input.maxLength = 31;
+    input.autocomplete = "off";
+    input.spellcheck = false;
+    input.value = newModuleNameDraft;
+    input.disabled = state.busyAction !== null;
+    input.setAttribute(
+      "aria-describedby",
+      "new-module-name-hint");
+    field.appendChild(label);
+    field.appendChild(input);
+    field.appendChild(createElement(
+      "p",
+      "new-module-hint",
+      "31文字以内のVBA識別子。種別は標準モジュールです。"));
+    field.lastChild.id = "new-module-name-hint";
+    cancel.disabled = state.busyAction !== null;
+    importButton.disabled = state.busyAction !== null;
+    if (state.busyAction === "readClipboard") {
+      importButton.insertBefore(
+        createElement("span", "loading-spinner"),
+        importButton.firstChild);
+    }
+    actions.appendChild(cancel);
+    actions.appendChild(importButton);
+    intake.appendChild(field);
+    intake.appendChild(actions);
+    return intake;
+  }
+
   function createStepThree(state) {
     var selected = getSelectedModule(state);
     var screen = createElement("section", "screen");
@@ -1074,11 +1210,19 @@
     screen.setAttribute("aria-labelledby", "step-title-3");
     screen.appendChild(createScreenHeader(
       3,
-      selected ? selected.name : "モジュールを選択",
-      selected
+      state.newModuleIntake
+        ? "新規モジュール"
+        : selected
+          ? selected.name
+          : "モジュールを選択",
+      state.newModuleIntake
+        ? "STANDARD MODULE"
+        : selected
         ? selected.typeLabel + " / " + selected.lineCount + " LINES"
         : ""));
-    if (!selected) {
+    if (state.newModuleIntake) {
+      body.appendChild(createNewModuleIntake(state));
+    } else if (!selected) {
       body.appendChild(createStepThreeEmpty());
     } else if (selected.status === "changed" ||
         selected.status === "unchanged") {
@@ -1752,6 +1896,7 @@
       "attachBook",
       { path: path }
     ).then(function (data) {
+      newModuleNameDraft = "";
       global.MacroDeskState.setBook(data.book, data.modules);
       global.MacroDeskState.setBusyAction(null);
       clearToast();
@@ -1882,7 +2027,7 @@
     });
   }
 
-  function showPasteError() {
+  function showPasteError(focusAction) {
     var error = {
       code: "E-PASTE-01",
       message: generalErrorMessages["E-PASTE-01"]
@@ -1891,7 +2036,10 @@
 
     global.MacroDeskState.setLastError(error);
     showToast(error.message, "error");
-    button = document.querySelector('[data-action="paste-response"]');
+    button = document.querySelector(
+      '[data-action="' +
+      (focusAction || "paste-response") +
+      '"]');
     if (button) {
       button.focus();
     }
@@ -1979,9 +2127,80 @@
       });
   }
 
+  function importNewModuleFromClipboard() {
+    var state = global.MacroDeskState.getState();
+    var name = newModuleNameDraft;
+    var nameError = getNewModuleNameError(state, name);
+    var input;
+
+    if (state.busyAction || !state.newModuleIntake) {
+      return Promise.resolve(false);
+    }
+    if (nameError) {
+      showToast(nameError, "error");
+      input = document.getElementById("new-module-name");
+      if (input) {
+        input.setAttribute("aria-invalid", "true");
+        input.focus();
+      }
+      return Promise.resolve(false);
+    }
+
+    global.MacroDeskState.setBusyAction("readClipboard");
+    return global.hostBridge.request("readClipboard").then(
+      function (result) {
+        var normalizedText;
+        var rows;
+        var changedLineCount;
+        var lineCount;
+        var module;
+
+        global.MacroDeskState.setBusyAction(null);
+        normalizedText = normalizePastedText(
+          result ? result.text : "");
+        if (normalizedText.length === 0) {
+          showPasteError("import-new-module");
+          return false;
+        }
+
+        rows = global.MacroDeskDiff.compare(
+          "",
+          normalizedText);
+        changedLineCount =
+          global.MacroDeskDiff.countChangedLines(rows);
+        lineCount =
+          global.MacroDeskDiff.toLines(
+            normalizedText).length;
+        module = global.MacroDeskState.addNewModule(
+          name,
+          normalizedText,
+          changedLineCount,
+          lineCount);
+        if (!module) {
+          return false;
+        }
+
+        newModuleNameDraft = "";
+        global.MacroDeskState.setLastError(null);
+        clearToast();
+        announce(
+          name +
+          " を新規標準モジュールとして取り込みました。");
+        recordPaste(module, normalizedText);
+        return true;
+      },
+      function (error) {
+        handleHostError(error, "");
+        global.MacroDeskState.setBusyAction(null);
+        return false;
+      });
+  }
+
   function cancelSelectedPaste() {
     var state = global.MacroDeskState.getState();
     var name = state.selectedModuleName;
+    var module = global.MacroDeskState.findModule(name);
+    var wasNew = module && module.isNew === true;
 
     if (!name ||
         !global.MacroDeskState.cancelModulePaste(name)) {
@@ -1992,7 +2211,9 @@
     announce(name + " の貼り付けを取り消しました。");
     global.setTimeout(function () {
       var button = document.querySelector(
-        '[data-action="paste-response"]');
+        wasNew
+          ? '[data-new-module-intake="true"]'
+          : '[data-action="paste-response"]');
       if (button) {
         button.focus();
       }
@@ -2064,10 +2285,26 @@
   function onModuleClick(event) {
     var toggle = event.target.closest("[data-module-toggle]");
     var button = event.target.closest("[data-module-name]");
+    var newModuleButton = event.target.closest(
+      "[data-new-module-intake]");
 
     if (toggle) {
       toggleModuleExcluded(
         toggle.getAttribute("data-module-toggle"));
+      return;
+    }
+    if (newModuleButton) {
+      newModuleNameDraft = "";
+      global.MacroDeskState.setLastError(null);
+      clearToast();
+      global.MacroDeskState.beginNewModuleIntake();
+      global.setTimeout(function () {
+        var input = document.getElementById(
+          "new-module-name");
+        if (input) {
+          input.focus();
+        }
+      }, 0);
       return;
     }
     if (!button) {
@@ -2123,6 +2360,11 @@
       pasteFromClipboard();
     } else if (action === "cancel-paste") {
       cancelSelectedPaste();
+    } else if (action === "import-new-module") {
+      importNewModuleFromClipboard();
+    } else if (action === "cancel-new-module") {
+      newModuleNameDraft = "";
+      global.MacroDeskState.cancelNewModuleIntake();
     } else if (action === "toggle-selected-excluded") {
       toggleModuleExcluded(
         global.MacroDeskState.getState().selectedModuleName);
@@ -2141,6 +2383,11 @@
   }
 
   function onMainInput(event) {
+    if (event.target.id === "new-module-name") {
+      newModuleNameDraft = event.target.value;
+      event.target.removeAttribute("aria-invalid");
+      return;
+    }
     if (event.target.id !== "request-text") {
       return;
     }
@@ -2227,6 +2474,7 @@
     createOutputTimestamp: createOutputTimestamp,
     createBuildOutputName: createBuildOutputName,
     getHostErrorMessage: getHostErrorMessage,
+    getNewModuleNameError: getNewModuleNameError,
     joinFinalCode: joinFinalCode,
     createBuildModules: createBuildModules,
     prepareBuildConfirmation: prepareBuildConfirmation,
@@ -2234,6 +2482,7 @@
     revealBuildOutput: revealBuildOutput,
     acceptPastedText: acceptPastedText,
     pasteFromClipboard: pasteFromClipboard,
+    importNewModuleFromClipboard: importNewModuleFromClipboard,
     cancelSelectedPaste: cancelSelectedPaste,
     toggleModuleExcluded: toggleModuleExcluded,
     loadAppInfo: loadAppInfo,

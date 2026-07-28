@@ -189,6 +189,8 @@ try {
     $excludedContext = $result.excludedContext | ConvertFrom-Json
     $empty = $result.empty | ConvertFrom-Json
     $wrongModule = $result.wrongModule | ConvertFrom-Json
+    $newIntake = $result.newIntake | ConvertFrom-Json
+    $newModule = $result.newModule | ConvertFrom-Json
     $largeFull = $result.largeFull | ConvertFrom-Json
     $largeContext = $result.largeContext | ConvertFrom-Json
     $buildConfirmation =
@@ -322,6 +324,28 @@ try {
         -ge 0.4) `
         'Wrong-module diff is not visually dominant.'
 
+    Assert-True ($newIntake.form -and $newIntake.input) `
+        'New standard module intake form is missing.'
+    Assert-True (
+        $newIntake.guided -eq 1 -and
+        $newIntake.moduleGlow -eq 0 -and
+        -not $newIntake.step4Guided) `
+        'New module intake must have exactly one guided action.'
+    Assert-True (
+        $newModule.count -eq 7 -and
+        $newModule.selected -eq 'CommonHelpers' -and
+        $newModule.status -eq 'changed' -and
+        $newModule.isNew -and
+        $newModule.type -eq 'standard') `
+        'New standard module state mismatch.'
+    Assert-True ($newModule.code -ceq $result.additionCode) `
+        'New module pasted code mismatch.'
+    Assert-True ($newModule.badge -eq ([char]0x65B0)) `
+        'New module badge mismatch.'
+    Assert-True (
+        $newModule.diff -gt 0 -and $newModule.step4) `
+        'New module diff or Step 4 readiness is missing.'
+
     Assert-True ($largeFull.rows -eq 5001) `
         'Large-module full view row count mismatch.'
     Assert-True ($largeFull.gaps -eq 0) `
@@ -349,8 +373,8 @@ try {
     Assert-True ($buildConfirmation.view -eq 'confirmation') `
         'Step 4 confirmation view is missing.'
     Assert-True (
-        $buildConfirmation.targets -eq 3 -and
-        $buildConfirmation.changed -eq 3) `
+        $buildConfirmation.targets -eq 4 -and
+        $buildConfirmation.changed -eq 4) `
         'Step 4 write-back target count mismatch.'
     Assert-True (
         $buildConfirmation.timestamp -match
@@ -407,8 +431,8 @@ try {
         $buildSuccess.expected) `
         'Displayed confirmation name and actual output name differ.'
     Assert-True (
-        $buildSuccess.written -eq 3 -and
-        $buildSuccess.results -eq 3) `
+        $buildSuccess.written -eq 4 -and
+        $buildSuccess.results -eq 4) `
         'Written badges or build results are incomplete.'
     Assert-True (
         $buildSuccess.reveal -and
@@ -421,9 +445,9 @@ try {
         'Reveal action did not receive the output path.'
 
     Assert-True (
-        $selfLoop.targets -eq 3 -and
-        $selfLoop.unchanged -eq 3 -and
-        $selfLoop.exact -eq 3) `
+        $selfLoop.targets -eq 4 -and
+        $selfLoop.unchanged -eq 4 -and
+        $selfLoop.exact -eq 4) `
         'Reattached write-back targets are not exact matches.'
     Assert-True (
         $selfLoop.changed -eq 0 -and

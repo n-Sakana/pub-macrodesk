@@ -317,11 +317,28 @@ namespace MacroDesk
             IDictionary<string, string> moduleChanges,
             string outputTimestamp)
         {
+            return BuildBook(
+                moduleChanges,
+                new List<VbaModuleAddition>(),
+                outputTimestamp);
+        }
+
+        public Dictionary<string, object> BuildBook(
+            IDictionary<string, string> moduleChanges,
+            IList<VbaModuleAddition> newModules,
+            string outputTimestamp)
+        {
             if (moduleChanges == null)
             {
                 throw new HostActionException(
                     "E-BUILD-01",
                     "The build module list is missing.");
+            }
+            if (newModules == null)
+            {
+                throw new HostActionException(
+                    "E-BUILD-01",
+                    "The new module list is missing.");
             }
             ValidateOutputTimestamp(outputTimestamp);
 
@@ -347,7 +364,8 @@ namespace MacroDesk
             BookBuildResult build = BookIO.BuildCopy(
                 sourcePath,
                 outputPath,
-                moduleChanges);
+                moduleChanges,
+                newModules);
             Dictionary<string, object> data =
                 CreateBuildData(build);
             if (!build.Success)

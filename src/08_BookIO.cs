@@ -163,6 +163,19 @@ namespace MacroDesk
             string outputPath,
             IDictionary<string, string> moduleChanges)
         {
+            return BuildCopy(
+                sourcePath,
+                outputPath,
+                moduleChanges,
+                new List<VbaModuleAddition>());
+        }
+
+        public static BookBuildResult BuildCopy(
+            string sourcePath,
+            string outputPath,
+            IDictionary<string, string> moduleChanges,
+            IList<VbaModuleAddition> newModules)
+        {
             BookBuildResult result = new BookBuildResult();
             DateTime started = DateTime.UtcNow;
             bool outputCreated = false;
@@ -172,6 +185,10 @@ namespace MacroDesk
                 if (moduleChanges == null)
                 {
                     throw new ArgumentNullException("moduleChanges");
+                }
+                if (newModules == null)
+                {
+                    throw new ArgumentNullException("newModules");
                 }
 
                 VbaProjectData sourceProject = ReadProject(sourcePath);
@@ -191,6 +208,11 @@ namespace MacroDesk
                         sourceProject,
                         moduleChanges,
                         result.Results);
+                List<VbaModuleAddition> additions =
+                    PrepareBuildAdditions(
+                        sourceProject,
+                        newModules,
+                        result.Results);
 
                 File.Copy(
                     sourceProject.FilePath,
@@ -201,14 +223,16 @@ namespace MacroDesk
                 byte[] rebuiltProject =
                     VbaProjectWriter.RebuildProject(
                         sourceProject,
-                        changedModules);
+                        changedModules,
+                        additions);
                 WriteZipVbaProject(
                     fullOutputPath,
                     rebuiltProject);
                 VerifyBuild(
                     sourceProject,
                     fullOutputPath,
-                    changedModules);
+                    changedModules,
+                    additions);
 
                 SetPendingResults(
                     result.Results,
@@ -369,6 +393,60 @@ namespace MacroDesk
             return changed;
         }
 
+        private static List<VbaModuleAddition> PrepareBuildAdditions(
+            VbaProjectData project,
+            IList<VbaModuleAddition> requestedAdditions,
+            List<ModuleBuildResult> results)
+        {
+            HashSet<string> names = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+            int index;
+            for (index = 0; index < project.Modules.Count; index++)
+            {
+                names.Add(project.Modules[index].Name);
+            }
+
+            List<VbaModuleAddition> additions =
+                new List<VbaModuleAddition>();
+            for (index = 0;
+                index < requestedAdditions.Count;
+                index++)
+            {
+                VbaModuleAddition requested =
+                    requestedAdditions[index];
+                if (requested == null)
+                {
+                    throw new ArgumentException(
+                        "A VBA module addition is null.",
+                        "requestedAdditions");
+                }
+                VbaProjectWriter.ValidateNewModuleName(
+                    requested.Name);
+                if (requested.Code == null)
+                {
+                    throw new ArgumentException(
+                        "A VBA module addition code is null.",
+                        "requestedAdditions");
+                }
+                if (!names.Add(requested.Name))
+                {
+                    throw new InvalidDataException(
+                        "Duplicate VBA module name: " +
+                        requested.Name);
+                }
+
+                additions.Add(
+                    new VbaModuleAddition(
+                        requested.Name,
+                        requested.Code));
+                ModuleBuildResult item =
+                    new ModuleBuildResult();
+                item.Name = requested.Name;
+                results.Add(item);
+            }
+            return additions;
+        }
+
         private static void SetPendingResults(
             List<ModuleBuildResult> results,
             string status,
@@ -443,7 +521,8 @@ namespace MacroDesk
         private static void VerifyBuild(
             VbaProjectData sourceProject,
             string outputPath,
-            Dictionary<string, string> changedModules)
+            Dictionary<string, string> changedModules,
+            IList<VbaModuleAddition> newModules)
         {
             VbaProjectData outputProject;
             try
@@ -461,7 +540,16 @@ namespace MacroDesk
                 BuildModuleMap(sourceProject);
             Dictionary<string, VbaModule> outputModules =
                 BuildModuleMap(outputProject);
+            if (outputModules.Count !=
+                sourceModules.Count + newModules.Count)
+            {
+                throw new BuildVerificationException(
+                    "The output VBA module count is incorrect.");
+            }
+
             HashSet<string> changedPaths =
+                new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> addedPaths =
                 new HashSet<string>(StringComparer.Ordinal);
 
             foreach (KeyValuePair<string, string> change
@@ -497,10 +585,71 @@ namespace MacroDesk
                         sourceModule.StreamEntry));
             }
 
+            int index;
+            for (index = 0; index < newModules.Count; index++)
+            {
+                VbaModuleAddition addition = newModules[index];
+                VbaModule outputModule;
+                if (sourceModules.ContainsKey(addition.Name) ||
+                    !outputModules.TryGetValue(
+                        addition.Name,
+                        out outputModule))
+                {
+                    throw new BuildVerificationException(
+                        "An added VBA module is missing: " +
+                        addition.Name);
+                }
+                if (outputModule.Kind !=
+                        VbaModuleKind.Standard ||
+                    outputModule.SourceOffset != 0 ||
+                    !string.Equals(
+                        NormalizeCrLf(outputModule.FullCode),
+                        NormalizeCrLf(
+                            VbaProjectWriter.
+                                CreateNewModuleFullCode(
+                                    addition.Name,
+                                    addition.Code)),
+                        StringComparison.Ordinal))
+                {
+                    throw new BuildVerificationException(
+                        "Added VBA module mismatch: " +
+                        addition.Name);
+                }
+
+                addedPaths.Add(
+                    GetEntryPath(
+                        outputProject.Ole2,
+                        outputModule.StreamEntry));
+            }
+
+            if (newModules.Count > 0)
+            {
+                if (sourceProject.ProjectEntry == null ||
+                    sourceProject.ProjectWmEntry == null ||
+                    sourceProject.DirEntry == null)
+                {
+                    throw new BuildVerificationException(
+                        "VBA project metadata streams are missing.");
+                }
+                changedPaths.Add(
+                    GetEntryPath(
+                        sourceProject.Ole2,
+                        sourceProject.ProjectEntry));
+                changedPaths.Add(
+                    GetEntryPath(
+                        sourceProject.Ole2,
+                        sourceProject.ProjectWmEntry));
+                changedPaths.Add(
+                    GetEntryPath(
+                        sourceProject.Ole2,
+                        sourceProject.DirEntry));
+            }
+
             VerifyLogicalEntries(
                 sourceProject.Ole2,
                 outputProject.Ole2,
-                changedPaths);
+                changedPaths,
+                addedPaths);
         }
 
         private static Dictionary<string, VbaModule> BuildModuleMap(
@@ -527,13 +676,15 @@ namespace MacroDesk
         private static void VerifyLogicalEntries(
             Ole2File source,
             Ole2File output,
-            HashSet<string> changedPaths)
+            HashSet<string> changedPaths,
+            HashSet<string> addedPaths)
         {
             Dictionary<string, Ole2DirectoryEntry> sourceEntries =
                 BuildEntryMap(source);
             Dictionary<string, Ole2DirectoryEntry> outputEntries =
                 BuildEntryMap(output);
-            if (sourceEntries.Count != outputEntries.Count)
+            if (outputEntries.Count !=
+                sourceEntries.Count + addedPaths.Count)
             {
                 throw new BuildVerificationException(
                     "OLE2 logical entry count changed.");
@@ -580,6 +731,22 @@ namespace MacroDesk
                             " at byte " +
                             difference);
                     }
+                }
+            }
+
+            foreach (KeyValuePair<string, Ole2DirectoryEntry> pair
+                in outputEntries)
+            {
+                if (sourceEntries.ContainsKey(pair.Key))
+                {
+                    continue;
+                }
+                if (!addedPaths.Contains(pair.Key) ||
+                    pair.Value.ObjectType != 2)
+                {
+                    throw new BuildVerificationException(
+                        "Unexpected OLE2 logical entry: " +
+                        pair.Key);
                 }
             }
         }

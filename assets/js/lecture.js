@@ -93,6 +93,14 @@
         "④［改修版をビルド］へ進み、対象と出力名を確認してください。"
       ].join("\n")
     },
+    "L3-7": {
+      title: "新しい標準モジュールを取り込む",
+      body: [
+        "返答のコードブロックをコピーします。",
+        "追加するモジュール名を入力し、［新規モジュールとして取り込む］を押します。",
+        "種別は標準モジュールとして追加されます。"
+      ].join("\n")
+    },
     "L4-1": {
       title: "新しいブックを作成",
       body: [
@@ -262,6 +270,9 @@
     }
 
     if (state.currentStep === 3) {
+      if (state.newModuleIntake) {
+        return "L3-7";
+      }
       selected = findSelectedModule(state);
       if (selected && selected.status === "changed") {
         return "L3-3";

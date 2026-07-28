@@ -105,4 +105,32 @@ assert(
   state.findModule("Module1").status === "pending",
   "Exclusion release did not restore pending status.");
 
+assert(
+  state.beginNewModuleIntake(),
+  "New module intake could not be opened.");
+assert(
+  state.getState().newModuleIntake === true &&
+    state.getState().selectedModuleName === null,
+  "New module intake state mismatch.");
+const newModule = state.addNewModule(
+  "CommonHelpers",
+  "Option Explicit\r\nPublic Sub Run(): End Sub\r\n",
+  2,
+  2);
+assert(newModule !== null, "New module was not added.");
+assert(
+  newModule.isNew === true &&
+    newModule.type === "standard" &&
+    newModule.status === "changed",
+  "New module metadata mismatch.");
+assert(
+  state.getTransitionRow()[4] === true,
+  "New module did not enable Step 4.");
+assert(
+  state.cancelModulePaste("CommonHelpers"),
+  "New module cancellation failed.");
+assert(
+  state.findModule("CommonHelpers") === null,
+  "Cancelling a new module did not remove it.");
+
 console.log("test-p6-state: PASS");

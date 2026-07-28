@@ -299,6 +299,7 @@ Assert-True ($fullOutputRoot.StartsWith(
 
 $knownNames = @(
     'identity.xlsm',
+    'new_standard_module.xlsm',
     'one_line.xlsm',
     'plus_50_percent.xlsm',
     'plus_500_percent.xlsm',
@@ -333,6 +334,51 @@ $identity = Invoke-BuildCase `
     $identityChanges
 [void]$cases.Add($identity)
 Assert-OtherZipEntries $resolvedBookPath $identity.Path
+
+$additionCode = (
+    "Option Explicit`r`n`r`n" +
+    "Public Sub RunAddedMacro()`r`n" +
+    "    Debug.Print `"added`"`r`n" +
+    "End Sub`r`n")
+$additionChanges = New-Object `
+    'System.Collections.Generic.Dictionary[string,string]'
+$additionList = New-Object `
+    'System.Collections.Generic.List[MacroDesk.VbaModuleAddition]'
+$additionList.Add(
+    (New-Object MacroDesk.VbaModuleAddition(
+        'CommonHelpers',
+        $additionCode)))
+$additionPath = Join-Path `
+    $fullOutputRoot `
+    'new_standard_module.xlsm'
+$additionResult = [MacroDesk.BookIO]::BuildCopy(
+    $resolvedBookPath,
+    $additionPath,
+    $additionChanges,
+    $additionList)
+Assert-True $additionResult.Success `
+    "New module build failed: $($additionResult.Message)"
+Assert-True ($additionResult.Results.Count -eq 1) `
+    'New module build result count mismatch.'
+Assert-True (
+    $additionResult.Results[0].Name -ceq 'CommonHelpers' -and
+    $additionResult.Results[0].Result -eq 'written') `
+    'New module build result mismatch.'
+$additionProject = [MacroDesk.BookIO]::ReadProject($additionPath)
+$additionModule = Get-Module $additionProject 'CommonHelpers'
+Assert-True ($additionModule.Kind.ToString() -eq 'Standard') `
+    'Built new module kind mismatch.'
+Assert-True ($additionModule.SourceOffset -eq 0) `
+    'Built new module PerformanceCache is not empty.'
+Assert-True ($additionModule.Code -ceq $additionCode) `
+    'Built new module code mismatch.'
+Assert-OtherZipEntries $resolvedBookPath $additionPath
+[void]$cases.Add([pscustomobject]@{
+    Label = 'new_standard_module'
+    Path = [IO.Path]::GetFullPath($additionPath)
+    Result = $additionResult
+    Project = $additionProject
+})
 
 $oneLineCode = [regex]::Replace(
     $appController.FullCode,

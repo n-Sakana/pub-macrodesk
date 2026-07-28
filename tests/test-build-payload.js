@@ -137,6 +137,42 @@ assertEqual(
   attributes,
   "Build payload creation changed the retained attributes.");
 
+var newModules = app.createBuildModules({
+  modules: [
+    {
+      name: "CommonHelpers",
+      status: "changed",
+      attributes: "",
+      pastedCode: normalized,
+      isNew: true
+    }
+  ]
+});
+assert(newModules.length === 1, "New module build payload is missing.");
+assertEqual(
+  newModules[0].name,
+  "CommonHelpers",
+  "New module build name mismatch.");
+assertEqual(
+  newModules[0].code,
+  normalized,
+  "New module build payload must not synthesize Attributes in JS.");
+assertEqual(
+  newModules[0].isNew,
+  true,
+  "New module build payload is not explicitly marked.");
+
+assertEqual(
+  app.getNewModuleNameError(state, "共通処理"),
+  "",
+  "A valid Unicode VBA identifier was rejected.");
+assert(
+  app.getNewModuleNameError(state, "1Broken").length > 0,
+  "An invalid VBA identifier was accepted.");
+assert(
+  app.getNewModuleNameError(state, "module1").length > 0,
+  "A case-insensitive duplicate module name was accepted.");
+
 var threw = false;
 try {
   app.createBuildModules({
