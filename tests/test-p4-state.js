@@ -40,7 +40,7 @@ assert(
   "Initial lecture branch mismatch.");
 
 stateApi.setBook(
-  { name: "sample.xlsm", path: "C:\\sample.xlsm", ext: ".xlsm" },
+  { name: "sample.xlsm", path: "sample.xlsm", ext: ".xlsm" },
   [
     {
       name: "Module1",
@@ -58,7 +58,10 @@ assert(row[3] === true, "Attached step 1 must allow step 3.");
 assert(row[4] === false, "Step 4 must still require a change.");
 
 assert(stateApi.navigate(2), "Navigation to step 2 failed.");
-stateApi.setRequestState("Please change it.", "C:\\request.txt");
+assert(
+  stateApi.getGuideTarget().id === "request-field",
+  "An empty request without presets must guide to the textarea.");
+stateApi.setRequestState("Please change it.", "request.txt");
 assert(
   lectureApi.getBranchKey(stateApi.getState()) === "L2-3",
   "Created request lecture branch mismatch.");
@@ -77,8 +80,11 @@ assert(row[2] === true, "Step 3 must allow returning to step 2.");
 assert(row[3] === false, "The current step must be unavailable.");
 assert(row[4] === true, "A changed module must enable step 4.");
 assert(
-  lectureApi.getBranchKey(stateApi.getState()) === "L3-3",
-  "Changed module lecture branch mismatch.");
+  lectureApi.getBranchKey(stateApi.getState()) === "L3-6",
+  "Completed changed-module lecture branch mismatch.");
+assert(
+  stateApi.getGuideTarget().id === "step3-next",
+  "Completed changed modules must guide to the build confirmation.");
 assert(
   stateApi.cancelModulePaste("Module1"),
   "Cancelling pasted module code failed.");
@@ -91,6 +97,9 @@ assert(
 assert(
   stateApi.getState().modules[0].status === "excluded",
   "Excluded status mismatch.");
+assert(
+  stateApi.getGuideTarget() === null,
+  "No-change completion must not advance to the build step.");
 assert(
   stateApi.toggleModuleExcluded("Module1"),
   "Excluded module could not be restored.");

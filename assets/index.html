@@ -10,6 +10,17 @@
   <link rel="stylesheet" href="css/lecture.css">
   <link rel="stylesheet" href="css/steps.css">
   <link rel="stylesheet" href="css/diff.css">
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem("macrodesk.theme");
+        if (theme === "light" || theme === "dark") {
+          document.documentElement.setAttribute("data-theme", theme);
+        }
+      } catch (error) {
+      }
+    }());
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">メイン画面へ移動</a>
@@ -49,12 +60,26 @@
           </li>
         </ol>
       </nav>
+
+      <button
+        class="theme-toggle"
+        id="theme-toggle"
+        type="button"
+        aria-label="テーマを切り替える（現在: ライト）"
+        title="テーマを切り替える（現在: ライト）">
+        <svg class="theme-icon theme-icon--moon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M15.5 12.5A6.5 6.5 0 0 1 7.5 4.5a6 6 0 1 0 8 8Z"></path>
+        </svg>
+        <svg class="theme-icon theme-icon--sun" viewBox="0 0 20 20" aria-hidden="true" hidden>
+          <circle cx="10" cy="10" r="3.25"></circle>
+          <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.35 4.35l1.4 1.4M14.25 14.25l1.4 1.4M15.65 4.35l-1.4 1.4M5.75 14.25l-1.4 1.4"></path>
+        </svg>
+      </button>
     </header>
 
     <aside class="module-region" aria-labelledby="module-heading">
       <div class="module-header">
         <div>
-          <p class="region-kicker">PROJECT</p>
           <h1 id="module-heading">モジュール</h1>
         </div>
         <span class="module-count" id="module-count" aria-label="0 モジュール">0</span>
@@ -90,19 +115,38 @@
         <div class="lecture-content" id="lecture-content">
           <h2 id="lecture-title"></h2>
           <p id="lecture-body"></p>
+          <p class="lecture-next-action" id="lecture-next-action" hidden></p>
         </div>
       </aside>
     </div>
   </div>
 
+  <dialog class="discard-modal" id="discard-modal" aria-labelledby="discard-modal-title">
+    <div class="discard-modal-content">
+      <h2 id="discard-modal-title">取り込み済みの内容を破棄しますか？</h2>
+      <p>別のブックを添付すると、現在取り込んでいる変更は破棄されます。</p>
+      <div class="step-actions">
+        <button
+          class="action-button action-button--secondary"
+          id="discard-modal-cancel"
+          type="button">キャンセル</button>
+        <button
+          class="action-button action-button--danger"
+          id="discard-modal-confirm"
+          type="button">破棄して添付する</button>
+      </div>
+    </div>
+  </dialog>
+
   <div class="status-announcer" id="status-announcer" aria-live="polite"></div>
   <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
 
+  <script src="js/theme.js"></script>
   <script src="js/host-bridge.js"></script>
   <script src="js/prompt-template.js"></script>
   <script src="js/diff.js"></script>
-  <script src="js/diff-report.js"></script>
   <script src="js/vba-highlight.js"></script>
+  <script src="js/diff-report.js"></script>
   <script src="js/diff-view.js"></script>
   <script src="js/state.js"></script>
   <script src="js/lecture.js"></script>

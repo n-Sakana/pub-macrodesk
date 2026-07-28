@@ -62,8 +62,8 @@ function Assert-Guided {
     Assert-True (-not $Metric.horizontal) `
         "$Label has document-level horizontal scroll."
     Assert-True (
-        [string]$Metric.font -match 'Yu Gothic UI') `
-        "$Label does not use the Japanese UI font stack."
+        [string]$Metric.font -match 'Noto Sans JP') `
+        "$Label does not use the bundled Japanese UI font."
 }
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -153,12 +153,39 @@ try {
     $builds = $result.builds
     $logs = $result.logRecords | ConvertFrom-Json
     $lecture = $result.lectureRender | ConvertFrom-Json
+    $themeLight = $result.themeLight | ConvertFrom-Json
+    $themeDark = $result.themeDark | ConvertFrom-Json
+    $themeRestored = $result.themeRestored | ConvertFrom-Json
+
+    Assert-True (
+        $themeLight.theme -eq 'light' -and
+        [string]::IsNullOrEmpty([string]$themeLight.stored) -and
+        $themeLight.background -eq 'rgb(244, 246, 248)' -and
+        $themeLight.visibleIcons -eq 1 -and
+        -not $themeLight.guided) `
+        'The default light theme is not applied as designed.'
+    Assert-True (
+        $themeDark.theme -eq 'dark' -and
+        $themeDark.stored -eq 'dark' -and
+        $themeDark.background -eq 'rgb(20, 23, 27)' -and
+        $themeDark.visibleIcons -eq 1 -and
+        -not $themeDark.guided -and
+        $themeDark.label -ne $themeLight.label -and
+        -not [string]::IsNullOrEmpty([string]$themeDark.announced)) `
+        'The dark theme toggle or persistence is incomplete.'
+    Assert-True (
+        $themeRestored.theme -eq 'light' -and
+        $themeRestored.stored -eq 'light' -and
+        $themeRestored.background -eq 'rgb(244, 246, 248)') `
+        'The theme toggle did not restore and persist light mode.'
 
     $step1Unattached = Get-JsonProperty `
         $guided 'step1Unattached'
     $step1Attached = Get-JsonProperty `
         $guided 'step1Attached'
     $step2Empty = Get-JsonProperty $guided 'step2Empty'
+    $step2EmptyNoPresets = Get-JsonProperty `
+        $guided 'step2EmptyNoPresets'
     $step2Text = Get-JsonProperty $guided 'step2Text'
     $step2Created = Get-JsonProperty $guided 'step2Created'
     $step3Unselected = Get-JsonProperty `
@@ -169,6 +196,8 @@ try {
         $guided 'step3ChangedPending'
     $step3ChangedComplete = Get-JsonProperty `
         $guided 'step3ChangedComplete'
+    $step3NoChange = Get-JsonProperty `
+        $guided 'step3NoChange'
     $step4Confirmation = Get-JsonProperty `
         $guided 'step4Confirmation'
     $step4Success = Get-JsonProperty $guided 'step4Success'
@@ -179,6 +208,8 @@ try {
         'step1-next' 'Step 1 attached'
     Assert-Guided $step2Empty `
         'preset-section' 'Step 2 empty'
+    Assert-Guided $step2EmptyNoPresets `
+        'request-textarea' 'Step 2 empty without presets'
     Assert-Guided $step2Text `
         'create-request' 'Step 2 with request'
     Assert-Guided $step2Created `
@@ -186,7 +217,7 @@ try {
     Assert-Guided $step3Unselected `
         'ModuleA' 'Step 3 unselected'
     Assert-Guided $step3Selected `
-        'paste-target' 'Step 3 selected'
+        'paste-response' 'Step 3 selected'
     Assert-Guided $step3ChangedPending `
         'ModuleB' 'Step 3 changed with pending'
     Assert-True (
@@ -194,11 +225,17 @@ try {
         -not $step3ChangedPending.step4Guided) `
         'Step 4 must be ready but not glowing while pending remains.'
     Assert-Guided $step3ChangedComplete `
-        '^4$' 'Step 3 changed and complete'
+        'step3-next' 'Step 3 changed and complete'
     Assert-True (
         $step3ChangedComplete.step4Ready -and
-        $step3ChangedComplete.step4Guided) `
-        'Step 4 must be the guided target after pending reaches zero.'
+        -not $step3ChangedComplete.step4Guided -and
+        $step3ChangedComplete.doneBar) `
+        'The completion bar must guide to step 4 after pending reaches zero.'
+    Assert-True (
+        $step3NoChange.guided -eq 0 -and
+        -not $step3NoChange.step4Ready -and
+        -not $step3NoChange.doneBar) `
+        'A no-change completion must not offer or guide build navigation.'
     Assert-Guided $step4Confirmation `
         'build-book' 'Step 4 confirmation'
     Assert-True ($step4Confirmation.branch -eq 'L4-1') `

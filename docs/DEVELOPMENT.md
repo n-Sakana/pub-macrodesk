@@ -45,7 +45,10 @@ macrodesk/
 │   ├── 07_VbaProject.cs     # dir の MODULE レコードを正本とするモジュール一覧・コード取得・コードページ・書き戻し計画
 │   └── 08_BookIO.cs         # xlsm/xlam/xlsb(zip) の入出力、コピー生成、ビルド、検証
 ├── assets/                  # UI 実体
-├── presets/                 # 改修マニュアル（*.md、1 ファイル = 1 ボタン）
+│   ├── fonts/               # Noto Sans JP / UDEV Gothic の TTF と OFL
+│   ├── css/                 # 2 テーマのトークンとコンポーネント
+│   └── js/                  # UI、diff、ハイライト、テーマ切替
+├── presets/                 # 依頼文のひな形（*.md、1 ファイル = 1 ボタン）
 ├── templates/               # 依頼ファイル全体の編集可能なテンプレート
 ├── lib/                     # WebView2 DLL（4 本）
 ├── docs/                    # SPEC.md / DEVELOPMENT.md（本書）
@@ -80,6 +83,7 @@ Windows PowerShell 5.1 の fresh process で、各 runner を個別に実行す�
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-app-compile.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-design-system.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-compression.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-ole2.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-vbaproject.ps1
@@ -101,6 +105,7 @@ Node test（UI ロジックの単体検証）:
 ```powershell
 node tests\test-build-payload.js
 node tests\test-diff.js
+node tests\test-diff-view.js
 node tests\test-diff-report.js
 node tests\test-host-bridge.js
 node tests\test-p4-state.js

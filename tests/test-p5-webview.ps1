@@ -229,8 +229,8 @@ try {
         }
     }
 
-    Assert-True ($cancelled.confirmCount -eq 1) `
-        'Imported-content replacement confirmation did not run.'
+    Assert-True ($cancelled.dialogOpen -eq $false) `
+        'Imported-content replacement dialog did not close.'
     Assert-True ($cancelled.status -eq 'changed') `
         'Cancelled replacement changed module state.'
     Assert-True ($reset.step -eq 1) `
@@ -267,10 +267,10 @@ try {
     $expectedRequestText =
         'existing request' + "`r`n`r`n" + $presetContent
     Assert-True ($preset.requestText -ceq $expectedRequestText) `
-        'Preset append does not match owner decision 2A.'
+        'Preset append does not match the append policy.'
     Assert-True ($preset.presetCount -eq 1) `
         'Preset button count mismatch.'
-    Assert-True ($preset.fixedOpen -eq $false) `
+    Assert-True ($preset.noticeOpen -eq $false) `
         'Template notice must start collapsed.'
     Assert-True (
         -not [string]::IsNullOrEmpty(
@@ -279,8 +279,9 @@ try {
     Assert-True (
         $preset.templateText.Contains(
             'templates\request-template.txt') -and
-        -not $preset.templateText.Contains('{{')) `
-        'Template notice is stale or exposes raw placeholders.'
+        $preset.templateText.Contains('{{REQUEST_TEXT}}') -and
+        $preset.templateText.Contains('{{MODULE_SOURCE_BLOCKS}}')) `
+        'Template notice does not explain its path and required insertions.'
     Assert-True ($preset.branch -eq 'L2-2') `
         'Step 2 lecture branch mismatch before creation.'
     Assert-True ($preset.horizontal -eq $false) `
@@ -297,13 +298,7 @@ try {
         [IO.Path]::GetFileName($requestPath) -match
         $requestNamePattern) `
         'Request file name mismatch.'
-    $createdPrefix = -join @(
-        [char]0x4F5C,
-        [char]0x6210,
-        [char]0x6E08,
-        [char]0x307F,
-        [char]0x003A,
-        [char]0x0020)
+    $createdPrefix = ([char]0x2713) + [char]0x0020
     Assert-True ($success.heading -eq (
         $createdPrefix + [IO.Path]::GetFileName($requestPath))) `
         'Created request status text mismatch.'

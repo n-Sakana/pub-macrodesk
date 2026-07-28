@@ -77,6 +77,126 @@
     return count;
   }
 
+  function getGuideTarget() {
+    var presets;
+    var pendingName = null;
+    var selected = null;
+    var pendingCount = 0;
+    var changedCount = getChangedModuleCount();
+
+    if (state.busyAction !== null) {
+      return null;
+    }
+    state.modules.forEach(function (module) {
+      if (module.name === state.selectedModuleName) {
+        selected = module;
+      }
+      if (module.status === "pending") {
+        pendingCount += 1;
+        if (pendingName === null) {
+          pendingName = module.name;
+        }
+      }
+    });
+
+    if (state.currentStep === 1) {
+      return state.book
+        ? {
+          id: "step1-next",
+          label: "［次へ（依頼を作る）］"
+        }
+        : {
+          id: "attach",
+          label: "［ファイルを選ぶ］"
+        };
+    }
+    if (state.currentStep === 2) {
+      presets = state.appInfo && state.appInfo.presets
+        ? state.appInfo.presets
+        : [];
+      if (state.requestFilePath) {
+        return {
+          id: "step2-next",
+          label: "［次へ（返答を取り込む）］"
+        };
+      }
+      if (state.requestText.trim().length === 0) {
+        return presets.length > 0
+          ? {
+            id: "presets",
+            label: "ひな形を選ぶ"
+          }
+          : {
+            id: "request-field",
+            label: "依頼内容を入力する"
+          };
+      }
+      return {
+        id: "create-request",
+        label: "［依頼ファイルを作成］"
+      };
+    }
+    if (state.currentStep === 3) {
+      if (state.newModuleIntake) {
+        return {
+          id: "import-new-module",
+          label: "［新規モジュールとして取り込む］"
+        };
+      }
+      if (pendingCount === 0) {
+        return changedCount > 0
+          ? {
+            id: "step3-next",
+            label: "［次へ（ビルドの確認）］"
+          }
+          : null;
+      }
+      if (selected && selected.status === "pending") {
+        return {
+          id: "paste-response",
+          label: "［返答コードを貼り付ける］"
+        };
+      }
+      return {
+        id: "module",
+        moduleName: pendingName,
+        label: "左の一覧で ［" + pendingName + "］ を選ぶ"
+      };
+    }
+    if (state.buildResult &&
+        state.buildResult.status === "success") {
+      return {
+        id: "reveal-build-output",
+        label: "［出力フォルダを開く］"
+      };
+    }
+    if (state.buildResult &&
+        state.buildResult.status === "error") {
+      return {
+        id: "retry-build",
+        label: "［もう一度ビルド］"
+      };
+    }
+    return {
+      id: "build-book",
+      label: "［ビルド］"
+    };
+  }
+
+  function getLineCount(value) {
+    var text = typeof value === "string" ? value : "";
+    var lines;
+
+    if (!text) {
+      return 0;
+    }
+    lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+    if (lines.length > 0 && lines[lines.length - 1] === "") {
+      lines.pop();
+    }
+    return lines.length;
+  }
+
   function getTransitionRow() {
     var key = String(state.currentStep);
     var source;
@@ -136,7 +256,8 @@
       module.changedLineCount = 0;
       module.written = false;
       module.pastedCode = null;
-      module.showChangesOnly = false;
+      module.showChangesOnly = module.lineCount > 200;
+      module.wrapDiff = false;
     });
     state.selectedModuleName = null;
     state.newModuleIntake = false;
@@ -204,7 +325,10 @@
       module.changedLineCount = 0;
     }
     module.written = false;
-    module.showChangesOnly = false;
+    module.showChangesOnly = Math.max(
+      module.lineCount || 0,
+      getLineCount(code)) > 200;
+    module.wrapDiff = false;
     notify();
     return module;
   }
@@ -254,7 +378,8 @@
       pastedCode: code,
       status: "changed",
       changedLineCount: changedLineCount || 0,
-      showChangesOnly: false,
+      showChangesOnly: lineCount > 200,
+      wrapDiff: false,
       written: false,
       isNew: true
     };
@@ -287,7 +412,8 @@
     module.changedLineCount = 0;
     module.pastedCode = null;
     module.written = false;
-    module.showChangesOnly = false;
+    module.showChangesOnly = module.lineCount > 200;
+    module.wrapDiff = false;
     notify();
     return true;
   }
@@ -320,6 +446,20 @@
     }
 
     module.showChangesOnly = showChangesOnly === true;
+    notify();
+    return true;
+  }
+
+  function setModuleWrapDiff(moduleName, wrapDiff) {
+    var module = findModule(moduleName);
+
+    if (!module ||
+        (module.status !== "changed" &&
+         module.status !== "unchanged")) {
+      return false;
+    }
+
+    module.wrapDiff = wrapDiff === true;
     notify();
     return true;
   }
@@ -411,7 +551,7 @@
     };
     state.book = {
       name: "受注管理.xlsm",
-      path: "C:\\Work\\受注管理.xlsm",
+      path: "samples\\受注管理.xlsm",
       ext: ".xlsm"
     };
     state.modules = [
@@ -497,6 +637,7 @@
     getState: getState,
     getTransitionRow: getTransitionRow,
     getChangedModuleCount: getChangedModuleCount,
+    getGuideTarget: getGuideTarget,
     canNavigate: canNavigate,
     navigate: navigate,
     setBook: setBook,
@@ -511,6 +652,7 @@
     cancelModulePaste: cancelModulePaste,
     toggleModuleExcluded: toggleModuleExcluded,
     setModuleShowChangesOnly: setModuleShowChangesOnly,
+    setModuleWrapDiff: setModuleWrapDiff,
     setRequestState: setRequestState,
     setRequestText: setRequestText,
     setRequestFilePath: setRequestFilePath,

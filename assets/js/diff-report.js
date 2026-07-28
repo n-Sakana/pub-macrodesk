@@ -51,12 +51,90 @@
     });
   }
 
-  function buildCodeCell(text) {
-    var value = toText(text);
+  function getInlineDifference(leftText, rightText) {
+    var left = toText(leftText);
+    var right = toText(rightText);
+    var start = 0;
+    var leftEnd = left.length;
+    var rightEnd = right.length;
 
-    return value.length > 0
-      ? escapeHtml(value)
-      : "&#160;";
+    while (start < leftEnd &&
+        start < rightEnd &&
+        left.charAt(start) === right.charAt(start)) {
+      start += 1;
+    }
+    while (leftEnd > start &&
+        rightEnd > start &&
+        left.charAt(leftEnd - 1) === right.charAt(rightEnd - 1)) {
+      leftEnd -= 1;
+      rightEnd -= 1;
+    }
+    return {
+      leftStart: start,
+      leftEnd: leftEnd,
+      rightStart: start,
+      rightEnd: rightEnd
+    };
+  }
+
+  function buildTokenRange(tokens, start, end, showWhitespace) {
+    var offset = 0;
+    var parts = [];
+
+    tokens.forEach(function (token) {
+      var tokenStart = offset;
+      var tokenEnd = offset + token.text.length;
+      var from = Math.max(start, tokenStart);
+      var to = Math.min(end, tokenEnd);
+      var text;
+
+      offset = tokenEnd;
+      if (from >= to) {
+        return;
+      }
+      text = token.text.substring(
+        from - tokenStart,
+        to - tokenStart);
+      if (showWhitespace) {
+        text = text.replace(/\t/g, "\u2192").replace(/ /g, "\u00B7");
+      }
+      text = escapeHtml(text);
+      if (token.type === "plain") {
+        parts.push(text);
+      } else {
+        parts.push(
+          '<span class="vba-token vba-token--',
+          token.type,
+          '">',
+          text,
+          "</span>");
+      }
+    });
+    return parts.join("");
+  }
+
+  function buildCodeCell(text, markStart, markEnd, markClass) {
+    var value = toText(text);
+    var tokens;
+
+    if (!value) {
+      return "&#160;";
+    }
+    tokens = global.MacroDeskVbaHighlight.tokenizeLine(value);
+    if (markStart === undefined ||
+        markEnd === undefined ||
+        markStart >= markEnd) {
+      return buildTokenRange(tokens, 0, value.length, false);
+    }
+    return [
+      buildTokenRange(tokens, 0, markStart, false),
+      '<mark class="diff-inline-mark ',
+      markClass,
+      '">',
+      buildTokenRange(tokens, markStart, markEnd, true),
+      "</mark>",
+      buildTokenRange(tokens, markEnd, value.length, false)
+    ].join("");
   }
 
   function buildDiffRow(row) {
@@ -69,6 +147,9 @@
     var rightNumber = row.lineB >= 0
       ? String(row.lineB + 1)
       : "";
+    var inline = type === "changed"
+      ? getInlineDifference(row.textA, row.textB)
+      : null;
 
     return [
       '<tr class="diff-row diff-row--',
@@ -78,14 +159,22 @@
       leftNumber,
       "</td>",
       '<td class="code-cell code-cell--left"><code>',
-      buildCodeCell(row.textA),
+      buildCodeCell(
+        row.textA,
+        inline ? inline.leftStart : undefined,
+        inline ? inline.leftEnd : undefined,
+        "diff-inline-mark--removed"),
       "</code></td>",
       '<td class="separator" aria-hidden="true"></td>',
       '<td class="line-number line-number--right" aria-hidden="true">',
       rightNumber,
       "</td>",
       '<td class="code-cell code-cell--right"><code>',
-      buildCodeCell(row.textB),
+      buildCodeCell(
+        row.textB,
+        inline ? inline.rightStart : undefined,
+        inline ? inline.rightEnd : undefined,
+        "diff-inline-mark--added"),
       "</code></td>",
       "</tr>"
     ].join("");
@@ -104,7 +193,7 @@
       '">',
       '<header class="module-header">',
       "<div>",
-      '<p class="module-kicker">VBA MODULE</p>',
+      '<p class="module-kicker">変更モジュール</p>',
       "<h2>",
       escapeHtml(name),
       "</h2>",
@@ -113,9 +202,9 @@
       "<span>",
       escapeHtml(getTypeLabel(module)),
       "</span>",
-      "<span>",
+      "<span>変更 ",
       String(changedCount),
-      " 変更行</span>",
+      " 行</span>",
       "</p>",
       "</header>",
       '<div class="diff-scroll">',
@@ -160,6 +249,10 @@
         typeof global.MacroDeskDiff.compare !== "function") {
       throw new Error("The diff engine is unavailable.");
     }
+    if (!global.MacroDeskVbaHighlight ||
+        typeof global.MacroDeskVbaHighlight.tokenizeLine !== "function") {
+      throw new Error("The VBA highlighter is unavailable.");
+    }
     if (!bookName) {
       throw new Error("The report book name is missing.");
     }
@@ -182,55 +275,66 @@
       escapeHtml(bookName),
       " 改修差分</title>",
       "<style>",
-      ":root{color-scheme:dark;font-family:Segoe UI,Meiryo,sans-serif;",
-      "background:#0d1117;color:#e6edf3}",
+      ":root{color-scheme:light;font-family:Noto Sans JP,Yu Gothic UI,",
+      "Yu Gothic,Meiryo,sans-serif;background:#F4F6F8;color:#1F2A37}",
       "*{box-sizing:border-box}",
-      "body{margin:0;background:#0d1117;color:#e6edf3}",
+      "body{margin:0;background:#F4F6F8;color:#1F2A37}",
       "main{padding:32px}",
-      ".report-header{margin:0 0 28px;padding:24px;",
-      "border:1px solid #30363d;border-radius:10px;background:#161b22}",
-      ".report-kicker,.module-kicker{margin:0 0 6px;color:#8b949e;",
-      "font-size:12px;font-weight:700;letter-spacing:.12em}",
-      "h1,h2{margin:0;line-height:1.35}",
-      "h1{font-size:26px}",
-      "h2{font-size:20px}",
+      ".report-header{margin:0 0 28px;padding:24px;border:1px solid ",
+      "#CFD7DE;border-radius:10px;background:#FFFFFF}",
+      ".report-kicker,.module-kicker{margin:0 0 6px;color:#5D6B7A;",
+      "font-size:11px;font-weight:600;letter-spacing:.01em}",
+      "h1,h2{margin:0;line-height:1.4}",
+      "h1{font-size:22px}h2{font-size:17px}",
       ".report-summary{display:flex;flex-wrap:wrap;gap:10px 22px;",
-      "margin:14px 0 0;color:#b1bac4;font-size:14px}",
-      ".module-report{margin:0 0 28px;border:1px solid #30363d;",
-      "border-radius:10px;background:#161b22;overflow:visible}",
+      "margin:14px 0 0;color:#3C4B5C;font-size:13px}",
+      ".module-report{margin:0 0 28px;border:1px solid #CFD7DE;",
+      "border-radius:10px;background:#FFFFFF;overflow:visible}",
       ".module-header{display:flex;align-items:flex-end;",
       "justify-content:space-between;gap:20px;padding:18px 20px}",
       ".module-meta{display:flex;flex-wrap:wrap;justify-content:flex-end;",
-      "gap:8px;margin:0;color:#b1bac4;font-size:13px}",
-      ".module-meta span{padding:4px 8px;border:1px solid #30363d;",
-      "border-radius:999px;background:#0d1117}",
+      "gap:8px;margin:0;color:#3C4B5C;font-size:12px}",
+      ".module-meta span{padding:4px 8px;border:1px solid #CFD7DE;",
+      "border-radius:4px;background:#FAFBFC}",
       ".diff-scroll{width:100%;overflow-x:auto;",
-      "border-top:1px solid #30363d}",
+      "border-top:1px solid #CFD7DE}",
       ".diff-table{width:max-content;min-width:100%;",
-      "border-collapse:collapse;table-layout:fixed;",
-      "font-family:Consolas,Cascadia Mono,monospace;font-size:13px}",
-      ".column-line{width:52px}",
-      ".column-code{width:640px}",
+      "border-collapse:collapse;table-layout:auto;",
+      "font-family:UDEV Gothic,Consolas,Cascadia Mono,monospace;",
+      "font-size:13px;line-height:20px}",
+      ".column-line{width:46px}.column-code{min-width:640px}",
       ".column-separator{width:1px}",
-      "th{padding:10px 12px;background:#21262d;color:#b1bac4;",
-      "font-family:Segoe UI,Meiryo,sans-serif;font-size:12px;",
-      "font-weight:700;text-align:left}",
-      "td{border-top:1px solid #21262d;vertical-align:top}",
-      ".line-number{padding:3px 9px;background:#0d1117;",
-      "color:#6e7681;text-align:right;user-select:none}",
-      ".code-cell{min-width:640px;padding:3px 10px}",
-      ".code-cell code{display:block;white-space:pre;line-height:1.55}",
-      ".separator{width:1px;min-width:1px;padding:0;",
-      "background:#30363d}",
-      ".diff-row--equal .code-cell{color:#c9d1d9}",
+      "th{padding:8px 12px;background:#FAFBFC;color:#5D6B7A;",
+      "font-family:Noto Sans JP,Yu Gothic UI,Yu Gothic,Meiryo,sans-serif;",
+      "font-size:12px;font-weight:600;text-align:left}",
+      "td{border-top:1px solid #E2E7EC;vertical-align:top}",
+      ".line-number{width:46px;min-width:46px;padding:0 8px;",
+      "background:#ECEFF2;color:#5D6B7A;text-align:right;",
+      "user-select:none}",
+      ".code-cell{min-width:640px;padding:0 12px;background:#FBFCFD}",
+      ".code-cell code{display:block;white-space:pre}",
+      ".separator{width:1px;min-width:1px;padding:0;background:#CFD7DE}",
       ".diff-row--changed .code-cell--left,",
-      ".diff-row--removed .code-cell--left{background:#35171b;",
-      "color:#ffdcd7}",
+      ".diff-row--removed .code-cell--left{background:#FBEDEE;",
+      "box-shadow:inset 3px 0 0 #C25560}",
+      ".diff-row--changed .line-number--left,",
+      ".diff-row--removed .line-number--left{background:#FBEDEE}",
       ".diff-row--changed .code-cell--right,",
-      ".diff-row--added .code-cell--right{background:#17351f;",
-      "color:#aff5b4}",
+      ".diff-row--added .code-cell--right{background:#EAF5E7;",
+      "box-shadow:inset 3px 0 0 #4C9155}",
+      ".diff-row--changed .line-number--right,",
+      ".diff-row--added .line-number--right{background:#EAF5E7}",
       ".diff-row--added .code-cell--left,",
-      ".diff-row--removed .code-cell--right{background:#11161d}",
+      ".diff-row--added .line-number--left,",
+      ".diff-row--removed .code-cell--right,",
+      ".diff-row--removed .line-number--right{background:#ECEFF2}",
+      ".diff-inline-mark{padding:0;color:inherit}",
+      ".diff-inline-mark--removed{background:#F3CDD1}",
+      ".diff-inline-mark--added{background:#C9E7C0}",
+      ".vba-token--keyword{color:#2C5EA8}",
+      ".vba-token--comment{color:#567545}",
+      ".vba-token--string{color:#A0582C}",
+      ".vba-token--number{color:#6E4FA5}",
       "@media(max-width:760px){main{padding:16px}",
       ".module-header{align-items:flex-start;flex-direction:column}",
       ".module-meta{justify-content:flex-start}}",
@@ -239,7 +343,7 @@
       "<body>",
       "<main>",
       '<header class="report-header">',
-      '<p class="report-kicker">MACRODESK BUILD DIFF</p>',
+      '<p class="report-kicker">改修差分</p>',
       "<h1>",
       escapeHtml(bookName),
       "</h1>",
@@ -264,6 +368,7 @@
     escapeHtml: escapeHtml,
     formatTimestamp: formatTimestamp,
     getChangedModules: getChangedModules,
+    getInlineDifference: getInlineDifference,
     buildReport: buildReport
   };
 }(window));

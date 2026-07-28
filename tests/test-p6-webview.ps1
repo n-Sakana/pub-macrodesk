@@ -204,6 +204,8 @@ try {
     $newIntake = $result.newIntake | ConvertFrom-Json
     $newModule = $result.newModule | ConvertFrom-Json
     $largeFull = $result.largeFull | ConvertFrom-Json
+    $largeExpanded = $result.largeExpanded | ConvertFrom-Json
+    $largeWrapped = $result.largeWrapped | ConvertFrom-Json
     $largeContext = $result.largeContext | ConvertFrom-Json
     $buildConfirmation =
         $result.buildConfirmation | ConvertFrom-Json
@@ -244,13 +246,19 @@ try {
     Assert-True ($normal.status -eq 'changed') `
         'Changed paste status mismatch.'
     Assert-True ($normal.count -eq 1) `
-        'Owner-approved changed-line count must be one.'
+        'Changed-line count must be one.'
     Assert-True ($normal.pasted -ceq $result.changedCode) `
         'Normalized pasted code mismatch.'
     Assert-True (-not $normal.fence -and -not $normal.attribute) `
         'Fence or leading Attribute text survived normalization.'
     Assert-True ($normal.nonEqual -eq 1) `
         'One-line edit must render one non-equal diff row.'
+    Assert-True (
+        $normal.inlineMarks -gt 0 -and
+        $normal.changedTokens -gt 0) `
+        (
+            'Changed rows lack inline marks or syntax highlighting. ' +
+            "marks=$($normal.inlineMarks) tokens=$($normal.changedTokens)")
     Assert-True ($normal.result -match '1') `
         'Changed-line result is missing from the UI.'
     Assert-True ($normal.badge -match '1') `
@@ -354,18 +362,20 @@ try {
         'New standard module state mismatch.'
     Assert-True ($newModule.code -ceq $result.additionCode) `
         'New module pasted code mismatch.'
-    Assert-True ($newModule.badge -eq ([char]0x65B0)) `
-        'New module badge mismatch.'
+    $newBadgeText = ([string]$newModule.badge).Trim()
+    $newBadgePrefix = ([char]0x65B0) + [char]0x002B
+    Assert-True ($newBadgeText -eq ($newBadgePrefix + '5')) `
+        "New module badge mismatch: $($newModule.badge)"
     Assert-True (
         $newModule.diff -gt 0 -and $newModule.step4) `
         'New module diff or Step 4 readiness is missing.'
 
-    Assert-True ($largeFull.rows -eq 5001) `
-        'Large-module full view row count mismatch.'
-    Assert-True ($largeFull.gaps -eq 0) `
-        'Large-module full view must not contain gaps.'
-    Assert-True ($largeFull.pressed -eq 'false') `
-        'Changes-only toggle must default off.'
+    Assert-True ($largeFull.rows -eq 21) `
+        'Large-module default view must retain plus/minus ten lines.'
+    Assert-True ($largeFull.gaps -eq 2) `
+        'Large-module default view must show two omission markers.'
+    Assert-True ($largeFull.pressed -eq 'true') `
+        'Changes-only toggle must default on above 200 lines.'
     Assert-True ($largeFull.clientHeight -gt 0) `
         'Large diff scroller has no visible height.'
     Assert-True (
@@ -373,14 +383,21 @@ try {
         'Large diff content does not overflow its scroller.'
     Assert-True ($largeFull.canScroll) `
         'Large diff cannot scroll vertically.'
-    Assert-True ($largeFull.hostDisplay -eq 'flex') `
-        'Diff table host does not provide a flex context.'
-    Assert-True ($largeContext.rows -eq 21) `
-        'Changes-only view must retain plus/minus ten lines.'
-    Assert-True ($largeContext.gaps -eq 2) `
-        'Changes-only view must show two omission markers.'
-    Assert-True ($largeContext.pressed -eq 'true') `
-        'Changes-only toggle state mismatch.'
+    Assert-True (
+        $largeExpanded.gaps -eq 1 -and
+        $largeExpanded.rows -gt $largeFull.rows) `
+        'An omitted-line band did not expand in place.'
+    Assert-True (
+        $largeWrapped.pressed -eq 'true' -and
+        $largeWrapped.wrapped -and
+        $largeWrapped.whiteSpace -eq 'pre-wrap') `
+        'The diff wrap toggle did not change line wrapping.'
+    Assert-True ($largeContext.rows -eq 5001) `
+        'Expanded large-module view row count mismatch.'
+    Assert-True ($largeContext.gaps -eq 0) `
+        'Expanded large-module view must not contain gaps.'
+    Assert-True ($largeContext.pressed -eq 'false') `
+        'Expanded large-module toggle state mismatch.'
     Assert-True (-not $largeContext.horizontal) `
         'Large diff caused document-level horizontal scroll.'
 

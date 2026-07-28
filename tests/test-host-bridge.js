@@ -118,11 +118,11 @@ async function main() {
   messageHandler({
     data: {
       event: "bookDropped",
-      data: { path: "C:\\work\\book.xlsm" }
+      data: { path: "work\\book.xlsm" }
     }
   });
   assert(
-    droppedPath === "C:\\work\\book.xlsm",
+    droppedPath === "work\\book.xlsm",
     "bookDropped data mismatch."
   );
   unsubscribe();
@@ -130,13 +130,13 @@ async function main() {
   messageHandler({
     data: {
       event: "bookDropped",
-      data: { path: "C:\\work\\other.xlsm" }
+      data: { path: "work\\other.xlsm" }
     }
   });
   assert(droppedPath === "", "Event unsubscribe failed.");
 
   const timeoutPromise = bridge.request("attachBook", {
-    path: "C:\\work\\book.xlsm"
+    path: "work\\book.xlsm"
   });
   const timeoutId = nextTimer;
   assert(typeof timers[timeoutId] === "function", "Timeout was not armed.");

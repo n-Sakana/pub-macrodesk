@@ -20,6 +20,7 @@ var context = vm.createContext(sandbox);
 
 [
   "diff.js",
+  "vba-highlight.js",
   "diff-report.js"
 ].forEach(function (file) {
   vm.runInContext(
@@ -83,10 +84,19 @@ assert(
     html.indexOf("Module&lt;&amp;&gt;") >= 0,
   "Diff report metadata is not HTML-escaped.");
 assert(
-  html.indexOf("&lt;old&amp;&gt;") >= 0 &&
-    html.indexOf("&lt;new&amp;&gt;") >= 0 &&
+  html.indexOf("&lt;") >= 0 &&
+    html.indexOf("old") >= 0 &&
+    html.indexOf("new") >= 0 &&
+    html.indexOf("&amp;&gt;") >= 0 &&
     html.indexOf("\"<old&>\"") < 0,
   "Diff report code is not HTML-escaped.");
+assert(
+  html.indexOf(
+    'class="diff-inline-mark diff-inline-mark--removed"') >= 0 &&
+    html.indexOf(
+      'class="diff-inline-mark diff-inline-mark--added"') >= 0 &&
+    html.indexOf('class="vba-token vba-token--string"') >= 0,
+  "Diff report inline marks or syntax highlighting are missing.");
 assert(
   html.indexOf("2026-07-28 12:34:56") >= 0,
   "Diff report timestamp format mismatch.");
@@ -114,6 +124,32 @@ assert(
     html.indexOf(" src=") < 0 &&
     html.indexOf(" href=") < 0,
   "Diff report has an external dependency.");
+assert(
+  html.indexOf("#F4F6F8") >= 0 &&
+    html.indexOf("#1F2A37") >= 0 &&
+    html.indexOf("#FBEDEE") >= 0 &&
+    html.indexOf("#EAF5E7") >= 0 &&
+    html.indexOf("#14171B") < 0 &&
+    html.indexOf("data-theme") < 0,
+  "Diff report must use the fixed light palette.");
+
+var whitespaceHtml = report.buildReport({
+  bookName: "Whitespace.xlsm",
+  buildTimestamp: "20260728_123456",
+  modules: [
+    {
+      name: "Whitespace",
+      type: "standard",
+      code: "    value\r\n",
+      pastedCode: "\tvalue\r\n",
+      status: "changed"
+    }
+  ]
+});
+assert(
+  whitespaceHtml.indexOf("\u00B7") >= 0 &&
+    whitespaceHtml.indexOf("\u2192") >= 0,
+  "Diff report does not expose changed spaces and tabs.");
 
 var withoutCrLf = html.replace(/\r\n/g, "");
 assert(

@@ -27,7 +27,7 @@ var state = windowObject.MacroDeskState;
 state.setBook(
   {
     name: "sample.xlsm",
-    path: "C:\\sample.xlsm",
+    path: "sample.xlsm",
     ext: ".xlsm"
   },
   [
@@ -72,7 +72,7 @@ assert(state.navigate(4), "Could not enter Step 4.");
 
 state.setBuildResult({
   status: "success",
-  outputPath: "C:\\sample_20260728_010203.xlsm",
+  outputPath: "sample_20260728_010203.xlsm",
   results: [
     {
       name: "Module1",

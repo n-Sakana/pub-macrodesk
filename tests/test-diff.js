@@ -43,7 +43,7 @@ assert(
   "Mixed diff shape mismatch.");
 assert(
   diff.countChangedLines(rows) === 2,
-  "Owner-approved changed-line count mismatch.");
+  "Changed-line count mismatch.");
 assert(
   rows[2].lineA === 2 && rows[2].lineB === 2,
   "Changed row line numbers mismatch.");

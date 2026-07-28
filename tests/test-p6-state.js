@@ -26,7 +26,7 @@ const state = windowObject.MacroDeskState;
 state.setBook(
   {
     name: "sample.xlsm",
-    path: "C:\\sample.xlsm",
+    path: "sample.xlsm",
     ext: ".xlsm"
   },
   [

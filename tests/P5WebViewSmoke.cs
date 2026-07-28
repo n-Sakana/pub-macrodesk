@@ -192,32 +192,43 @@ namespace MacroDesk.Tests
 
                     string bookJson = serializer.Serialize(bookPath);
                     await webView.CoreWebView2.ExecuteScriptAsync(
-                        "window.__p5CancelDone=false;" +
-                        "window.__p5ConfirmCount=0;" +
                         "MacroDeskState.getState().modules[2]" +
                         ".status='changed';" +
-                        "window.confirm=function(){" +
-                        "window.__p5ConfirmCount+=1;return false;};" +
-                        "MacroDeskApp.attachPath(" + bookJson + ")" +
-                        ".then(function(){window.__p5CancelDone=true;});");
-                    await WaitFor("window.__p5CancelDone === true");
+                        "MacroDeskApp.attachPath(" + bookJson + ");");
+                    await WaitFor(
+                        "document.getElementById(" +
+                        "'discard-modal').open === true");
+                    await webView.CoreWebView2.ExecuteScriptAsync(
+                        "document.getElementById(" +
+                        "'discard-modal-cancel').click();");
+                    await WaitFor(
+                        "document.getElementById(" +
+                        "'discard-modal').open === false");
                     string cancelled = await ReadJson(
                         "({" +
-                        "confirmCount:window.__p5ConfirmCount," +
+                        "dialogOpen:document.getElementById(" +
+                        "'discard-modal').open," +
                         "status:MacroDeskState.getState()" +
                         ".modules[2].status," +
                         "book:MacroDeskState.getState().book.name" +
                         "})");
 
                     await webView.CoreWebView2.ExecuteScriptAsync(
-                        "window.__p5ResetDone=false;" +
                         "MacroDeskState.setLectureCollapsed(true);" +
-                        "window.confirm=function(){return true;};" +
-                        "MacroDeskApp.attachPath(" + bookJson + ")" +
-                        ".then(function(){window.__p5ResetDone=true;});");
+                        "MacroDeskApp.attachPath(" + bookJson + ");");
                     await WaitFor(
-                        "window.__p5ResetDone === true && " +
-                        "MacroDeskState.getState().busyAction === null");
+                        "document.getElementById(" +
+                        "'discard-modal').open === true");
+                    await webView.CoreWebView2.ExecuteScriptAsync(
+                        "document.getElementById(" +
+                        "'discard-modal-confirm').click();");
+                    await WaitFor(
+                        "document.getElementById(" +
+                        "'discard-modal').open === false && " +
+                        "MacroDeskState.getState().busyAction === null " +
+                        "&& MacroDeskState.getState().modules" +
+                        ".filter(function(m){return m.status===" +
+                        "'pending';}).length === 6");
                     string reset = await ReadJson(
                         "({" +
                         "step:MacroDeskState.getState().currentStep," +
@@ -281,12 +292,12 @@ namespace MacroDesk.Tests
                         ".requestText," +
                         "presetCount:document.querySelectorAll(" +
                         "'[data-action=\"load-preset\"]').length," +
-                        "fixedOpen:document.querySelector(" +
-                        "'.fixed-preview').open," +
+                        "noticeOpen:document.querySelector(" +
+                        "'.template-notice').open," +
                         "templateSummary:document.querySelector(" +
-                        "'.fixed-preview summary').textContent," +
+                        "'.template-summary').textContent," +
                         "templateText:document.querySelector(" +
-                        "'.fixed-preview-text').textContent," +
+                        "'.template-content').textContent," +
                         "branch:document.getElementById(" +
                         "'lecture-panel').dataset.branch," +
                         "horizontal:document.documentElement" +
@@ -400,7 +411,7 @@ namespace MacroDesk.Tests
                     "code:value,message:'mock attach error'});" +
                     "};}(code));" +
                     "await MacroDeskApp.attachPath(" +
-                    "'C:\\\\attempt.xlsm');" +
+                    "'samples\\\\attempt.xlsm');" +
                     "results[code]={" +
                     "state:MacroDeskState.getState()" +
                     ".lastError.code," +

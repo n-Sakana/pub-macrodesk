@@ -98,17 +98,18 @@ assert(
     lecture.contentByKey["L1-1"].body.indexOf("Excel") >= 0,
   "L1-1 must describe formats and the open-Excel restriction.");
 assert(
-  lecture.contentByKey["L2-3"].body.indexOf("Copilot Chat") >= 0 &&
+  lecture.contentByKey["L2-3"].body.indexOf("チャット AI") >= 0 &&
     lecture.contentByKey["L2-3"].body.indexOf("添付ファイルの依頼") >= 0,
-  "L2-3 must include the Copilot handoff.");
+  "L2-3 must include the chat AI handoff.");
 assert(
   lecture.contentByKey["L3-3"].body.indexOf("赤") >= 0 &&
     lecture.contentByKey["L3-3"].body.indexOf("緑") >= 0,
   "L3-3 must explain diff colors in text.");
 assert(
   lecture.contentByKey["L3-3"].body.indexOf("残りのモジュール") >= 0 &&
-    lecture.contentByKey["L3-3"].body.indexOf("④") >= 0,
-  "L3-3 must explain how to continue after checking the diff.");
+    lecture.contentByKey["L3-3"].body.indexOf("左の一覧") >= 0 &&
+    lecture.contentByKey["L3-3"].body.indexOf("④") < 0,
+  "L3-3 must continue through the module list without a step shortcut.");
 assert(
   lecture.contentByKey["L3-7"].body.indexOf("標準モジュール") >= 0 &&
     lecture.contentByKey["L3-7"].body.indexOf("モジュール名") >= 0,

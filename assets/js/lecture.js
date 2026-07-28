@@ -21,9 +21,9 @@
     "L2-1": {
       title: "依頼の下書きを作る",
       body: [
-        "プリセットを選ぶと、マニュアル本文が依頼欄へ入ります。",
+        "ひな形を選ぶと、その本文が依頼欄へ入ります。",
         "入った文章は自由に直し、自分の言葉で書き足せます。",
-        "まず、近い内容のプリセットを選んでください。"
+        "まず、近い内容のひな形を選んでください。"
       ].join("\n")
     },
     "L2-2": {
@@ -34,9 +34,9 @@
       ].join("\n")
     },
     "L2-3": {
-      title: "Copilot Chat へ渡す",
+      title: "チャット AI へ渡す",
       body: [
-        "選択された依頼ファイルを Copilot Chat に添付します。",
+        "選択された依頼ファイルをチャット AI に添付します。",
         "「添付ファイルの依頼に従ってください」と送信してください。",
         "返答が届いたら、③［返答を取り込む］へ進みます。"
       ].join("\n")
@@ -51,15 +51,15 @@
     "L3-1": {
       title: "改修サマリーを確認",
       body: [
-        "Copilot の返答冒頭にある「■ 改修サマリー」が今回の指示書です。",
+        "チャット AI の返答冒頭にある「■ 改修サマリー」が今回の指示書です。",
         "そこに挙がったモジュールを、左の一覧から選んでください。"
       ].join("\n")
     },
     "L3-2": {
-      title: "返答コードを取り込む",
+      title: "返答コードを貼り付ける",
       body: [
         "返答のコードブロック右上にあるコピーボタンで、コードをコピーします。",
-        "［Copilotの返答を貼り付ける］を押します。Ctrl+V でも貼り付けられます。"
+        "［返答コードを貼り付ける］を押します。Ctrl+V でも貼り付けられます。"
       ].join("\n")
     },
     "L3-3": {
@@ -67,7 +67,7 @@
       body: [
         "左が現在のコード、右が貼り付けたコードです。",
         "赤は消える行、緑は増える行です。意図した変更か確認してください。",
-        "意図どおりなら、残りのモジュールを取り込むか、④［改修版をビルド］へ進みます。",
+        "意図どおりなら、残りのモジュールを左の一覧から選んで取り込みます。",
         "違う場合は貼り付けを取り消すか、②へ戻って依頼を言い直します。"
       ].join("\n")
     },
@@ -83,14 +83,14 @@
       body: [
         "改修サマリーの箇条書きに沿って、残りのモジュールも貼り付けます。",
         "変更しないと書かれたモジュールは、対象外マークで消し込めます。",
-        "未処理がなくなったら、④へ進みます。"
+        "未処理はあと {pendingCount} 個です。"
       ].join("\n")
     },
     "L3-6": {
       title: "ビルドへ進めます",
       body: [
         "書き戻す変更がそろいました。",
-        "④［改修版をビルド］へ進み、対象と出力名を確認してください。"
+        "画面下の［次へ（ビルドの確認）］で④へ進み、対象と出力名を確認してください。"
       ].join("\n")
     },
     "L3-7": {
@@ -173,14 +173,15 @@
       title: "依頼テンプレートを確認",
       body: [
         "依頼テンプレートを読み込めませんでした。",
-        "templates\\request-template.txt を UTF-8 で保存し、差し込み変数を確認してください。"
+        "templates\\request-template.txt を UTF-8 で保存し、" +
+          "差し込み（{{REQUEST_TEXT}}／{{MODULE_SOURCE_BLOCKS}}）を確認してください。"
       ].join("\n")
     },
     "E-PASTE-01": {
       title: "コードをコピーし直す",
       body: [
         "貼り付けられるコードがありませんでした。",
-        "Copilot のコードブロック右上のコピーボタンで、コードをコピーし直してください。"
+        "チャット AI のコードブロック右上のコピーボタンで、コードをコピーし直してください。"
       ].join("\n")
     },
     "E-BUILD-01": {
@@ -280,15 +281,15 @@
       if (state.newModuleIntake) {
         return "L3-7";
       }
+      if (countPending(state) === 0 && state.modules.length > 0) {
+        return "L3-6";
+      }
       selected = findSelectedModule(state);
       if (selected && selected.status === "changed") {
         return "L3-3";
       }
       if (selected && selected.status === "unchanged") {
         return "L3-4";
-      }
-      if (countPending(state) === 0 && state.modules.length > 0) {
-        return "L3-6";
       }
       if (countChanged(state) > 0) {
         return "L3-5";
@@ -302,6 +303,7 @@
   function getContent(state, key) {
     var content = contentByKey[key];
     var changedCount;
+    var presets;
 
     if (state.lastError) {
       return errorContentByCode[state.lastError.code] ||
@@ -320,13 +322,31 @@
         };
       }
     }
+    if (key === "L2-1") {
+      presets = state.appInfo && state.appInfo.presets
+        ? state.appInfo.presets
+        : [];
+      if (presets.length === 0) {
+        return {
+          title: "依頼の下書きを作る",
+          body: [
+            "改修してほしい内容を依頼欄へ入力します。",
+            "場所と希望を、自分の言葉で具体的に書いてください。"
+          ].join("\n")
+        };
+      }
+    }
     return content;
   }
 
   function formatBody(body, state) {
-    return body.replace(
-      "{moduleCount}",
-      String(state.modules.length));
+    return body
+      .replace(
+        "{moduleCount}",
+        String(state.modules.length))
+      .replace(
+        "{pendingCount}",
+        String(countPending(state)));
   }
 
   function render(state) {
@@ -360,9 +380,19 @@
     elements.branch.textContent = state.lastError &&
       state.lastError.code
       ? state.lastError.code
-      : key;
+      : "";
     elements.title.textContent = content.title;
     elements.body.textContent = formatBody(content.body, state);
+    if (global.MacroDeskState.getGuideTarget()) {
+      elements.nextAction.textContent =
+        "次にすること → " +
+        global.MacroDeskState.getGuideTarget().label;
+      elements.nextAction.hidden = false;
+    } else {
+      elements.nextAction.textContent = "";
+      elements.nextAction.hidden = true;
+    }
+
     elements.panel.setAttribute("data-branch", key);
     if (state.lastError && state.lastError.code) {
       elements.panel.setAttribute(
@@ -396,6 +426,7 @@
       branch: document.getElementById("lecture-branch"),
       title: document.getElementById("lecture-title"),
       body: document.getElementById("lecture-body"),
+      nextAction: document.getElementById("lecture-next-action"),
       workRegion: document.getElementById("work-region")
     };
 

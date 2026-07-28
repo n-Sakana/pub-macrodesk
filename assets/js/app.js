@@ -3,6 +3,8 @@
 
   var elements = null;
   var toastTimer = null;
+  var presetFeedbackTimer = null;
+  var pendingAttachPath = null;
   var newModuleNameDraft = "";
 
   var typeIcons = {
@@ -42,24 +44,24 @@
       label: "未処理"
     },
     changed: {
-      text: "確",
-      label: "確定、変更あり"
+      text: "+0",
+      label: "取り込み済み、変更あり"
     },
     "new": {
-      text: "新",
+      text: "新+0",
       label: "新規、変更あり"
     },
     unchanged: {
       text: "同",
-      label: "確定、変更なし"
+      label: "取り込み済み、変更なし"
     },
     excluded: {
       text: "外",
       label: "対象外"
     },
     written: {
-      text: "済",
-      label: "書き込み済み"
+      text: "✓済",
+      label: "書き戻し済み"
     }
   };
 
@@ -82,7 +84,7 @@
     "E-GEN-02":
       "依頼テンプレートを読み込めませんでした。templates\\request-template.txt の存在、UTF-8 形式、差し込み変数を確認してください。",
     "E-PASTE-01":
-      "貼り付けるコードがありません。Copilot のコードブロックをコピーして、もう一度お試しください。",
+      "貼り付けるコードがありません。チャット AI のコードブロックをコピーして、もう一度お試しください。",
     "E-SYS-01":
       "WebView2 Runtime が見つかりません。起動時の案内に従って配布元へ連絡してください。",
     "E-SYS-02":
@@ -102,9 +104,9 @@
     "差分 HTML ファイルを作成できませんでした。改修版ブックは正常に作成されています。";
 
   var buildResultLabels = {
-    written: "書き込み・検証 OK",
+    written: "書き戻し・検証 OK",
     verify_failed: "読み直し検証で不一致",
-    io_error: "書き込み失敗",
+    io_error: "書き戻し失敗",
     skipped_no_change: "変更なし"
   };
 
@@ -129,6 +131,20 @@
     return button;
   }
 
+  function createIconButton(label, action) {
+    var button = createElement("button", "icon-button");
+
+    button.type = "button";
+    button.title = label;
+    button.setAttribute("aria-label", label);
+    button.setAttribute("data-action", action);
+    button.innerHTML =
+      '<svg viewBox="0 0 20 20" aria-hidden="true">' +
+      '<rect x="6.5" y="6.5" width="10" height="10" rx="1.5"></rect>' +
+      '<path d="M13.5 6.5v-3h-10v10h3"></path></svg>';
+    return button;
+  }
+
   function getFileName(path) {
     var parts = String(path || "").split(/[\\/]/);
     return parts[parts.length - 1] || "";
@@ -146,6 +162,12 @@
     return selected;
   }
 
+  function isGuideTarget(id) {
+    var target = global.MacroDeskState.getGuideTarget();
+
+    return target !== null && target.id === id;
+  }
+
   function showToast(message, tone) {
     var toast;
     var label;
@@ -161,7 +183,11 @@
     label = createElement(
       "strong",
       "toast-label",
-      tone === "error" ? "確認" : "完了");
+      tone === "error"
+        ? "確認してください"
+        : tone === "info"
+          ? "お知らせ"
+          : "完了");
     toast.setAttribute(
       "role",
       tone === "error" ? "alert" : "status");
@@ -186,6 +212,32 @@
     elements.toastRegion.textContent = "";
   }
 
+  function copyText(value, label) {
+    var clipboard = global.navigator &&
+      global.navigator.clipboard;
+
+    if (!clipboard ||
+        typeof clipboard.writeText !== "function") {
+      showToast(
+        "クリップボードへコピーできませんでした。",
+        "error");
+      return Promise.resolve(false);
+    }
+    return clipboard.writeText(String(value || "")).then(
+      function () {
+        showToast(
+          (label || "内容") + "をコピーしました。",
+          "success");
+        return true;
+      },
+      function () {
+        showToast(
+          "クリップボードへコピーできませんでした。",
+          "error");
+        return false;
+      });
+  }
+
   function announce(message) {
     elements.statusAnnouncer.textContent = "";
     global.setTimeout(function () {
@@ -198,21 +250,21 @@
       var step = Number(button.getAttribute("data-step"));
       var current = step === state.currentStep;
       var available = global.MacroDeskState.canNavigate(step);
+      var complete = step < state.currentStep;
       var stepFourReady = step === 4 && !current && available;
-      var stepFourGuided = stepFourReady &&
-        state.currentStep === 3 &&
-        !state.newModuleIntake &&
-        getFirstPendingModuleName(state) === null;
+      var number = button.querySelector(".progress-number");
+      var item = button.parentNode;
 
       button.disabled = state.busyAction !== null ||
         current ||
         !available;
+      button.classList.toggle("is-complete", complete);
+      button.classList.toggle("is-unavailable", !current && !available);
       button.classList.toggle(
         "is-ready",
         stepFourReady);
-      button.classList.toggle(
-        "is-guided-target",
-        stepFourGuided);
+      item.classList.toggle("is-complete", complete);
+      number.textContent = complete ? "✓" : String(step);
       if (current) {
         button.setAttribute("aria-current", "step");
       } else {
@@ -240,7 +292,10 @@
     var text = details.text;
 
     if (status === "changed" && module.changedLineCount > 0) {
-      text += " +" + module.changedLineCount;
+      text = "+" + module.changedLineCount;
+    }
+    if (status === "new" && module.changedLineCount > 0) {
+      text = "新+" + module.changedLineCount;
     }
 
     return {
@@ -276,23 +331,11 @@
   }
 
   function getGlowingModuleName(state) {
-    var selected;
-    var confirmedCount;
+    var target = global.MacroDeskState.getGuideTarget();
 
-    if (state.currentStep !== 3 ||
-        state.newModuleIntake) {
-      return null;
-    }
-
-    selected = getSelectedModule(state);
-    confirmedCount = getConfirmedModuleCount(state);
-    if (confirmedCount > 0) {
-      return getFirstPendingModuleName(state);
-    }
-    if (!selected) {
-      return getFirstPendingModuleName(state);
-    }
-    return null;
+    return target && target.id === "module"
+      ? target.moduleName
+      : null;
   }
 
   function renderModuleList(state) {
@@ -327,6 +370,7 @@
         "module-badge module-badge--" + badge.status,
         badge.text);
       var statusControl;
+      var rowAction = null;
       var selected = module.name === state.selectedModuleName;
       var typeLabel = module.typeLabel ||
         typeNames[module.type] ||
@@ -335,8 +379,10 @@
       if (module.status === "excluded") {
         item.classList.add("is-excluded");
       }
+      if (selected) {
+        item.classList.add("is-selected");
+      }
       if (module.name === glowingModuleName) {
-        item.classList.add("is-next-target");
         item.classList.add("is-guided-target");
       }
 
@@ -355,34 +401,56 @@
       button.appendChild(createModuleIcon(module.type));
       button.appendChild(name);
       button.appendChild(lines);
+      statusControl = createElement(
+        "span",
+        "module-status-static");
+      statusControl.appendChild(badgeElement);
       if (module.status === "pending" ||
           module.status === "excluded") {
-        statusControl = createElement(
+        rowAction = createElement(
           "button",
-          "module-status-button");
-        statusControl.type = "button";
-        statusControl.setAttribute(
+          "module-row-action");
+        rowAction.type = "button";
+        rowAction.setAttribute(
           "data-module-toggle",
           module.name);
-        statusControl.setAttribute(
+        rowAction.setAttribute(
           "aria-label",
           module.status === "excluded"
             ? module.name + " の対象外を解除"
             : module.name + " を対象外にする");
-        statusControl.appendChild(badgeElement);
-      } else {
-        statusControl = createElement(
-          "span",
-          "module-status-static");
-        statusControl.appendChild(badgeElement);
+        rowAction.title = module.status === "excluded"
+          ? "対象外を解除"
+          : "対象外にする";
+        rowAction.innerHTML = module.status === "excluded"
+          ? '<svg viewBox="0 0 20 20" aria-hidden="true">' +
+            '<path d="M6 6H3v-3"></path>' +
+            '<path d="M3.5 6a7 7 0 1 1-.2 7"></path></svg>'
+          : '<svg viewBox="0 0 20 20" aria-hidden="true">' +
+            '<circle cx="10" cy="10" r="6.5"></circle>' +
+            '<path d="m5.5 14.5 9-9"></path></svg>';
+        rowAction.classList.toggle(
+          "is-visible",
+          module.status === "excluded");
       }
 
       row.setAttribute("data-module-row-name", module.name);
       row.appendChild(button);
+      if (rowAction) {
+        row.appendChild(rowAction);
+      }
       row.appendChild(statusControl);
       item.appendChild(row);
       elements.moduleList.appendChild(item);
     });
+
+    if (state.modules.length > 0) {
+      var legend = createElement(
+        "li",
+        "module-legend",
+        "未=未処理　+n=変更あり　同=変更なし　外=対象外　✓済=書き戻し済み");
+      elements.moduleList.appendChild(legend);
+    }
 
     if (state.currentStep === 3 && state.book) {
       var addItem = createElement(
@@ -391,7 +459,7 @@
       var addButton = createElement(
         "button",
         "module-add-button",
-        "新規モジュールとして取り込む");
+        "＋ 新規モジュールとして取り込む");
 
       addButton.type = "button";
       addButton.setAttribute(
@@ -405,21 +473,34 @@
     }
   }
 
-  function createScreenHeader(step, title, meta) {
+  function createScreenHeader(step, title, meta, secondaryMeta) {
     var header = createElement("header", "screen-header");
     var heading = createElement("div", "screen-heading");
     var eyebrow = createElement(
       "p",
       "screen-eyebrow",
-      "STEP " + step);
+      ["", "手順①", "手順②", "手順③", "手順④"][step]);
     var titleElement = createElement("h2", "screen-title", title);
-    var metaElement = createElement("span", "screen-meta", meta || "");
+    var metaGroup = createElement("div", "screen-meta-group");
+    var metaElement = createElement(
+      "span",
+      "screen-meta screen-book-chip",
+      meta || "");
 
     titleElement.id = "step-title-" + step;
     heading.appendChild(eyebrow);
     heading.appendChild(titleElement);
     header.appendChild(heading);
-    header.appendChild(metaElement);
+    if (meta) {
+      metaGroup.appendChild(metaElement);
+    }
+    if (secondaryMeta) {
+      metaGroup.appendChild(createElement(
+        "span",
+        "screen-meta screen-status-meta",
+        secondaryMeta));
+    }
+    header.appendChild(metaGroup);
     return header;
   }
 
@@ -485,11 +566,11 @@
     var stats = createElement("dl", "book-stats");
     var nextButton = createActionButton(
       "次へ（依頼を作る）",
-      "action-button--primary is-guided-target",
+      "action-button--primary",
       "step1-next");
 
     details.appendChild(
-      createElement("span", "book-card-label", "ATTACHED BOOK"));
+      createElement("span", "book-card-label", "対象ブック"));
     details.appendChild(heading);
     details.appendChild(path);
     stats.appendChild(createElement("dt", "", "モジュール"));
@@ -500,6 +581,9 @@
       createElement("dd", "", String(state.book.totalLines)));
 
     nextButton.disabled = state.busyAction !== null;
+    nextButton.classList.toggle(
+      "is-guided-target",
+      isGuideTarget("step1-next"));
     card.appendChild(details);
     card.appendChild(stats);
     card.appendChild(nextButton);
@@ -525,14 +609,24 @@
 
     screen.setAttribute("data-step", "1");
     screen.setAttribute("aria-labelledby", "step-title-1");
+    dropZone.classList.toggle("is-compact", state.book !== null);
     dropZone.classList.toggle("is-primary-target", state.book === null);
-    dropZone.classList.toggle("is-guided-target", state.book === null);
+    dropZone.classList.toggle(
+      "is-guided-target",
+      isGuideTarget("attach"));
     dropText.appendChild(
-      createElement("h3", "", "Excel ブックをここにドロップ"));
-    dropText.appendChild(createElement(
-      "p",
-      "",
-      "対応形式: .xlsm / .xlam / .xlsb"));
+      createElement(
+        "h3",
+        "",
+        state.book
+          ? "別のブックに差し替える（ここにドロップ）"
+          : "Excel ブックをここにドロップ"));
+    if (!state.book) {
+      dropText.appendChild(createElement(
+        "p",
+        "",
+        "対応形式: .xlsm / .xlam / .xlsb"));
+    }
     pickButton.disabled = state.busyAction !== null;
     if (state.busyAction === "attachBook") {
       pickButton.insertBefore(
@@ -556,8 +650,7 @@
     body.appendChild(stack);
     screen.appendChild(createScreenHeader(
       1,
-      state.book ? "添付したブックを確認" : "対象ブックを添付",
-      state.book ? state.book.ext.toUpperCase() : ""));
+      state.book ? "添付したブックを確認" : "対象ブックを添付"));
     screen.appendChild(body);
     return screen;
   }
@@ -576,23 +669,24 @@
       ? state.appInfo.presets
       : [];
     var section = createElement("section", "preset-section");
-    var label = createElement("p", "field-label", "プリセット");
+    var label = createElement("h3", "field-label", "ひな形から始める");
     var helper = createElement(
       "p",
       "field-helper",
-      "選ぶと、現在の依頼文の末尾へ追記します。");
+      "選ぶと依頼文の末尾に本文が入ります。何度でも追加できます。" +
+        "ひな形は依頼文の下書きです。ファイルの形はテンプレートが決めます。");
     var buttons = createElement("div", "preset-buttons");
 
     section.classList.toggle(
       "is-guided-target",
-      !state.requestFilePath &&
-        state.requestText.trim().length === 0);
+      isGuideTarget("presets"));
     presets.forEach(function (preset) {
       var button = createActionButton(
-        preset.name,
+        "＋ " + preset.name,
         "action-button--preset",
         "load-preset");
       button.setAttribute("data-preset-file", preset.file);
+      button.setAttribute("data-preset-name", preset.name);
       button.disabled = state.busyAction !== null;
       buttons.appendChild(button);
     });
@@ -604,20 +698,47 @@
   }
 
   function createTemplateNotice() {
-    var details = createElement("details", "fixed-preview");
-    var summary = createElement(
-      "summary",
-      "",
-      "依頼ファイルのテンプレート");
-    var pre = createElement(
-      "pre",
-      "fixed-preview-text",
-      "依頼ファイルはテンプレートから生成されます。\n" +
-        "内容を変えたい場合は templates\\request-template.txt を編集してください。");
+    var details = createElement("details", "template-notice");
+    var summary = createElement("summary", "template-summary");
+    var icon = createElement("span", "template-icon");
+    var content = createElement("div", "template-content");
+    var pathRow = createElement("div", "template-path-row");
+    var path = createElement(
+      "code",
+      "template-path",
+      "templates\\request-template.txt");
+    var copy = createIconButton(
+      "テンプレートのパスをコピー",
+      "copy-text");
 
-    pre.setAttribute("aria-label", "依頼ファイルテンプレートの案内");
+    icon.setAttribute("aria-hidden", "true");
+    icon.innerHTML =
+      '<svg viewBox="0 0 20 20">' +
+      '<path d="M5 2.5h6l4 4V17.5H5Z"></path>' +
+      '<path d="M11 2.5v4h4"></path></svg>';
+    summary.appendChild(icon);
+    summary.appendChild(createElement(
+      "span",
+      "",
+      "依頼ファイルの定型文はテンプレートから作られます（差し替え可）"));
+    content.appendChild(createElement(
+      "p",
+      "",
+      "依頼ファイルの冒頭説明や出力形式の指定は、テンプレートから生成されます。" +
+        "文言を変えたいときは次のファイルを編集してください（UTF-8）。"));
+    copy.setAttribute(
+      "data-copy-text",
+      "templates\\request-template.txt");
+    pathRow.appendChild(path);
+    pathRow.appendChild(copy);
+    content.appendChild(pathRow);
+    content.appendChild(createElement(
+      "p",
+      "template-note",
+      "{{REQUEST_TEXT}} と {{MODULE_SOURCE_BLOCKS}} の 2 つの差し込みは必須です。" +
+        "壊れている場合は作成時に E-GEN-02 でお知らせします。"));
     details.appendChild(summary);
-    details.appendChild(pre);
+    details.appendChild(content);
     return details;
   }
 
@@ -626,11 +747,11 @@
     var heading = createElement(
       "h3",
       "",
-      "作成済み: " + getFileName(state.requestFilePath));
+      "✓ " + getFileName(state.requestFilePath));
     var text = createElement(
       "p",
       "",
-      "選択された依頼ファイルを Copilot Chat に添付してください。");
+      "このファイルをチャット AI に添付してください。");
     var actions = createElement("div", "step-actions");
     var createAgain = createActionButton(
       "もう一度作成する",
@@ -638,13 +759,16 @@
       "create-request");
     var next = createActionButton(
       "次へ（返答を取り込む）",
-      "action-button--primary is-guided-target",
+      "action-button--primary",
       "step2-next");
 
     createAgain.disabled = state.busyAction !== null;
     next.disabled = state.busyAction !== null;
+    next.classList.toggle(
+      "is-guided-target",
+      isGuideTarget("step2-next"));
     card.appendChild(
-      createElement("span", "success-label", "REQUEST FILE READY"));
+      createElement("span", "success-label", "作成済み"));
     card.appendChild(heading);
     card.appendChild(text);
     actions.appendChild(createAgain);
@@ -665,7 +789,7 @@
     var helper = createElement(
       "p",
       "field-helper",
-      "マニュアルを選んだあとも、自由に書き足せます。");
+      "ひな形を選んだあとも、自由に書き足せます。");
     var textarea = createElement("textarea", "request-textarea");
     var createButton;
     var presets = state.appInfo && state.appInfo.presets
@@ -692,31 +816,38 @@
     field.appendChild(label);
     field.appendChild(helper);
     field.appendChild(textarea);
-    workspace.appendChild(field);
     if (presets.length > 0) {
       workspace.appendChild(createPresetSection(state));
     }
+    textarea.classList.toggle(
+      "is-guided-target",
+      isGuideTarget("request-field"));
+    workspace.appendChild(field);
     workspace.appendChild(createTemplateNotice());
 
     if (state.requestFilePath) {
       workspace.appendChild(createRequestSuccess(state));
     } else {
+      var createActions = createElement(
+        "div",
+        "step-actions request-actions");
       createButton = createActionButton(
         state.busyAction === "writeRequestFile"
           ? "依頼ファイルを作成しています"
           : "依頼ファイルを作成",
-        "action-button--primary action-button--wide",
+        "action-button--primary",
         "create-request");
       createButton.classList.toggle(
         "is-guided-target",
-        state.requestText.trim().length > 0);
+        isGuideTarget("create-request"));
       createButton.disabled = state.busyAction !== null;
       if (state.busyAction === "writeRequestFile") {
         createButton.insertBefore(
           createElement("span", "loading-spinner"),
           createButton.firstChild);
       }
-      workspace.appendChild(createButton);
+      createActions.appendChild(createButton);
+      workspace.appendChild(createActions);
     }
 
     body.appendChild(workspace);
@@ -746,19 +877,21 @@
       textarea.value = state.requestText;
     }
     textarea.disabled = state.busyAction !== null;
+    textarea.classList.toggle(
+      "is-guided-target",
+      isGuideTarget("request-field"));
     presetSection = screen.querySelector(".preset-section");
     if (presetSection) {
       presetSection.classList.toggle(
         "is-guided-target",
-        !state.requestFilePath &&
-          state.requestText.trim().length === 0);
+        isGuideTarget("presets"));
     }
     createButton = screen.querySelector(
       '[data-action="create-request"]');
     if (createButton && !state.requestFilePath) {
       createButton.classList.toggle(
         "is-guided-target",
-        state.requestText.trim().length > 0);
+        isGuideTarget("create-request"));
     }
     Array.prototype.forEach.call(
       screen.querySelectorAll("[data-action]"),
@@ -927,21 +1060,19 @@
     var button = createActionButton(
       state.busyAction === "readClipboard"
         ? "クリップボードを読み取っています"
-        : "Copilotの返答を貼り付ける",
+        : "返答コードを貼り付ける",
       "action-button--primary paste-target-button",
       "paste-response");
 
-    if (getConfirmedModuleCount(state) === 0) {
-      target.classList.add("is-guided-target");
-    }
+    button.classList.toggle(
+      "is-guided-target",
+      isGuideTarget("paste-response"));
     header.appendChild(createElement("span", "", "貼り付けるコード"));
-    header.appendChild(
-      createElement("span", "code-pane-note", "COPILOT"));
     target.appendChild(createPasteIcon());
     target.appendChild(createElement(
       "p",
       "paste-target-lead",
-      "コードブロックのコピーボタンでコピーしてから貼り付けます。"));
+      "チャット AI のコードブロックをコピーしてから貼り付けます。"));
     button.disabled = state.busyAction !== null;
     if (state.busyAction === "readClipboard") {
       button.insertBefore(
@@ -970,8 +1101,6 @@
       "toggle-selected-excluded");
 
     header.appendChild(createElement("span", "", "貼り付けるコード"));
-    header.appendChild(
-      createElement("span", "code-pane-note", "EXCLUDED"));
     target.appendChild(createElement(
       "span",
       "paste-target-state",
@@ -979,7 +1108,8 @@
     target.appendChild(createElement(
       "p",
       "paste-target-lead",
-      module.name + " はチェックリスト上で対象外になっています。"));
+      "対象外にしたモジュールです。" +
+        "改修サマリーで変更なしとされたものを消し込むのに使います。"));
     target.appendChild(button);
     pane.appendChild(header);
     pane.appendChild(target);
@@ -1008,11 +1138,7 @@
     var right = createElement("div", "diff-column-heading");
 
     left.appendChild(createElement("strong", "", "現在のコード"));
-    left.appendChild(
-      createElement("span", "code-pane-note", "ORIGINAL"));
     right.appendChild(createElement("strong", "", "貼り付けたコード"));
-    right.appendChild(
-      createElement("span", "code-pane-note", "COPILOT"));
     headings.appendChild(left);
     headings.appendChild(right);
     return headings;
@@ -1034,10 +1160,21 @@
     var rows = global.MacroDeskDiff.compare(
       module.code || "",
       module.pastedCode || "");
-    var largestLineCount = Math.max(
-      global.MacroDeskDiff.toLines(module.code || "").length,
-      global.MacroDeskDiff.toLines(module.pastedCode || "").length);
     var tableHost = createElement("div", "diff-table-host");
+    var changeBlocks =
+      global.MacroDeskDiffView.assignChangeBlocks(rows);
+    var previous = createActionButton(
+      "↑ 前の変更",
+      "action-button--secondary action-button--compact",
+      "previous-change");
+    var next = createActionButton(
+      "↓ 次の変更",
+      "action-button--secondary action-button--compact",
+      "next-change");
+    var counter = createElement(
+      "span",
+      "diff-change-counter",
+      changeBlocks > 0 ? "1/" + changeBlocks : "0/0");
     var cancel = createActionButton(
       "貼り付けを取り消す",
       "action-button--secondary action-button--compact",
@@ -1049,29 +1186,51 @@
       "action-button--secondary action-button--compact",
       "repaste-response");
     var contextToggle;
+    var wrapToggle;
 
     result.setAttribute("role", "status");
+    result.title = "追加・削除・変更された行の合計です";
     resultGroup.appendChild(result);
-    resultGroup.appendChild(createElement(
-      "span",
-      "diff-result-note",
-      module.status === "unchanged"
-        ? "現在のコードと同一です"
-        : "非 equal の diff 行数"));
-
-    if (largestLineCount > 5000) {
-      contextToggle = createActionButton(
-        "変更箇所のみ表示",
-        "action-button--secondary action-button--compact",
-        "toggle-diff-context");
-      contextToggle.setAttribute(
-        "aria-pressed",
-        module.showChangesOnly ? "true" : "false");
-      contextToggle.classList.toggle(
-        "is-active",
-        module.showChangesOnly === true);
-      actions.appendChild(contextToggle);
+    if (module.status === "unchanged") {
+      resultGroup.appendChild(createElement(
+        "span",
+        "diff-result-note",
+        "現在のコードと同一です"));
+    } else if (
+        global.MacroDeskDiffView.hasWhitespaceOnlyChange(rows)) {
+      resultGroup.appendChild(createElement(
+        "span",
+        "diff-result-note",
+        "空白のみの変更を含む"));
     }
+
+    previous.disabled = changeBlocks === 0;
+    next.disabled = changeBlocks === 0;
+    actions.appendChild(previous);
+    actions.appendChild(next);
+    actions.appendChild(counter);
+    contextToggle = createActionButton(
+      "変更箇所のみ",
+      "action-button--secondary action-button--compact diff-toggle",
+      "toggle-diff-context");
+    contextToggle.setAttribute(
+      "aria-pressed",
+      module.showChangesOnly ? "true" : "false");
+    contextToggle.classList.toggle(
+      "is-active",
+      module.showChangesOnly === true);
+    wrapToggle = createActionButton(
+      "折り返し",
+      "action-button--secondary action-button--compact diff-toggle",
+      "toggle-diff-wrap");
+    wrapToggle.setAttribute(
+      "aria-pressed",
+      module.wrapDiff ? "true" : "false");
+    wrapToggle.classList.toggle(
+      "is-active",
+      module.wrapDiff === true);
+    actions.appendChild(contextToggle);
+    actions.appendChild(wrapToggle);
 
     cancel.disabled = state.busyAction !== null;
     repaste.disabled = state.busyAction !== null;
@@ -1080,8 +1239,8 @@
         createElement("span", "loading-spinner"),
         repaste.firstChild);
     }
-    actions.appendChild(cancel);
     actions.appendChild(repaste);
+    actions.appendChild(cancel);
     toolbar.appendChild(resultGroup);
     toolbar.appendChild(actions);
     workspace.appendChild(toolbar);
@@ -1090,7 +1249,24 @@
     global.MacroDeskDiffView.renderDiff(
       tableHost,
       rows,
-      module.showChangesOnly === true);
+      module.showChangesOnly === true,
+      module.wrapDiff === true);
+    if (module.isNew === true) {
+      var placeholder = createElement(
+        "div",
+        "diff-new-placeholder");
+      placeholder.appendChild(createElement(
+        "span",
+        "diff-new-placeholder-icon",
+        "＋"));
+      placeholder.appendChild(createElement(
+        "p",
+        "",
+        "新規モジュール — 元のコードはありません。" +
+          "右側が追加される全文です。"));
+      tableHost.classList.add("has-new-module-placeholder");
+      tableHost.appendChild(placeholder);
+    }
     return workspace;
   }
 
@@ -1102,11 +1278,11 @@
     empty.appendChild(createElement(
       "h3",
       "",
-      "取り込むモジュールを選択"));
+      "モジュールを選択"));
     empty.appendChild(createElement(
       "p",
       "",
-      "Copilot の改修サマリーを見て、左の一覧から対象モジュールを選んでください。"));
+      "改修サマリーに挙がったモジュールを、左の一覧から選んでください。"));
     return empty;
   }
 
@@ -1122,7 +1298,6 @@
         !identifierPattern.test(name)) {
       return "モジュール名は31文字以内のVBA識別子で入力してください。";
     }
-
     state.modules.some(function (module) {
       if (module.name.toLowerCase() ===
           name.toLowerCase()) {
@@ -1160,13 +1335,13 @@
       state.busyAction === "readClipboard"
         ? "クリップボードを読み取っています"
         : "新規モジュールとして取り込む",
-      "action-button--primary is-guided-target",
+      "action-button--primary",
       "import-new-module");
 
     intake.appendChild(createElement(
       "p",
       "region-kicker",
-      "NEW STANDARD MODULE"));
+      "新規（標準モジュール）"));
     intake.appendChild(createElement(
       "h3",
       "",
@@ -1195,6 +1370,9 @@
     field.lastChild.id = "new-module-name-hint";
     cancel.disabled = state.busyAction !== null;
     importButton.disabled = state.busyAction !== null;
+    importButton.classList.toggle(
+      "is-guided-target",
+      isGuideTarget("import-new-module"));
     if (state.busyAction === "readClipboard") {
       importButton.insertBefore(
         createElement("span", "loading-spinner"),
@@ -1211,6 +1389,15 @@
     var selected = getSelectedModule(state);
     var screen = createElement("section", "screen");
     var body = createElement("div", "step-three-body");
+    var pendingCount = 0;
+    var processedCount;
+
+    state.modules.forEach(function (module) {
+      if (module.status === "pending") {
+        pendingCount += 1;
+      }
+    });
+    processedCount = state.modules.length - pendingCount;
 
     screen.setAttribute("data-step", "3");
     screen.setAttribute("aria-labelledby", "step-title-3");
@@ -1222,10 +1409,10 @@
           ? selected.name
           : "モジュールを選択",
       state.newModuleIntake
-        ? "STANDARD MODULE"
-        : selected
-        ? selected.typeLabel + " / " + selected.lineCount + " LINES"
-        : ""));
+        ? state.book.name
+        : state.book.name,
+      "処理済み " + processedCount + "/" + state.modules.length +
+        " ・ 未処理 " + pendingCount));
     if (state.newModuleIntake) {
       body.appendChild(createNewModuleIntake(state));
     } else if (!selected) {
@@ -1237,6 +1424,31 @@
       body.appendChild(createWaitingWorkspace(state, selected));
     }
     screen.appendChild(body);
+    if (pendingCount === 0 &&
+        global.MacroDeskState.getChangedModuleCount() > 0 &&
+        state.modules.length > 0 &&
+        !state.newModuleIntake) {
+      var doneBar = createElement("div", "step-done-bar");
+      var doneMessage = createElement(
+        "p",
+        "step-done-message",
+        "未処理はありません。全モジュールを確定しました。");
+      var next = createActionButton(
+        "次へ（ビルドの確認）",
+        "action-button--primary",
+        "step3-next");
+
+      doneMessage.insertBefore(
+        createElement("span", "step-done-check", "✓"),
+        doneMessage.firstChild);
+      next.disabled = state.busyAction !== null;
+      next.classList.toggle(
+        "is-guided-target",
+        isGuideTarget("step3-next"));
+      doneBar.appendChild(doneMessage);
+      doneBar.appendChild(next);
+      screen.appendChild(doneBar);
+    }
     return screen;
   }
 
@@ -1265,6 +1477,7 @@
 
   function createBuildCountGrid(state) {
     var counts = getBuildCounts(state);
+    var section = createElement("section", "build-count-section");
     var grid = createElement("dl", "build-count-grid");
     var items = [
       {
@@ -1303,7 +1516,32 @@
       card.appendChild(value);
       grid.appendChild(card);
     });
-    return grid;
+    section.appendChild(grid);
+    if (counts.pending > 0) {
+      var details = createElement(
+        "details",
+        "build-pending-details");
+      var summary = createElement(
+        "summary",
+        "",
+        "未処理の内訳を表示");
+      var chips = createElement(
+        "div",
+        "build-pending-chips");
+
+      state.modules.forEach(function (module) {
+        if (module.status === "pending") {
+          chips.appendChild(createElement(
+            "span",
+            "build-pending-chip",
+            module.name));
+        }
+      });
+      details.appendChild(summary);
+      details.appendChild(chips);
+      section.appendChild(details);
+    }
+    return section;
   }
 
   function createBuildTargetTable(state) {
@@ -1350,6 +1588,12 @@
         "build-module-lines",
         module.changedLineCount + " 行");
       name.scope = "row";
+      if (module.isNew === true) {
+        name.appendChild(createElement(
+          "span",
+          "build-new-badge",
+          "新規"));
+      }
       row.appendChild(name);
       row.appendChild(type);
       row.appendChild(count);
@@ -1376,12 +1620,20 @@
       state.buildTimestamp,
       state.appInfo && state.appInfo.buildFileLabel);
     var name = createElement("code", "build-output-name", fileName);
+    var nameRow = createElement("div", "build-copy-row");
+    var copy = createIconButton(
+      "出力ファイル名をコピー",
+      "copy-text");
 
     heading.id = "build-output-title";
     section.setAttribute("aria-labelledby", heading.id);
     name.title = fileName;
+    copy.setAttribute("data-copy-text", fileName);
+    copy.setAttribute("data-copy-label", "出力ファイル名");
+    nameRow.appendChild(name);
+    nameRow.appendChild(copy);
     section.appendChild(heading);
-    section.appendChild(name);
+    section.appendChild(nameRow);
     section.appendChild(createElement(
       "p",
       "build-output-note",
@@ -1400,12 +1652,15 @@
       "build-back");
     var build = createActionButton(
       "ビルド",
-      "action-button--primary build-primary-action is-guided-target",
+      "action-button--primary build-primary-action",
       "build-book");
 
     build.disabled = !state.buildTimestamp ||
       state.busyAction !== null;
     back.disabled = state.busyAction !== null;
+    build.classList.toggle(
+      "is-guided-target",
+      isGuideTarget("build-book"));
     workspace.setAttribute("data-build-view", "confirmation");
     workspace.appendChild(createBuildCountGrid(state));
     workspace.appendChild(createBuildTargetTable(state));
@@ -1438,7 +1693,7 @@
     card.appendChild(createElement(
       "p",
       "",
-      "書き込み後にブックを読み直して検証しています。"));
+      "書き戻し後にブックを読み直して検証しています。"));
     card.appendChild(createElement(
       "code",
       "build-progress-name",
@@ -1519,21 +1774,31 @@
       "code",
       "build-result-path",
       result.outputPath);
+    var outputRow = createElement("div", "build-copy-row");
+    var copy = createIconButton(
+      "出力パスをコピー",
+      "copy-text");
     var actions = createElement("div", "step-actions");
     var continueButton = createActionButton(
       "続けて改修する",
-      "action-button--secondary",
+      "action-button--tertiary",
       "build-continue");
     var reveal = createActionButton(
       state.busyAction === "revealPath"
         ? "出力フォルダを開いています"
         : "出力フォルダを開く",
-      "action-button--primary is-guided-target",
+      "action-button--primary",
       "reveal-build-output");
 
     output.title = result.outputPath;
+    copy.setAttribute("data-copy-text", result.outputPath);
+    copy.setAttribute("data-copy-label", "出力パス");
+    continueButton.title = "同じブックの取り込みへ戻ります";
     reveal.disabled = state.busyAction !== null;
     continueButton.disabled = state.busyAction !== null;
+    reveal.classList.toggle(
+      "is-guided-target",
+      isGuideTarget("reveal-build-output"));
     if (state.busyAction === "revealPath") {
       reveal.insertBefore(
         createElement("span", "loading-spinner"),
@@ -1548,18 +1813,26 @@
     headingGroup.lastChild.appendChild(createElement(
       "span",
       "success-label",
-      "BUILD VERIFIED"));
+      "ビルド完了"));
     headingGroup.lastChild.appendChild(createElement(
       "h3",
       "",
       "改修版ブックを作成しました"));
     card.appendChild(headingGroup);
-    card.appendChild(output);
+    outputRow.appendChild(output);
+    outputRow.appendChild(copy);
+    card.appendChild(outputRow);
     card.appendChild(createElement(
       "p",
       "build-result-guidance",
       "Excel で開いてマクロの動作を確認してください。"));
     actions.appendChild(continueButton);
+    if (result.diffError || !result.diffPath) {
+      actions.appendChild(createElement(
+        "span",
+        "diff-report-unavailable",
+        "差分レポートは作成できませんでした"));
+    }
     actions.appendChild(reveal);
     card.appendChild(actions);
     workspace.setAttribute("data-build-view", "success");
@@ -1585,7 +1858,7 @@
       "build-back");
     var retry = createActionButton(
       "もう一度ビルド",
-      "action-button--primary is-guided-target",
+      "action-button--primary",
       "retry-build");
 
     headingText.appendChild(createElement(
@@ -1596,6 +1869,9 @@
       "h3",
       "",
       "改修版ブックを作成できませんでした"));
+    retry.classList.toggle(
+      "is-guided-target",
+      isGuideTarget("retry-build"));
     headingGroup.appendChild(createBuildStatusIcon("error"));
     headingGroup.appendChild(headingText);
     card.appendChild(headingGroup);
@@ -1640,7 +1916,8 @@
     screen.appendChild(createScreenHeader(
       4,
       "改修版ブックをビルド",
-      "書き戻し " + counts.changed + " モジュール"));
+      state.book ? state.book.name : "",
+      "書き戻し " + counts.changed + " 個"));
     screen.appendChild(body);
     return screen;
   }
@@ -1740,6 +2017,18 @@
     global.MacroDeskState.setBuildConfirmation(timestamp);
     clearToast();
     return timestamp;
+  }
+
+  function goToBuildConfirmation() {
+    if (!global.MacroDeskState.canNavigate(4)) {
+      return false;
+    }
+    prepareBuildConfirmation();
+    if (global.MacroDeskState.navigate(4)) {
+      elements.main.focus();
+      return true;
+    }
+    return false;
   }
 
   function recordInfo(message) {
@@ -1911,15 +2200,15 @@
     return timestamp;
   }
 
-  function attachPath(path) {
+  function showDiscardModal(path) {
+    pendingAttachPath = path;
+    elements.discardModal.showModal();
+  }
+
+  function performAttachPath(path) {
     var state = global.MacroDeskState.getState();
 
     if (!path || state.busyAction) {
-      return Promise.resolve(null);
-    }
-    if (global.MacroDeskState.hasImportedModules() &&
-        !global.confirm(
-          "取り込み済みの内容が破棄されます。別のブックを添付しますか？")) {
       return Promise.resolve(null);
     }
 
@@ -1946,6 +2235,19 @@
     });
   }
 
+  function attachPath(path) {
+    var state = global.MacroDeskState.getState();
+
+    if (!path || state.busyAction) {
+      return Promise.resolve(null);
+    }
+    if (global.MacroDeskState.hasImportedModules()) {
+      showDiscardModal(path);
+      return Promise.resolve(null);
+    }
+    return performAttachPath(path);
+  }
+
   function pickBook() {
     var state = global.MacroDeskState.getState();
 
@@ -1967,6 +2269,42 @@
         global.MacroDeskState.setBusyAction(null);
         return null;
       });
+  }
+
+  function showPresetFeedback(file) {
+    var buttons = document.querySelectorAll("[data-preset-file]");
+    var target = null;
+
+    Array.prototype.some.call(buttons, function (button) {
+      if (button.getAttribute("data-preset-file") === file) {
+        target = button;
+        return true;
+      }
+      return false;
+    });
+    if (!target) {
+      return;
+    }
+    if (presetFeedbackTimer !== null) {
+      global.clearTimeout(presetFeedbackTimer);
+    }
+    target.textContent = "✓ 追加しました";
+    target.classList.add("is-added");
+    presetFeedbackTimer = global.setTimeout(function () {
+      var currentButtons = document.querySelectorAll(
+        "[data-preset-file]");
+
+      Array.prototype.some.call(currentButtons, function (button) {
+        if (button.getAttribute("data-preset-file") === file) {
+          button.textContent =
+            "＋ " + button.getAttribute("data-preset-name");
+          button.classList.remove("is-added");
+          return true;
+        }
+        return false;
+      });
+      presetFeedbackTimer = null;
+    }, 2000);
   }
 
   function loadPreset(file) {
@@ -1998,6 +2336,7 @@
           textarea.value.length,
           textarea.value.length);
       }
+      showPresetFeedback(file);
       return result;
     }, function (error) {
       handleHostError(error, "");
@@ -2138,8 +2477,8 @@
     announce(
       module.name +
       (accepted.status === "unchanged"
-        ? " は変更なしで確定しました。"
-        : " を変更 " + changedLineCount + " 行で確定しました。"));
+        ? " は変更なしとして取り込みました。"
+        : " を変更 " + changedLineCount + " 行で取り込みました。"));
     recordPaste(module, normalizedText);
     return true;
   }
@@ -2298,6 +2637,33 @@
       !module.showChangesOnly);
   }
 
+  function toggleSelectedDiffWrap() {
+    var state = global.MacroDeskState.getState();
+    var module = global.MacroDeskState.findModule(
+      state.selectedModuleName);
+
+    if (!module) {
+      return false;
+    }
+    return global.MacroDeskState.setModuleWrapDiff(
+      module.name,
+      !module.wrapDiff);
+  }
+
+  function jumpSelectedDiff(direction) {
+    var host = elements.main.querySelector(".diff-table-host");
+    var counter = elements.main.querySelector(
+      ".diff-change-counter");
+
+    if (!host) {
+      return false;
+    }
+    return global.MacroDeskDiffView.jumpToChange(
+      host,
+      direction,
+      counter);
+  }
+
   function loadAppInfo() {
     return global.hostBridge.request("getAppInfo").then(
       function (appInfo) {
@@ -2318,9 +2684,8 @@
       return;
     }
     if (targetStep === 4) {
-      prepareBuildConfirmation();
-    }
-    if (global.MacroDeskState.navigate(targetStep)) {
+      goToBuildConfirmation();
+    } else if (global.MacroDeskState.navigate(targetStep)) {
       elements.main.focus();
     }
   }
@@ -2398,6 +2763,8 @@
     } else if (action === "step2-next") {
       global.MacroDeskState.navigate(3);
       elements.main.focus();
+    } else if (action === "step3-next") {
+      goToBuildConfirmation();
     } else if (action === "paste-response" ||
         action === "repaste-response") {
       pasteFromClipboard();
@@ -2413,6 +2780,16 @@
         global.MacroDeskState.getState().selectedModuleName);
     } else if (action === "toggle-diff-context") {
       toggleSelectedDiffContext();
+    } else if (action === "toggle-diff-wrap") {
+      toggleSelectedDiffWrap();
+    } else if (action === "previous-change") {
+      jumpSelectedDiff(-1);
+    } else if (action === "next-change") {
+      jumpSelectedDiff(1);
+    } else if (action === "copy-text") {
+      copyText(
+        button.getAttribute("data-copy-text"),
+        button.getAttribute("data-copy-label"));
     } else if (action === "build-book") {
       buildBook();
     } else if (action === "reveal-build-output") {
@@ -2460,6 +2837,24 @@
     acceptPastedText(text, selected.name);
   }
 
+  function onDocumentKeyDown(event) {
+    var state;
+
+    if (!event.altKey ||
+        (event.key !== "ArrowUp" &&
+         event.key !== "ArrowDown")) {
+      return;
+    }
+    state = global.MacroDeskState.getState();
+    if (state.currentStep !== 3 ||
+        state.busyAction !== null ||
+        !elements.main.querySelector(".diff-table-host")) {
+      return;
+    }
+    event.preventDefault();
+    jumpSelectedDiff(event.key === "ArrowUp" ? -1 : 1);
+  }
+
   function hasDemoQuery() {
     var query = global.location.search || "";
     return /(?:^\?|&)demo=1(?:&|$)/.test(query);
@@ -2476,7 +2871,12 @@
       moduleEmpty: document.getElementById("module-empty"),
       main: document.getElementById("main-content"),
       statusAnnouncer: document.getElementById("status-announcer"),
-      toastRegion: document.getElementById("toast-region")
+      toastRegion: document.getElementById("toast-region"),
+      discardModal: document.getElementById("discard-modal"),
+      discardModalCancel: document.getElementById(
+        "discard-modal-cancel"),
+      discardModalConfirm: document.getElementById(
+        "discard-modal-confirm")
     };
 
     elements.progressButtons.forEach(function (button) {
@@ -2489,6 +2889,23 @@
     elements.main.addEventListener("click", onMainClick);
     elements.main.addEventListener("input", onMainInput);
     document.addEventListener("paste", onDocumentPaste);
+    document.addEventListener("keydown", onDocumentKeyDown);
+    elements.discardModalCancel.addEventListener("click", function () {
+      pendingAttachPath = null;
+      elements.discardModal.close();
+      announce("ブックの差し替えをキャンセルしました。");
+    });
+    elements.discardModalConfirm.addEventListener("click", function () {
+      var path = pendingAttachPath;
+
+      pendingAttachPath = null;
+      elements.discardModal.close();
+      performAttachPath(path);
+    });
+    elements.discardModal.addEventListener("cancel", function () {
+      pendingAttachPath = null;
+      announce("ブックの差し替えをキャンセルしました。");
+    });
 
     global.MacroDeskState.subscribe(render);
     if (hasDemoQuery()) {

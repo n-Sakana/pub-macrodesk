@@ -104,10 +104,10 @@ assertEqual(
   app.getHostErrorMessage({
     code: "E-SYS-02",
     data: {
-      userMessage: "プリセットは UTF-8 で保存してください。"
+      userMessage: "ひな形は UTF-8 で保存してください。"
     }
   }),
-  "プリセットは UTF-8 で保存してください。",
+  "ひな形は UTF-8 で保存してください。",
   "Safe host-provided user message was not displayed.");
 
 assertEqual(

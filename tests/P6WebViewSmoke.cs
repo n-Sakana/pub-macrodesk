@@ -224,7 +224,7 @@ namespace MacroDesk.Tests
                         "selected:MacroDeskState.getState()" +
                         ".selectedModuleName," +
                         "glow:document.querySelectorAll(" +
-                        "'.module-item.is-next-target').length," +
+                        "'.module-item.is-guided-target').length," +
                         "step4:document.querySelector(" +
                         "'.progress-step[data-step=\"4\"]')" +
                         ".classList.contains('is-ready')," +
@@ -254,7 +254,7 @@ namespace MacroDesk.Tests
                         "branch:document.getElementById(" +
                         "'lecture-panel').dataset.branch," +
                         "moduleGlow:document.querySelectorAll(" +
-                        "'.module-item.is-next-target').length" +
+                        "'.module-item.is-guided-target').length" +
                         "})");
                     await Capture(waitingScreenshot);
 
@@ -308,6 +308,10 @@ namespace MacroDesk.Tests
                         "nonEqual:document.querySelectorAll(" +
                         "'.diff-row--changed,.diff-row--removed," +
                         ".diff-row--added').length," +
+                        "inlineMarks:document.querySelectorAll(" +
+                        "'.diff-row--changed .diff-inline-mark').length," +
+                        "changedTokens:document.querySelectorAll(" +
+                        "'.diff-row--changed .vba-token').length," +
                         "result:document.querySelector(" +
                         "'.diff-result').textContent," +
                         "badge:document.querySelector(" +
@@ -384,7 +388,7 @@ namespace MacroDesk.Tests
                         "'TimerUtils').changedLineCount," +
                         "prevented:window.__p6PastePrevented," +
                         "nextGlow:document.querySelectorAll(" +
-                        "'.module-item.is-next-target').length," +
+                        "'.module-item.is-guided-target').length," +
                         "step4:document.querySelector(" +
                         "'.progress-step[data-step=\"4\"]')" +
                         ".classList.contains('is-ready')" +
@@ -603,12 +607,44 @@ namespace MacroDesk.Tests
                         "'.diff-table-host')).display" +
                         "})");
                     await Execute(
+                        "document.querySelector('.diff-gap-button')" +
+                        ".click();");
+                    await WaitFor(
+                        "document.querySelectorAll('.diff-gap')" +
+                        ".length===1");
+                    string largeExpanded = await ReadJson(
+                        "({" +
+                        "rows:document.querySelectorAll(" +
+                        "'.diff-row').length," +
+                        "gaps:document.querySelectorAll(" +
+                        "'.diff-gap').length" +
+                        "})");
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"toggle-diff-wrap\"]')" +
+                        ".click();");
+                    await WaitFor(
+                        "MacroDeskState.findModule('WindowUtils')" +
+                        ".wrapDiff === true");
+                    string largeWrapped = await ReadJson(
+                        "({" +
+                        "pressed:document.querySelector(" +
+                        "'[data-action=\"toggle-diff-wrap\"]')" +
+                        ".getAttribute('aria-pressed')," +
+                        "wrapped:document.querySelector(" +
+                        "'.diff-table-scroller').classList" +
+                        ".contains('is-wrapped')," +
+                        "whiteSpace:getComputedStyle(" +
+                        "document.querySelector('.diff-code'))" +
+                        ".whiteSpace" +
+                        "})");
+                    await Execute(
                         "document.querySelector(" +
                         "'[data-action=\"toggle-diff-context\"]')" +
                         ".click();");
                     await WaitFor(
                         "MacroDeskState.findModule('WindowUtils')" +
-                        ".showChangesOnly === true");
+                        ".showChangesOnly === false");
                     string largeContext = await ReadJson(
                         "({" +
                         "rows:document.querySelectorAll(" +
@@ -936,6 +972,8 @@ namespace MacroDesk.Tests
                     result.Add("newIntake", newIntake);
                     result.Add("newModule", newModule);
                     result.Add("largeFull", largeFull);
+                    result.Add("largeExpanded", largeExpanded);
+                    result.Add("largeWrapped", largeWrapped);
                     result.Add("largeContext", largeContext);
                     result.Add(
                         "buildConfirmation",
@@ -1025,7 +1063,7 @@ namespace MacroDesk.Tests
                     "m.pastedCode=b.join('\\r\\n')+'\\r\\n';" +
                     "m.status='changed';" +
                     "m.changedLineCount=1;" +
-                    "m.showChangesOnly=false;" +
+                    "m.showChangesOnly=true;" +
                     "m.written=false;" +
                     "MacroDeskState.selectModule('WindowUtils');" +
                     "}());");

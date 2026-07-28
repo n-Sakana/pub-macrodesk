@@ -178,6 +178,12 @@ namespace MacroDesk.Tests
                     Dictionary<string, string> builds =
                         new Dictionary<string, string>();
 
+                    string themeLight = await ReadThemeMetrics();
+                    await Execute(
+                        "document.getElementById('theme-toggle').click();");
+                    string themeDark = await ReadThemeMetrics();
+                    string themeRestored;
+
                     await Execute("window.__p8SetBase();");
                     guided.Add("step1Unattached", await ReadMetrics());
 
@@ -189,6 +195,18 @@ namespace MacroDesk.Tests
                     await Execute("MacroDeskState.navigate(2);");
                     guided.Add("step2Empty", await ReadMetrics());
                     await Capture(presetScreenshot);
+                    await Execute(
+                        "MacroDeskState.setAppInfo(" +
+                        "{version:'1.0',presets:[]});");
+                    guided.Add(
+                        "step2EmptyNoPresets",
+                        await ReadMetrics());
+                    await Execute(
+                        "MacroDeskState.setAppInfo(" +
+                        "window.__p8AppInfo);");
+                    await Execute(
+                        "document.getElementById('theme-toggle').click();");
+                    themeRestored = await ReadThemeMetrics();
 
                     await Execute(
                         "MacroDeskState.setRequestText(" +
@@ -197,7 +215,7 @@ namespace MacroDesk.Tests
 
                     await Execute(
                         "MacroDeskState.setRequestFilePath(" +
-                        "'C:\\\\Work\\\\request.txt');");
+                        "'output\\\\request.txt');");
                     guided.Add("step2Created", await ReadMetrics());
 
                     await Execute(
@@ -230,6 +248,27 @@ namespace MacroDesk.Tests
                         await ReadMetrics());
 
                     await Execute(
+                        "window.__p8SetBase();" +
+                        "MacroDeskState.setBook(" +
+                        "window.__p8Book,window.__p8Modules());" +
+                        "MacroDeskState.navigate(3);" +
+                        "MacroDeskState.toggleModuleExcluded('ModuleA');" +
+                        "MacroDeskState.toggleModuleExcluded('ModuleB');" +
+                        "MacroDeskState.toggleModuleExcluded('ModuleC');");
+                    guided.Add(
+                        "step3NoChange",
+                        await ReadMetrics());
+
+                    await Execute(
+                        "window.__p8SetBase();" +
+                        "MacroDeskState.setBook(" +
+                        "window.__p8Book,window.__p8Modules());" +
+                        "MacroDeskState.navigate(3);" +
+                        "MacroDeskState.acceptModuleCode(" +
+                        "'ModuleA','Option Explicit\\r\\n" +
+                        "Public Sub Test(): End Sub\\r\\n',1);" +
+                        "MacroDeskState.toggleModuleExcluded('ModuleB');" +
+                        "MacroDeskState.toggleModuleExcluded('ModuleC');" +
                         "MacroDeskApp.prepareBuildConfirmation();" +
                         "MacroDeskState.navigate(4);");
                     guided.Add("step4Confirmation", await ReadMetrics());
@@ -268,7 +307,7 @@ namespace MacroDesk.Tests
                     await Execute(
                         "MacroDeskState.setBuildResult({" +
                         "status:'success'," +
-                        "outputPath:'C:\\\\Work\\\\output.xlsm'," +
+                        "outputPath:'output\\\\output.xlsm'," +
                         "results:[]});" +
                         "MacroDeskState.setLastError(null);");
                     guided.Add("step4Success", await ReadMetrics());
@@ -294,7 +333,7 @@ namespace MacroDesk.Tests
                             "MacroDeskApp.handleHostError({" +
                             "code:'" + code + "'," +
                             "message:'RAW HOST DETAIL'}," +
-                            "'C:\\\\Work\\\\sample.xlsm');");
+                            "'samples\\\\sample.xlsm');");
                         errors.Add(code, await ReadMetrics());
                     }
 
@@ -312,6 +351,9 @@ namespace MacroDesk.Tests
                     result.Add("guided", guided);
                     result.Add("errors", errors);
                     result.Add("builds", builds);
+                    result.Add("themeLight", themeLight);
+                    result.Add("themeDark", themeDark);
+                    result.Add("themeRestored", themeRestored);
                     result.Add(
                         "logRecords",
                         await ReadJson("window.__p8Logs"));
@@ -351,7 +393,7 @@ namespace MacroDesk.Tests
                     "};" +
                     "window.__p8Book={" +
                     "name:'sample.xlsm'," +
-                    "path:'C:\\\\Work\\\\sample.xlsm'," +
+                    "path:'samples\\\\sample.xlsm'," +
                     "ext:'.xlsm',totalLines:6};" +
                     "window.__p8Modules=function(){return[" +
                     "{name:'ModuleA',type:'standard'," +
@@ -422,6 +464,7 @@ namespace MacroDesk.Tests
                     ".classList.contains('is-ready')," +
                     "step4Guided:q('.progress-step[data-step=\"4\"]')" +
                     ".classList.contains('is-guided-target')," +
+                    "doneBar:q('.step-done-bar')!==null," +
                     "branch:panel.dataset.branch," +
                     "errorCode:panel.getAttribute('data-error-code')||'',"+
                     "title:q('#lecture-title').textContent," +
@@ -442,6 +485,26 @@ namespace MacroDesk.Tests
                     "horizontal:document.documentElement.scrollWidth>" +
                     "innerWidth" +
                     "};}())");
+            }
+
+            private async Task<string> ReadThemeMetrics()
+            {
+                return await ReadJson(
+                    "({" +
+                    "theme:document.documentElement" +
+                    ".getAttribute('data-theme')," +
+                    "stored:localStorage.getItem('macrodesk.theme')," +
+                    "background:getComputedStyle(document.body)" +
+                    ".backgroundColor," +
+                    "label:document.getElementById('theme-toggle')" +
+                    ".getAttribute('aria-label')," +
+                    "announced:document.getElementById(" +
+                    "'status-announcer').textContent," +
+                    "visibleIcons:document.querySelectorAll(" +
+                    "'#theme-toggle .theme-icon:not([hidden])').length," +
+                    "guided:document.getElementById('theme-toggle')" +
+                    ".classList.contains('is-guided-target')" +
+                    "})");
             }
 
             private async Task<string> ReadLectureMatrix()
