@@ -104,6 +104,10 @@ assert(
     lecture.contentByKey["L3-3"].body.indexOf("緑") >= 0,
   "L3-3 must explain diff colors in text.");
 assert(
+  lecture.contentByKey["L3-3"].body.indexOf("残りのモジュール") >= 0 &&
+    lecture.contentByKey["L3-3"].body.indexOf("④") >= 0,
+  "L3-3 must explain how to continue after checking the diff.");
+assert(
   lecture.contentByKey["L4-1"].body.indexOf("元のブック") >= 0 &&
     lecture.contentByKey["L4-1"].body.indexOf("変更しません") >= 0,
   "L4-1 must explain that the source is unchanged.");
