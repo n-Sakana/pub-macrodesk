@@ -287,6 +287,23 @@ try {
         'Step 2 lecture branch mismatch before creation.'
     Assert-True ($preset.horizontal -eq $false) `
         'Step 2 screen has horizontal document scroll.'
+    $presetFile = Get-ChildItem (Join-Path $repoRoot 'presets') `
+        -Filter '*.md' | Select-Object -First 1
+    $presetBody = [IO.File]::ReadAllText(
+        $presetFile.FullName,
+        [Text.Encoding]::UTF8).Trim()
+    $presetFirstLine = ($presetBody -split "`r?`n")[0].Trim()
+    Assert-True (
+        $presetFirstLine.Length -gt 0 -and
+        ([string]$preset.requestText).Contains($presetFirstLine) -and
+        ([string]$preset.requestText).Contains('Win32 API')) `
+        'Preset did not inject the migration request.'
+    Assert-True (
+        -not ([string]$preset.requestText).Contains('64 bit') -and
+        -not ([string]$preset.requestText).Contains('64bit') -and
+        -not ([string]$preset.requestText).Contains('PtrSafe') -and
+        -not ([string]$preset.requestText).Contains('Sleep')) `
+        'Preset still injects legacy wording.'
 
     Assert-InsideDirectory $requestPath $bookDirectory
     Assert-True ([IO.File]::Exists($requestPath)) `
@@ -317,6 +334,10 @@ try {
         'Clipboard does not hold the request prompt.'
     Assert-True ($result.clipboardHasCode -eq $false) `
         'Clipboard contains module source code.'
+    Assert-True ($result.clipboardMentionsWin32 -eq $true) `
+        'Clipboard prompt does not carry the migration request.'
+    Assert-True ($result.clipboardHasLegacyWording -eq $false) `
+        'Clipboard prompt contains legacy wording.'
 
     $attachLogs = @($logs | Where-Object {
         $_ -like 'attach: * (* modules)'

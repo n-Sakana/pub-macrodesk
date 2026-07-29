@@ -115,6 +115,7 @@ node tests\test-p7-state.js
 node tests\test-p8-lecture.js
 node tests\test-paste-edit.js
 node tests\test-paste-normalize.js
+node tests\test-preset-migration.js
 node tests\test-prompt-template.js
 node tests\test-vba-highlight.js
 ```

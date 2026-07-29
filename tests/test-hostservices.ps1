@@ -541,9 +541,12 @@ if ($TestExplorer) {
             Join-Path $testdataRoot 't2_6_outputs')
         Assert-True ([IO.File]::Exists($requestPath)) `
             'Code file was not created.'
+        $codeFileLabel = [IO.File]::ReadAllText(
+            (Join-Path $repoRoot 'assets\messages\code-file-label.txt'),
+            [Text.Encoding]::UTF8).Trim()
         Assert-True (
             [IO.Path]::GetFileName($requestPath) -like
-                '*_コード全文_*.txt') `
+                ('*_' + $codeFileLabel + '_*.txt')) `
             'Code file name must use the code-file label.'
 
         $bytes = [IO.File]::ReadAllBytes($requestPath)

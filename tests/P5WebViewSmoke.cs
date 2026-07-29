@@ -357,6 +357,23 @@ namespace MacroDesk.Tests
                         clipboardText.IndexOf(
                             "End Sub",
                             StringComparison.Ordinal) >= 0;
+                    bool clipboardMentionsWin32 =
+                        clipboardText.IndexOf(
+                            "Win32 API",
+                            StringComparison.Ordinal) >= 0;
+                    bool clipboardHasLegacyWording =
+                        clipboardText.IndexOf(
+                            "64 bit",
+                            StringComparison.Ordinal) >= 0 ||
+                        clipboardText.IndexOf(
+                            "64bit",
+                            StringComparison.Ordinal) >= 0 ||
+                        clipboardText.IndexOf(
+                            "PtrSafe",
+                            StringComparison.Ordinal) >= 0 ||
+                        clipboardText.IndexOf(
+                            "Sleep",
+                            StringComparison.Ordinal) >= 0;
                     RestoreClipboard();
 
                     string fileText = File.ReadAllText(
@@ -425,6 +442,12 @@ namespace MacroDesk.Tests
                         "clipboardMatchesPrompt",
                         clipboardMatchesPrompt);
                     result.Add("clipboardHasCode", clipboardHasCode);
+                    result.Add(
+                        "clipboardMentionsWin32",
+                        clipboardMentionsWin32);
+                    result.Add(
+                        "clipboardHasLegacyWording",
+                        clipboardHasLegacyWording);
                     result.Add("preserved", preserved);
                     result.Add(
                         "logs",
