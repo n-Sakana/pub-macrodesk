@@ -1,56 +1,60 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <defs>
+    <clipPath id="p21-clip"><rect x="40" y="148" width="672" height="378" rx="10"/></clipPath>
+    <clipPath id="p21b-clip"><rect x="740" y="356" width="240" height="135" rx="8"/></clipPath>
+    <clipPath id="p21c-clip"><rect x="1000" y="356" width="240" height="135" rx="8"/></clipPath>
+  </defs>
   <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
 
-  <g id="step-mark" data-pptx-role="decoration" data-pptx-bounds="100 36 100 122">
-    <text x="100" y="120" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="96" font-weight="bold" fill="#E2E8F0">4</text>
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="116" height="36" rx="18" fill="#1F4E79"/>
+    <text x="98" y="75" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">手順 4</text>
+    <text x="174" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2933">改修済みブックを作ります</text>
+    <text x="1240" y="84" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F4E79">別名の新しいブックができます</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E8F0" stroke-width="1"/>
   </g>
 
-  <g id="header" data-pptx-bounds="200 40 980 120">
-    <text x="200" y="62" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">手順 4</text>
-    <text x="200" y="106" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">改修済みブックを作ります</text>
-    <text x="200" y="150" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">別名の新しいブックができる。元のブックは最後まで変わらない</text>
+  <g id="shot" data-pptx-bounds="36 144 680 386">
+    <rect x="36" y="144" width="680" height="386" rx="14" fill="#F4F6F8"/>
+    <image href="../images/17-output-name.png" x="40" y="148" width="672" height="378" preserveAspectRatio="xMidYMid meet" clip-path="url(#p21-clip)"/>
+    <rect x="40" y="148" width="672" height="378" rx="10" fill="none" stroke="#E2E8F0" stroke-width="1"/>
   </g>
 
-  <g id="shot-name" data-pptx-bounds="100 190 340 250">
-    <rect x="100" y="190" width="340" height="209" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
-    <image href="../images/17-output-name.png" x="120" y="210" width="300" height="169" preserveAspectRatio="xMidYMid meet"/>
-    <text x="100" y="425" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">1. 出力ファイル名を確認する</text>
+  <g id="name-note" data-pptx-bounds="36 550 680 102">
+    <rect x="36" y="550" width="680" height="102" rx="14" fill="#F4F6F8"/>
+    <text x="62" y="582" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933"><tspan x="62" dy="0">既定の出力名は「ブック名_macrostudio.xlsm」。名前はファイル名</tspan><tspan x="62" dy="28">だけを入れます。区切り文字や、元と違う拡張子は使えません。</tspan></text>
   </g>
 
-  <g id="shot-building" data-pptx-bounds="470 190 340 250">
-    <rect x="470" y="190" width="340" height="209" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
-    <image href="../images/18-building.png" x="490" y="210" width="300" height="169" preserveAspectRatio="xMidYMid meet"/>
-    <text x="470" y="425" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">2. 自動で進みます（通常 1〜2 秒）</text>
+  <g id="step-label" data-pptx-bounds="736 144 504 156">
+    <text x="736" y="176" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#5B6B7C">1. 出力ファイル名を確認する</text>
+    <text x="736" y="216" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933"><tspan x="736" dy="0">書き戻したあとブックを読み直して、</tspan><tspan x="736" dy="34">意図どおり書き込まれたかを</tspan><tspan x="736" dy="34">検証しています。</tspan></text>
   </g>
 
-  <g id="shot-done" data-pptx-bounds="840 190 340 250">
-    <rect x="840" y="190" width="340" height="209" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
-    <image href="../images/19-done.png" x="860" y="210" width="300" height="169" preserveAspectRatio="xMidYMid meet"/>
-    <text x="840" y="425" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">3. 右下が［完了］になります</text>
+  <g id="shot-building" data-pptx-bounds="736 316 248 220">
+    <text x="736" y="340" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#5B6B7C">2. ビルド中</text>
+    <rect x="736" y="352" width="248" height="143" rx="12" fill="#F4F6F8"/>
+    <image href="../images/18-building.png" x="740" y="356" width="240" height="135" preserveAspectRatio="xMidYMid meet" clip-path="url(#p21b-clip)"/>
+    <rect x="740" y="356" width="240" height="135" rx="8" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="736" y="518" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">自動で進みます（通常 1〜2 秒）</text>
   </g>
 
-  <g id="note-name" data-pptx-bounds="100 452 1080 74">
-    <circle cx="110" cy="467" r="5" fill="#4A87C4"/>
-    <text x="132" y="474" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933"><tspan x="132" dy="0">出力名の既定は「ブック名_macrostudio.xlsm」。名前はファイル名だけを入れます。</tspan><tspan x="132" dy="34">区切り文字や、元と違う拡張子は使えません。</tspan></text>
+  <g id="shot-done" data-pptx-bounds="996 316 248 220">
+    <text x="996" y="340" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#5B6B7C">3. 完成</text>
+    <rect x="996" y="352" width="248" height="143" rx="12" fill="#F4F6F8"/>
+    <image href="../images/19-done.png" x="1000" y="356" width="240" height="135" preserveAspectRatio="xMidYMid meet" clip-path="url(#p21c-clip)"/>
+    <rect x="1000" y="356" width="240" height="135" rx="8" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="996" y="518" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">右下が［完了］になります</text>
   </g>
 
-  <g id="note-build" data-pptx-bounds="100 520 1080 74">
-    <circle cx="110" cy="535" r="5" fill="#4A87C4"/>
-    <text x="132" y="542" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933"><tspan x="132" dy="0">書き戻したあとブックを読み直して、意図どおり書き込まれたかを</tspan><tspan x="132" dy="34">検証しています。</tspan></text>
+  <g id="final-note" data-pptx-bounds="736 548 504 104">
+    <rect x="736" y="548" width="504" height="64" rx="14" fill="#FFFFFF" stroke="#E07B39" stroke-width="2"/>
+    <use data-icon="tabler-filled/alert-triangle" x="762" y="566" width="28" height="28" fill="#E07B39"/>
+    <text x="800" y="589" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F2933">最後に Excel で開いて確認を。</text>
+    <text x="736" y="644" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">［完了］で最初の画面へ戻ります。</text>
   </g>
 
-  <g id="note-done" data-pptx-bounds="100 588 1080 40">
-    <use data-icon="tabler-filled/circle-check" x="100" y="592" width="26" height="26" fill="#1F4E79"/>
-    <text x="132" y="614" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">［完了］を押すと最初の画面へ戻り、次のブックに移れます。</text>
-  </g>
-
-  <g id="note-check" data-pptx-bounds="100 628 1080 40">
-    <use data-icon="tabler-filled/alert-triangle" x="100" y="632" width="26" height="26" fill="#E07B39"/>
-    <text x="132" y="654" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#E07B39">最後に Excel で開いて、マクロの動作を確認してください。</text>
-  </g>
-
-  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 684 1080 24">
-    <text x="100" y="702" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
-    <text x="1180" y="702" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">21</text>
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 674 1200 32">
+    <text x="40" y="698" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1240" y="698" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">21</text>
   </g>
 </svg>

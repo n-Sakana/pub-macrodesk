@@ -9,7 +9,7 @@
     <circle cx="1200" cy="646" r="436" fill="#F1F5F9"/>
   </g>
 
-  <g id="cover-title" data-pptx-bounds="40 46 620 274">
+  <g id="cover-title" data-pptx-bounds="40 46 620 288">
     <rect x="40" y="54" width="196" height="38" rx="19" fill="#E07B39"/>
     <text x="138" y="80" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">ベータ版 1.0.0</text>
     <text x="40" y="214" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="72" font-weight="bold" fill="#1F4E79"><tspan x="40" dy="0">コードは</tspan><tspan x="40" dy="88">読めなくていい。</tspan></text>
@@ -28,7 +28,7 @@
     <text x="858" y="265" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">画面はサンプルのブックです</text>
   </g>
 
-  <g id="cover-footnote" data-pptx-bounds="40 640 620 44">
+  <g id="cover-footnote" data-pptx-bounds="40 642 620 54">
     <text x="40" y="660" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C"><tspan x="40" dy="0">サービス説明と操作マニュアル</tspan><tspan x="40" dy="24">ベータ版のため、画面の文言や配置は今後変わることがあります</tspan></text>
   </g>
 </svg>

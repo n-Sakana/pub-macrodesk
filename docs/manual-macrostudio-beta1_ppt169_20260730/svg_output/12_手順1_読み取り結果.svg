@@ -1,45 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <defs>
+    <clipPath id="p12a-clip"><rect x="40" y="180" width="580" height="326" rx="10"/></clipPath>
+    <clipPath id="p12b-clip"><rect x="660" y="180" width="580" height="326" rx="10"/></clipPath>
+  </defs>
   <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
 
-  <g id="step-mark" data-pptx-role="decoration" data-pptx-bounds="100 36 100 122">
-    <text x="100" y="120" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="96" font-weight="bold" fill="#E2E8F0">1</text>
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#1F4E79"/>
+    <text x="114" y="75" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">手順 1 · 2/3</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2933">読み込んだマクロを確認します</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E8F0" stroke-width="1"/>
   </g>
 
-  <g id="header" data-pptx-bounds="200 40 980 120">
-    <text x="200" y="62" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">手順 1 ・ 2/3</text>
-    <text x="200" y="106" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">読み込んだマクロを確認します</text>
-    <text x="200" y="150" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">ここではまだ、元のブックに一切書き込んでいない</text>
+  <g id="shot-closed" data-pptx-bounds="36 144 588 400">
+    <text x="40" y="166" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#5B6B7C">閉じた状態</text>
+    <rect x="36" y="176" width="588" height="334" rx="14" fill="#F4F6F8"/>
+    <image href="../images/03-read.png" x="40" y="180" width="580" height="326" preserveAspectRatio="xMidYMid meet" clip-path="url(#p12a-clip)"/>
+    <rect x="40" y="180" width="580" height="326" rx="10" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="40" y="536" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">「受注管理.xlsm から 4モジュール・412行を読み込みました」</text>
   </g>
 
-  <g id="shot-closed" data-pptx-bounds="100 180 530 350">
-    <rect x="100" y="180" width="530" height="315" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
-    <image href="../images/03-read.png" x="120" y="200" width="490" height="275" preserveAspectRatio="xMidYMid meet"/>
-    <text x="100" y="521" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">閉じた状態</text>
+  <g id="shot-open" data-pptx-bounds="656 144 588 400">
+    <text x="660" y="166" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#5B6B7C">「読み取った内容を見る」を開いた状態</text>
+    <rect x="656" y="176" width="588" height="334" rx="14" fill="#F4F6F8"/>
+    <image href="../images/04-read-open.png" x="660" y="180" width="580" height="326" preserveAspectRatio="xMidYMid meet" clip-path="url(#p12b-clip)"/>
+    <rect x="660" y="180" width="580" height="326" rx="10" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="660" y="536" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">モジュール名と行数の一覧が出ます</text>
   </g>
 
-  <g id="shot-open" data-pptx-bounds="650 180 530 350">
-    <rect x="650" y="180" width="530" height="315" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
-    <image href="../images/04-read-open.png" x="670" y="200" width="490" height="275" preserveAspectRatio="xMidYMid meet"/>
-    <text x="650" y="521" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">「読み取った内容を見る」を開いた状態</text>
+  <g id="claim" data-pptx-bounds="36 566 1208 86">
+    <rect x="36" y="566" width="1208" height="86" rx="14" fill="#FFFFFF" stroke="#2E7D5B" stroke-width="2"/>
+    <use data-icon="tabler-filled/shield-check" x="68" y="596" width="30" height="30" fill="#2E7D5B"/>
+    <text x="116" y="620" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" font-weight="bold" fill="#1F2933">ここでは元のブックには一切書き込んでいません。読んでいるだけです。</text>
   </g>
 
-  <g id="note-1" data-pptx-bounds="100 534 1080 40">
-    <use data-icon="tabler-filled/file-code" x="100" y="538" width="26" height="26" fill="#4A87C4"/>
-    <text x="140" y="562" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">「受注管理.xlsm から 4モジュール・412行を読み込みました」のように結果が出ます。</text>
-  </g>
-
-  <g id="note-2" data-pptx-bounds="100 578 1080 40">
-    <use data-icon="tabler-filled/eye" x="100" y="582" width="26" height="26" fill="#4A87C4"/>
-    <text x="140" y="606" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">中身を見たいときは「読み取った内容を見る」を開くと、モジュール名と行数の一覧が出ます。</text>
-  </g>
-
-  <g id="note-3" data-pptx-bounds="100 622 1080 40">
-    <use data-icon="tabler-filled/shield-check" x="100" y="626" width="26" height="26" fill="#E07B39"/>
-    <text x="140" y="650" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">ここでは元のブックには一切書き込んでいません。</text>
-  </g>
-
-  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 684 1080 24">
-    <text x="100" y="702" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
-    <text x="1180" y="702" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">12</text>
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1240" y="692" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">12</text>
   </g>
 </svg>

@@ -1,64 +1,56 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
   <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
 
-  <g id="header" data-pptx-bounds="100 44 1080 148">
-    <text x="100" y="84" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">取り込めないとき</text>
-    <text x="100" y="128" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">何も取り込まれないので、そのままやり直せる</text>
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="188" height="36" rx="18" fill="#E07B39"/>
+    <text x="134" y="75" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">取り込めないとき</text>
+    <text x="246" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2933">表示された文言から、原因を引きます</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E8F0" stroke-width="1"/>
   </g>
 
-  <g id="reassure" data-pptx-bounds="100 152 1080 52">
-    <rect x="100" y="152" width="1080" height="52" rx="14" fill="#F1F5F9"/>
-    <use data-icon="tabler-filled/shield-check" x="124" y="166" width="24" height="24" fill="#1F4E79"/>
-    <text x="162" y="186" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">どの場合も何も取り込まれないので、そのままやり直せます。元のブックも変わりません。</text>
+  <g id="reassure" data-pptx-bounds="40 144 1200 66">
+    <rect x="40" y="144" width="1200" height="66" rx="14" fill="#FFFFFF" stroke="#2E7D5B" stroke-width="2"/>
+    <use data-icon="tabler-filled/shield-check" x="72" y="164" width="28" height="28" fill="#2E7D5B"/>
+    <text x="116" y="187" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F2933">どの場合も何も取り込まれないので、そのままやり直せます。元のブックも変わりません。</text>
   </g>
 
-  <g id="table" data-pptx-replace-with="table" data-pptx-bounds="100 220 1080 440">
-    <metadata type="application/json">{"name":"p19-intake-errors","columns":["表示されること","意味","どうするか"],"rows":[["別の依頼への返答のようです","依頼番号が今回のものと違う","依頼文をコピーし直して AI へ送り直す"],["返答が途中で切れているようです","終わりの行が無い","コードブロック全体をコピーし直す"],["取り込める形のコードが見つかりませんでした","区切り行が無い","コードブロック全体（区切り行を含む）をコピーし直す"],["同じモジュールが2回入っていました","重複","AI へ、モジュールごとに1 つだけ返すよう伝える"],["クリップボードが空でした","コピーできていない","コードブロックのコピーボタンで取り直す"]],"style":{"font_family":"'Yu Gothic UI','Segoe UI',sans-serif","font_size":20,"colors":["#1F4E79","#F1F5F9"]}}</metadata>
-    <rect x="100" y="220" width="380" height="44" rx="10" fill="#1F4E79"/>
-    <text x="124" y="249" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">表示されること</text>
-    <rect x="492" y="220" width="280" height="44" rx="10" fill="#1F4E79"/>
-    <text x="516" y="249" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">意味</text>
-    <rect x="784" y="220" width="396" height="44" rx="10" fill="#1F4E79"/>
-    <text x="808" y="249" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">どうするか</text>
+  <g id="table" data-pptx-replace-with="table" data-pptx-bounds="40 228 1200 424">
+    <metadata type="application/json">{"name":"p19-intake-errors","columns":["表示されること","意味","どうするか"],"rows":[["別の依頼への返答のようです","依頼番号が今回のものと違う","依頼文をコピーし直して AI へ送り直す"],["返答が途中で切れているようです","終わりの行が無い","コードブロック全体をコピーし直す"],["取り込める形のコードが見つかりませんでした","区切り行が無い","コードブロック全体（区切り行を含む）をコピーし直す"],["同じモジュールが2回入っていました","重複","AI へ、モジュールごとに 1 つだけ返すよう伝える"],["クリップボードが空でした","コピーできていない","コードブロックのコピーボタンで取り直す"]],"style":{"font_family":"'Yu Gothic UI','Segoe UI',sans-serif","font_size":20,"colors":["#1F4E79","#F4F6F8"]}}</metadata>
+    <rect x="40" y="228" width="440" height="44" rx="10" fill="#1F4E79"/>
+    <text x="68" y="257" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">表示されること</text>
+    <rect x="492" y="228" width="288" height="44" rx="10" fill="#1F4E79"/>
+    <text x="520" y="257" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">意味</text>
+    <rect x="792" y="228" width="448" height="44" rx="10" fill="#1F4E79"/>
+    <text x="820" y="257" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">どうするか</text>
 
-    <rect x="100" y="274" width="380" height="70" rx="10" fill="#F1F5F9"/>
-    <text x="124" y="316" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">別の依頼への返答のようです</text>
-    <rect x="492" y="274" width="280" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
-    <text x="516" y="316" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C">依頼番号が今回のものと違う</text>
-    <rect x="784" y="274" width="396" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
-    <text x="808" y="316" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">依頼文をコピーし直して AI へ送り直す</text>
+    <rect x="40" y="282" width="440" height="66" rx="10" fill="#F4F6F8"/>
+    <text x="68" y="322" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">別の依頼への返答のようです</text>
+    <text x="520" y="322" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C">依頼番号が今回のものと違う</text>
+    <text x="820" y="322" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">依頼文をコピーし直して AI へ送り直す</text>
 
-    <rect x="100" y="352" width="380" height="70" rx="10" fill="#F1F5F9"/>
-    <text x="124" y="394" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">返答が途中で切れているようです</text>
-    <rect x="492" y="352" width="280" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
-    <text x="516" y="394" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C">終わりの行が無い</text>
-    <rect x="784" y="352" width="396" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
-    <text x="808" y="394" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">コードブロック全体をコピーし直す</text>
+    <rect x="40" y="358" width="440" height="66" rx="10" fill="#F4F6F8"/>
+    <text x="68" y="398" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">返答が途中で切れているようです</text>
+    <text x="520" y="398" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C">終わりの行が無い</text>
+    <text x="820" y="398" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">コードブロック全体をコピーし直す</text>
 
-    <rect x="100" y="430" width="380" height="70" rx="10" fill="#F1F5F9"/>
-    <text x="124" y="460" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933"><tspan x="124" dy="0">取り込める形のコードが</tspan><tspan x="124" dy="28">見つかりませんでした</tspan></text>
-    <rect x="492" y="430" width="280" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
-    <text x="516" y="472" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C">区切り行が無い</text>
-    <rect x="784" y="430" width="396" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
-    <text x="808" y="460" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933"><tspan x="808" dy="0">コードブロック全体（区切り行を含む）</tspan><tspan x="808" dy="28">をコピーし直す</tspan></text>
+    <rect x="40" y="434" width="440" height="66" rx="10" fill="#F4F6F8"/>
+    <text x="68" y="474" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">取り込める形のコードが見つかりませんでした</text>
+    <text x="520" y="474" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C">区切り行が無い</text>
+    <text x="820" y="474" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">コードブロック全体（区切り行を含む）をコピーし直す</text>
 
-    <rect x="100" y="508" width="380" height="70" rx="10" fill="#F1F5F9"/>
-    <text x="124" y="550" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">同じモジュールが2回入っていました</text>
-    <rect x="492" y="508" width="280" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
-    <text x="516" y="550" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C">重複</text>
-    <rect x="784" y="508" width="396" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
-    <text x="808" y="538" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933"><tspan x="808" dy="0">AI へ、モジュールごとに</tspan><tspan x="808" dy="28">1 つだけ返すよう伝える</tspan></text>
+    <rect x="40" y="510" width="440" height="66" rx="10" fill="#F4F6F8"/>
+    <text x="68" y="550" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">同じモジュールが2回入っていました</text>
+    <text x="520" y="550" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C">重複</text>
+    <text x="820" y="550" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">AI へ、モジュールごとに 1 つだけ返すよう伝える</text>
 
-    <rect x="100" y="586" width="380" height="70" rx="10" fill="#F1F5F9"/>
-    <text x="124" y="628" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">クリップボードが空でした</text>
-    <rect x="492" y="586" width="280" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
-    <text x="516" y="628" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C">コピーできていない</text>
-    <rect x="784" y="586" width="396" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
-    <text x="808" y="628" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">コードブロックのコピーボタンで取り直す</text>
+    <rect x="40" y="586" width="440" height="66" rx="10" fill="#F4F6F8"/>
+    <text x="68" y="626" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">クリップボードが空でした</text>
+    <text x="520" y="626" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C">コピーできていない</text>
+    <text x="820" y="626" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">コードブロックのコピーボタンで取り直す</text>
   </g>
 
-  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 684 1080 24">
-    <text x="100" y="702" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
-    <text x="1180" y="702" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">19</text>
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 674 1200 32">
+    <text x="40" y="698" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1240" y="698" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">19</text>
   </g>
 </svg>
