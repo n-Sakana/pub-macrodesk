@@ -2,21 +2,24 @@
   "use strict";
 
   var CRLF = "\r\n";
-  var MODULE_LINE =
-    "--------------------------------------------------";
-  var EMPTY_MODULE_NOTE =
-    "（このモジュールは現在空です。コードの省略ではありません）";
+  var CODE_BANNER = new Array(81).join("=");
+  var INDEX_LINE = new Array(41).join("-");
   var PLACEHOLDER_NAMES = [
     "REQUEST_TEXT",
     "BOOK_NAME",
     "MODULE_COUNT",
     "TOTAL_LINE_COUNT",
     "MODULE_LIST",
-    "MODULE_SOURCE_BLOCKS"
+    "CODE_FILE_NAME"
   ];
   var REQUIRED_PLACEHOLDER_NAMES = [
-    "REQUEST_TEXT",
-    "MODULE_SOURCE_BLOCKS"
+    "REQUEST_TEXT"
+  ];
+  var CODE_FILE_GROUPS = [
+    { type: "standard", heading: "Standard Modules:" },
+    { type: "class", heading: "Class Modules:" },
+    { type: "form", heading: "UserForms:" },
+    { type: "document", heading: "Document Modules:" }
   ];
   var KNOWN_PLACEHOLDERS = {};
 
@@ -74,15 +77,6 @@
       preset;
   }
 
-  function joinWithBlankLine(parts) {
-    var result = "";
-
-    parts.forEach(function (part) {
-      result = appendPreset(result, part);
-    });
-    return result;
-  }
-
   function requireString(value, label) {
     if (typeof value !== "string") {
       throw new Error(label + " is missing.");
@@ -107,25 +101,84 @@
     return lines.join(CRLF);
   }
 
-  function buildSourceBlocks(modules) {
-    var blocks = [];
+  function getModuleFileName(module) {
+    return requireString(module.name, "Module name") +
+      "." +
+      requireString(module.ext, "Module extension");
+  }
 
-    modules.forEach(function (module) {
-      var code = normalizeCrLf(
-        requireString(module.code, "Module code"));
+  function buildCodeFile(options) {
+    var lines = [];
+    var ordered = [];
+    var totalLines = 0;
 
-      blocks.push([
-        "■ " +
-          requireString(module.name, "Module name") +
-          "（" +
-          requireString(module.typeLabel, "Module type label") +
-          "）",
-        MODULE_LINE,
-        code || EMPTY_MODULE_NOTE
-      ].join(CRLF));
+    if (!options || !options.book ||
+        !Array.isArray(options.modules)) {
+      throw new Error("Code file source data is missing.");
+    }
+
+    var bookName = requireString(options.book.name, "Book name");
+    var generatedAt = requireString(
+      options.generatedAt,
+      "Code file timestamp");
+
+    lines.push(CODE_BANNER);
+    lines.push(" " + bookName + " - VBA Source Code");
+    lines.push(" Generated: " + generatedAt);
+    lines.push(CODE_BANNER);
+    lines.push("");
+    lines.push("MODULE INDEX");
+    lines.push(INDEX_LINE);
+    lines.push("");
+
+    CODE_FILE_GROUPS.forEach(function (group) {
+      var members = options.modules.filter(function (module) {
+        return module.type === group.type;
+      });
+
+      if (members.length === 0) {
+        return;
+      }
+      lines.push("  " + group.heading);
+      members.forEach(function (module) {
+        var lineCount = module.lineCount || 0;
+
+        totalLines += lineCount;
+        lines.push(
+          "    " + getModuleFileName(module) +
+          " (" + lineCount + " lines)");
+        ordered.push(module);
+      });
+      lines.push("");
     });
 
-    return joinWithBlankLine(blocks);
+    if (ordered.length !== options.modules.length) {
+      throw new Error("A module has an unknown type.");
+    }
+
+    lines.push(
+      "  Total: " + totalLines + " lines across " +
+      ordered.length + " modules");
+    lines.push("");
+
+    ordered.forEach(function (module) {
+      var code = normalizeCrLf(
+        requireString(module.code, "Module code"))
+        .replace(/(?:\r\n)+$/, "");
+
+      lines.push(CODE_BANNER);
+      lines.push(" " + getModuleFileName(module));
+      lines.push(CODE_BANNER);
+      lines.push("");
+      if (code.length > 0) {
+        code.split(CRLF).forEach(function (codeLine) {
+          lines.push(codeLine);
+        });
+        lines.push("");
+      }
+    });
+
+    return lines.join(CRLF).replace(/(?:\r\n)+$/, "") + CRLF;
   }
 
   function validateTemplate(template) {
@@ -135,6 +188,11 @@
     var withoutPlaceholders;
 
     while ((match = placeholderPattern.exec(template)) !== null) {
+      if (match[1] === "MODULE_SOURCE_BLOCKS") {
+        throw new Error(
+          "{{MODULE_SOURCE_BLOCKS}} is no longer supported: " +
+          "the source code now goes into the attached code file.");
+      }
       if (!Object.prototype.hasOwnProperty.call(
         KNOWN_PLACEHOLDERS,
         match[1])) {
@@ -194,7 +252,7 @@
     return result.replace(/(?:(?:\r\n))+$/, "") + CRLF;
   }
 
-  function buildRequestFile(options) {
+  function buildRequestPrompt(options) {
     var template;
     var requestText;
     var book;
@@ -220,7 +278,9 @@
       MODULE_COUNT: String(modules.length),
       TOTAL_LINE_COUNT: String(book.totalLines),
       MODULE_LIST: buildModuleList(modules),
-      MODULE_SOURCE_BLOCKS: buildSourceBlocks(modules)
+      CODE_FILE_NAME: requireString(
+        options.codeFileName,
+        "Code file name")
     };
 
     return renderTemplate(template, variables);
@@ -228,6 +288,7 @@
 
   global.MacroDeskPrompt = {
     appendPreset: appendPreset,
-    buildRequestFile: buildRequestFile
+    buildCodeFile: buildCodeFile,
+    buildRequestPrompt: buildRequestPrompt
   };
 }(window));

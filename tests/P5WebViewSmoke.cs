@@ -63,6 +63,9 @@ namespace MacroDesk.Tests
             public string Result;
             public Exception Error;
 
+            private IDataObject originalClipboard;
+            private bool clipboardCaptured;
+
             public SmokeRunner(
                 string baseDir,
                 string bookPath,
@@ -305,18 +308,13 @@ namespace MacroDesk.Tests
                         "})");
                     await Capture(stepTwoScreenshot);
 
+                    CaptureClipboard();
                     await webView.CoreWebView2.ExecuteScriptAsync(
-                        "window.__p5ExpectedContent=null;" +
+                        "window.__p5Template=null;" +
                         "window.__p5CreateDone=false;" +
                         "hostBridge.request('readRequestTemplate')" +
                         ".then(function(templateResult){" +
-                        "window.__p5ExpectedContent=" +
-                        "MacroDeskPrompt.buildRequestFile({" +
-                        "template:templateResult.content," +
-                        "requestText:MacroDeskState.getState()" +
-                        ".requestText," +
-                        "book:MacroDeskState.getState().book," +
-                        "modules:MacroDeskState.getState().modules});" +
+                        "window.__p5Template=templateResult.content;" +
                         "return MacroDeskApp.createRequestFile();" +
                         "})" +
                         ".then(function(){window.__p5CreateDone=true;});");
@@ -333,14 +331,69 @@ namespace MacroDesk.Tests
                         "'.request-success h3').textContent," +
                         "next:document.querySelector(" +
                         "'[data-action=\"step2-next\"]')!==null," +
+                        "copyAgain:document.querySelector(" +
+                        "'[data-action=\"copy-request-prompt\"]')" +
+                        "!==null," +
                         "branch:document.getElementById(" +
                         "'lecture-panel').dataset.branch" +
                         "})");
-                    string expectedContent = await ReadJson(
-                        "window.__p5ExpectedContent");
-                    expectedContent =
+                    string createdPath =
                         serializer.Deserialize<string>(
-                            expectedContent);
+                            await ReadJson(
+                                "MacroDeskState.getState()" +
+                                ".requestFilePath"));
+                    string requestPromptText =
+                        serializer.Deserialize<string>(
+                            await ReadJson(
+                                "MacroDeskState.getState()" +
+                                ".requestPrompt"));
+                    string clipboardText = Clipboard.GetText();
+                    bool clipboardMatchesPrompt =
+                        clipboardText == requestPromptText;
+                    bool clipboardHasCode =
+                        clipboardText.IndexOf(
+                            "Option Explicit",
+                            StringComparison.Ordinal) >= 0 ||
+                        clipboardText.IndexOf(
+                            "End Sub",
+                            StringComparison.Ordinal) >= 0;
+                    RestoreClipboard();
+
+                    string fileText = File.ReadAllText(
+                        createdPath,
+                        System.Text.Encoding.UTF8);
+                    string fileJson = serializer.Serialize(fileText);
+                    await webView.CoreWebView2.ExecuteScriptAsync(
+                        "window.__p5FileCheck=(function(fileText){" +
+                        "var m=fileText.match(/^ Generated: (.+)$/m);" +
+                        "if(!m){return 'no-generated-line';}" +
+                        "var expected=MacroDeskPrompt.buildCodeFile({" +
+                        "book:MacroDeskState.getState().book," +
+                        "modules:MacroDeskState.getState().modules," +
+                        "generatedAt:m[1]});" +
+                        "return expected===fileText" +
+                        "?'match':'mismatch';" +
+                        "}(" + fileJson + "));" +
+                        "window.__p5PromptCheck=(function(){" +
+                        "var st=MacroDeskState.getState();" +
+                        "var name=st.requestFilePath" +
+                        ".split(/[\\\\/]/).pop();" +
+                        "var expected=" +
+                        "MacroDeskPrompt.buildRequestPrompt({" +
+                        "template:window.__p5Template," +
+                        "requestText:st.requestText," +
+                        "book:st.book," +
+                        "modules:st.modules," +
+                        "codeFileName:name});" +
+                        "return expected===st.requestPrompt" +
+                        "?'match':'mismatch';" +
+                        "}());");
+                    string fileCheck =
+                        serializer.Deserialize<string>(
+                            await ReadJson("window.__p5FileCheck"));
+                    string promptCheck =
+                        serializer.Deserialize<string>(
+                            await ReadJson("window.__p5PromptCheck"));
 
                     await webView.CoreWebView2.ExecuteScriptAsync(
                         "document.querySelector(" +
@@ -366,7 +419,12 @@ namespace MacroDesk.Tests
                     result.Add("empty", empty);
                     result.Add("preset", preset);
                     result.Add("success", success);
-                    result.Add("expectedContent", expectedContent);
+                    result.Add("fileCheck", fileCheck);
+                    result.Add("promptCheck", promptCheck);
+                    result.Add(
+                        "clipboardMatchesPrompt",
+                        clipboardMatchesPrompt);
+                    result.Add("clipboardHasCode", clipboardHasCode);
                     result.Add("preserved", preserved);
                     result.Add(
                         "logs",
@@ -500,6 +558,49 @@ namespace MacroDesk.Tests
                 }
             }
 
+            private void CaptureClipboard()
+            {
+                if (clipboardCaptured)
+                {
+                    return;
+                }
+                try
+                {
+                    originalClipboard = Clipboard.GetDataObject();
+                }
+                catch
+                {
+                    originalClipboard = null;
+                }
+                clipboardCaptured = true;
+            }
+
+            private void RestoreClipboard()
+            {
+                if (!clipboardCaptured)
+                {
+                    return;
+                }
+                clipboardCaptured = false;
+                try
+                {
+                    if (originalClipboard == null)
+                    {
+                        Clipboard.Clear();
+                    }
+                    else
+                    {
+                        Clipboard.SetDataObject(
+                            originalClipboard,
+                            true);
+                    }
+                }
+                catch
+                {
+                }
+                originalClipboard = null;
+            }
+
             private void OnTimeout(object sender, EventArgs e)
             {
                 Fail(new TimeoutException(
@@ -516,6 +617,7 @@ namespace MacroDesk.Tests
             {
                 try
                 {
+                    RestoreClipboard();
                     if (timeoutTimer != null)
                     {
                         timeoutTimer.Stop();

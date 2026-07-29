@@ -138,6 +138,23 @@
     </div>
   </dialog>
 
+  <dialog class="discard-modal" id="edit-discard-modal" aria-labelledby="edit-discard-modal-title">
+    <div class="discard-modal-content">
+      <h2 id="edit-discard-modal-title">未反映の修正を破棄しますか？</h2>
+      <p>手動修正でまだ反映していない変更があります。このまま進むと破棄されます。</p>
+      <div class="step-actions">
+        <button
+          class="action-button action-button--secondary"
+          id="edit-discard-cancel"
+          type="button">編集に戻る</button>
+        <button
+          class="action-button action-button--danger"
+          id="edit-discard-confirm"
+          type="button">破棄して続行</button>
+      </div>
+    </div>
+  </dialog>
+
   <div class="status-announcer" id="status-announcer" aria-live="polite"></div>
   <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
 

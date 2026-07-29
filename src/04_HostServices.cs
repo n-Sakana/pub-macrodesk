@@ -281,14 +281,14 @@ namespace MacroDesk
             return result;
         }
 
-        public Dictionary<string, object> WriteRequestFile(
+        public Dictionary<string, object> WriteCodeFile(
             string content)
         {
             if (content == null)
             {
                 throw new HostActionException(
                     "E-GEN-01",
-                    "The request content is missing.");
+                    "The code file content is missing.");
             }
 
             string sourcePath = RequireAttachedBook("E-GEN-01");
@@ -297,7 +297,7 @@ namespace MacroDesk
             {
                 outputPath = CreateAdjacentOutputPath(
                     sourcePath,
-                    "request-file-label.txt",
+                    "code-file-label.txt",
                     ".txt",
                     DateTime.Now.ToString("yyyyMMdd_HHmmss"));
 
@@ -323,7 +323,7 @@ namespace MacroDesk
             {
                 throw new HostActionException(
                     "E-GEN-01",
-                    "The request file could not be created.",
+                    "The code file could not be created.",
                     null,
                     ex);
             }
@@ -339,6 +339,35 @@ namespace MacroDesk
             Dictionary<string, object> result =
                 new Dictionary<string, object>();
             result.Add("text", Clipboard.GetText());
+            return result;
+        }
+
+        public Dictionary<string, object> WriteClipboard(
+            string text)
+        {
+            if (text == null)
+            {
+                throw new HostActionException(
+                    "E-GEN-03",
+                    "The clipboard text is missing.");
+            }
+
+            try
+            {
+                Clipboard.SetText(text);
+            }
+            catch (Exception ex)
+            {
+                throw new HostActionException(
+                    "E-GEN-03",
+                    "The clipboard could not be updated.",
+                    null,
+                    ex);
+            }
+
+            Dictionary<string, object> result =
+                new Dictionary<string, object>();
+            result.Add("copied", true);
             return result;
         }
 

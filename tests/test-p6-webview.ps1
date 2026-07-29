@@ -197,6 +197,11 @@ try {
     $identical = $result.identical | ConvertFrom-Json
     $keyboard = $result.keyboard | ConvertFrom-Json
     $preserved = $result.preserved | ConvertFrom-Json
+    $editEntered = $result.editEntered | ConvertFrom-Json
+    $editPasteGuard = $result.editPasteGuard | ConvertFrom-Json
+    $editApplied = $result.editApplied | ConvertFrom-Json
+    $editKept = $result.editKept | ConvertFrom-Json
+    $editDiscarded = $result.editDiscarded | ConvertFrom-Json
     $excludedClick = $result.excludedClick | ConvertFrom-Json
     $excludedContext = $result.excludedContext | ConvertFrom-Json
     $empty = $result.empty | ConvertFrom-Json
@@ -340,6 +345,47 @@ try {
         'Step 2/3 round trip lost module status.'
     Assert-True ($preserved.pasted -ceq $result.changedCode) `
         'Step 2/3 round trip lost pasted code.'
+
+    Assert-True ($editEntered.seeded -eq $true) `
+        'Manual edit textarea was not seeded with the pasted code.'
+    Assert-True ($editEntered.sourcePane -eq $true) `
+        'Manual edit view lost the current-code pane.'
+    Assert-True ($editEntered.guide -eq 'apply-paste-edit') `
+        'Manual edit guide target mismatch.'
+    Assert-True ($editEntered.branch -eq 'L3-8') `
+        'Manual edit lecture branch mismatch.'
+    Assert-True ($editEntered.doneBar -eq $false) `
+        'Manual edit must hide the completion bar.'
+    Assert-True (-not $editPasteGuard.prevented) `
+        'Paste into the edit textarea was hijacked.'
+    Assert-True ($editPasteGuard.editing -eq $true) `
+        'Paste into the edit textarea ended the session.'
+    Assert-True ($editPasteGuard.hijacked -eq $false) `
+        'Paste into the edit textarea replaced the module code.'
+    Assert-True ($editApplied.status -eq 'changed') `
+        'Applied manual edit status mismatch.'
+    Assert-True ($editApplied.count -eq 1) `
+        'Applied manual edit changed-line count mismatch.'
+    Assert-True ($editApplied.fence -eq $false) `
+        'Manual edit apply did not normalize the fence line.'
+    Assert-True ($editApplied.diffTable -eq $true) `
+        'Manual edit apply did not return to the diff.'
+    Assert-True ($editApplied.badge -eq '+1') `
+        'Manual edit badge mismatch.'
+    Assert-True ($editApplied.editButton -eq $true) `
+        'Manual edit button is missing after apply.'
+    Assert-True ($editKept.editing -eq $true) `
+        'Cancelling the discard dialog ended the edit session.'
+    Assert-True ($editKept.selected -eq 'TimerUtils') `
+        'Cancelling the discard dialog changed the selection.'
+    Assert-True ($editKept.draft -eq $true) `
+        'Cancelling the discard dialog lost the draft.'
+    Assert-True ($editDiscarded.selected -eq 'WindowUtils') `
+        'Confirming the discard dialog did not switch modules.'
+    Assert-True ($editDiscarded.marker -eq $false) `
+        'Discarded draft leaked into the module code.'
+    Assert-True ($editDiscarded.status -eq 'changed') `
+        'Discarding the draft changed the module status.'
 
     Assert-True ($excludedClick.status -eq 'excluded') `
         'Badge click did not set excluded status.'

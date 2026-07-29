@@ -496,6 +496,26 @@ try {
 Assert-True ($timestampErrorCode -eq 'E-BUILD-01') `
     "Host build timestamp error mismatch: $timestampErrorCode"
 
+$clipboardService = New-Object MacroDesk.HostServices($null, $repoRoot)
+$originalClipboard = $clipboardService.ReadClipboard()['text']
+try {
+    $clipboardProbe = "MacroDesk clipboard probe`r`n2 lines`r`n"
+    [void]$clipboardService.WriteClipboard($clipboardProbe)
+    $clipboardRead = $clipboardService.ReadClipboard()['text']
+    Assert-True ($clipboardRead -ceq $clipboardProbe) `
+        'Clipboard round trip mismatch.'
+    $clipboardNullCode = ''
+    try {
+        [void]$clipboardService.WriteClipboard([NullString]::Value)
+    } catch [MacroDesk.HostActionException] {
+        $clipboardNullCode = $_.Exception.ErrorCode
+    }
+    Assert-True ($clipboardNullCode -eq 'E-GEN-03') `
+        "Clipboard null error mismatch: $clipboardNullCode"
+} finally {
+    [void]$clipboardService.WriteClipboard([string]$originalClipboard)
+}
+
 if ($TestExplorer) {
     $requestBookPath = Join-Path (
         Join-Path $testdataRoot 't2_6_outputs') 'identity.xlsm'
@@ -514,13 +534,17 @@ if ($TestExplorer) {
     $requestContent = "first line`r`nsecond line`r`n"
     $requestPath = ''
     try {
-        $requestResult = $requestService.WriteRequestFile(
+        $requestResult = $requestService.WriteCodeFile(
             $requestContent)
         $requestPath = $requestResult['path']
         Assert-InsideDirectory $requestPath (
             Join-Path $testdataRoot 't2_6_outputs')
         Assert-True ([IO.File]::Exists($requestPath)) `
-            'Request file was not created.'
+            'Code file was not created.'
+        Assert-True (
+            [IO.Path]::GetFileName($requestPath) -like
+                '*_コード全文_*.txt') `
+            'Code file name must use the code-file label.'
 
         $bytes = [IO.File]::ReadAllBytes($requestPath)
         Assert-True (

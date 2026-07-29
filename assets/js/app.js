@@ -6,6 +6,8 @@
   var presetFeedbackTimer = null;
   var pendingAttachPath = null;
   var newModuleNameDraft = "";
+  var pasteEditDraft = "";
+  var pendingEditDiscardAction = null;
   var dropActive = false;
   var dragDepth = 0;
 
@@ -76,9 +78,11 @@
 
   var generalErrorMessages = {
     "E-GEN-01":
-      "依頼ファイルを作成できませんでした。保存先の書き込み権限と空き容量を確認してください。",
+      "コードファイルを作成できませんでした。保存先の書き込み権限と空き容量を確認してください。",
     "E-GEN-02":
       "依頼テンプレートを読み込めませんでした。templates\\request-template.txt の存在、UTF-8 形式、差し込み変数を確認してください。",
+    "E-GEN-03":
+      "依頼文をクリップボードへコピーできませんでした。［依頼文をもう一度コピー］でやり直してください。",
     "E-PASTE-01":
       "貼り付けるコードがありません。チャット AI のコードブロックをコピーして、もう一度お試しください。",
     "E-SYS-01":
@@ -718,12 +722,13 @@
     summary.appendChild(createElement(
       "span",
       "",
-      "依頼ファイルの定型文はテンプレートから作られます（差し替え可）"));
+      "依頼文の定型部分はテンプレートから作られます（差し替え可）"));
     content.appendChild(createElement(
       "p",
       "",
-      "依頼ファイルの冒頭説明や出力形式の指定は、テンプレートから生成されます。" +
-        "文言を変えたいときは次のファイルを編集してください（UTF-8）。"));
+      "クリップボードへコピーされる依頼文は、テンプレートから生成されます。" +
+        "文言を変えたいときは次のファイルを編集してください（UTF-8）。" +
+        "コードファイルの形式は固定で、依頼文とは分かれています。"));
     copy.setAttribute(
       "data-copy-text",
       "templates\\request-template.txt");
@@ -733,7 +738,7 @@
     content.appendChild(createElement(
       "p",
       "template-note",
-      "{{REQUEST_TEXT}} と {{MODULE_SOURCE_BLOCKS}} の 2 つの差し込みは必須です。" +
+      "{{REQUEST_TEXT}} の差し込みは必須です。" +
         "壊れている場合は作成時に E-GEN-02 でお知らせします。"));
     details.appendChild(summary);
     details.appendChild(content);
@@ -749,8 +754,15 @@
     var text = createElement(
       "p",
       "",
-      "このファイルをチャット AI に添付してください。");
+      "チャット AI に依頼文を貼り付け（Ctrl+V）、" +
+        "このコードファイルを添付して送信してください。");
     var actions = createElement("div", "step-actions");
+    var copyPrompt = createActionButton(
+      state.busyAction === "writeClipboard"
+        ? "コピーしています"
+        : "依頼文をもう一度コピー",
+      "action-button--secondary",
+      "copy-request-prompt");
     var createAgain = createActionButton(
       "もう一度作成する",
       "action-button--secondary",
@@ -760,6 +772,8 @@
       "action-button--primary",
       "step2-next");
 
+    copyPrompt.disabled = state.busyAction !== null ||
+      !state.requestPrompt;
     createAgain.disabled = state.busyAction !== null;
     next.disabled = state.busyAction !== null;
     next.classList.toggle(
@@ -769,6 +783,7 @@
       createElement("span", "success-label", "作成済み"));
     card.appendChild(heading);
     card.appendChild(text);
+    actions.appendChild(copyPrompt);
     actions.appendChild(createAgain);
     actions.appendChild(next);
     card.appendChild(actions);
@@ -830,16 +845,16 @@
         "div",
         "step-actions request-actions");
       createButton = createActionButton(
-        state.busyAction === "writeRequestFile"
-          ? "依頼ファイルを作成しています"
-          : "依頼ファイルを作成",
+        state.busyAction === "prepareRequest"
+          ? "依頼を準備しています"
+          : "依頼を準備する",
         "action-button--primary",
         "create-request");
       createButton.classList.toggle(
         "is-guided-target",
         isGuideTarget("create-request"));
       createButton.disabled = state.busyAction !== null;
-      if (state.busyAction === "writeRequestFile") {
+      if (state.busyAction === "prepareRequest") {
         createButton.insertBefore(
           createElement("span", "loading-spinner"),
           createButton.firstChild);
@@ -957,6 +972,17 @@
       "_" +
       padDatePart(value.getHours()) +
       padDatePart(value.getMinutes()) +
+      padDatePart(value.getSeconds());
+  }
+
+  function createCodeFileTimestamp(dateValue) {
+    var value = dateValue || new Date();
+
+    return String(value.getFullYear()) + "-" +
+      padDatePart(value.getMonth() + 1) + "-" +
+      padDatePart(value.getDate()) + " " +
+      padDatePart(value.getHours()) + ":" +
+      padDatePart(value.getMinutes()) + ":" +
       padDatePart(value.getSeconds());
   }
 
@@ -1173,6 +1199,7 @@
       "repaste-response");
     var contextToggle;
     var wrapToggle;
+    var editButton;
 
     result.setAttribute("role", "status");
     result.title = "追加・削除・変更された行の合計です";
@@ -1218,6 +1245,13 @@
     wrapToggle.title = "長い行を折り返して左右を並べて表示します";
     actions.appendChild(contextToggle);
     actions.appendChild(wrapToggle);
+    editButton = createActionButton(
+      "手動修正",
+      "action-button--secondary action-button--compact",
+      "edit-paste");
+    editButton.title = "貼り付けたコードを右の欄で直接修正します";
+    editButton.disabled = state.busyAction !== null;
+    actions.appendChild(editButton);
 
     cancel.disabled = state.busyAction !== null;
     repaste.disabled = state.busyAction !== null;
@@ -1253,6 +1287,69 @@
       tableHost.classList.add("has-new-module-placeholder");
       tableHost.appendChild(placeholder);
     }
+    return workspace;
+  }
+
+  function createEditWorkspace(state, module) {
+    var workspace = createElement(
+      "div",
+      "step-three-workspace step-three-workspace--edit");
+    var toolbar = createElement("div", "diff-toolbar");
+    var resultGroup = createElement("div", "diff-result-group");
+    var actions = createElement("div", "diff-actions");
+    var apply = createActionButton(
+      "修正を反映",
+      "action-button--primary action-button--compact",
+      "apply-paste-edit");
+    var cancel = createActionButton(
+      "編集をやめる",
+      "action-button--secondary action-button--compact",
+      "cancel-paste-edit");
+    var panes = createElement("div", "edit-workspace-panes");
+    var editPane = createElement("section", "code-pane edit-pane");
+    var header = createElement("header", "code-pane-header");
+    var textarea = createElement("textarea", "edit-textarea");
+
+    resultGroup.appendChild(createElement(
+      "span",
+      "edit-mode-label",
+      "手動修正"));
+    resultGroup.appendChild(createElement(
+      "span",
+      "diff-result-note",
+      "軽微な写し間違いを直して反映します"));
+    apply.disabled = state.busyAction !== null;
+    cancel.disabled = state.busyAction !== null;
+    apply.classList.toggle(
+      "is-guided-target",
+      isGuideTarget("apply-paste-edit"));
+    actions.appendChild(apply);
+    actions.appendChild(cancel);
+    toolbar.appendChild(resultGroup);
+    toolbar.appendChild(actions);
+
+    header.appendChild(createElement(
+      "span",
+      "",
+      "貼り付けたコード（編集中）"));
+    textarea.id = "paste-edit-textarea";
+    textarea.value = pasteEditDraft;
+    textarea.spellcheck = false;
+    textarea.setAttribute("wrap", "off");
+    textarea.setAttribute("autocomplete", "off");
+    textarea.setAttribute(
+      "aria-label",
+      module.name + " の貼り付けたコードを編集");
+    textarea.disabled = state.busyAction !== null;
+    editPane.appendChild(header);
+    editPane.appendChild(textarea);
+    panes.appendChild(
+      global.MacroDeskDiffView.createSourceView(
+        document,
+        module.code || ""));
+    panes.appendChild(editPane);
+    workspace.appendChild(toolbar);
+    workspace.appendChild(panes);
     return workspace;
   }
 
@@ -1405,7 +1502,9 @@
       body.appendChild(createStepThreeEmpty());
     } else if (selected.status === "changed" ||
         selected.status === "unchanged") {
-      body.appendChild(createDiffWorkspace(state, selected));
+      body.appendChild(state.pasteEditing
+        ? createEditWorkspace(state, selected)
+        : createDiffWorkspace(state, selected));
     } else {
       body.appendChild(createWaitingWorkspace(state, selected));
     }
@@ -1413,7 +1512,8 @@
     if (pendingCount === 0 &&
         global.MacroDeskState.getChangedModuleCount() > 0 &&
         state.modules.length > 0 &&
-        !state.newModuleIntake) {
+        !state.newModuleIntake &&
+        !state.pasteEditing) {
       var doneBar = createElement("div", "step-done-bar");
       var doneMessage = createElement(
         "p",
@@ -2240,6 +2340,12 @@
     if (!path || state.busyAction) {
       return Promise.resolve(null);
     }
+    if (isEditDraftDirty()) {
+      guardEditDraft(function () {
+        attachPath(path);
+      });
+      return Promise.resolve(null);
+    }
     if (global.MacroDeskState.hasImportedModules()) {
       showDiscardModal(path);
       return Promise.resolve(null);
@@ -2363,18 +2469,27 @@
       return Promise.resolve(null);
     }
 
-    global.MacroDeskState.setBusyAction("writeRequestFile");
+    global.MacroDeskState.setBusyAction("prepareRequest");
     return global.hostBridge.request(
       "readRequestTemplate"
     ).then(function (templateResult) {
-      var content;
+      var codeContent;
 
       try {
-        content = global.MacroDeskPrompt.buildRequestFile({
+        // Validate the template before any file is written. The
+        // real code-file name is only known after the write, so a
+        // stand-in name is used for validation.
+        global.MacroDeskPrompt.buildRequestPrompt({
           template: templateResult.content,
           requestText: state.requestText,
           book: state.book,
-          modules: state.modules
+          modules: state.modules,
+          codeFileName: "code.txt"
+        });
+        codeContent = global.MacroDeskPrompt.buildCodeFile({
+          book: state.book,
+          modules: state.modules,
+          generatedAt: createCodeFileTimestamp(new Date())
         });
       } catch (error) {
         handleHostError({
@@ -2386,21 +2501,67 @@
       }
 
       return global.hostBridge.request(
-        "writeRequestFile",
-        { content: content }
+        "writeCodeFile",
+        { content: codeContent }
       ).then(function (result) {
-        global.MacroDeskState.setLastError(null);
+        var prompt = global.MacroDeskPrompt.buildRequestPrompt({
+          template: templateResult.content,
+          requestText: state.requestText,
+          book: state.book,
+          modules: state.modules,
+          codeFileName: getFileName(result.path)
+        });
+
         global.MacroDeskState.setRequestFilePath(result.path);
-        global.MacroDeskState.setBusyAction(null);
-        showToast("依頼ファイルを作成しました。", "success");
-        announce("依頼ファイルを作成しました。");
-        recordInfo("request created: " + result.path);
-        return result;
+        global.MacroDeskState.setRequestPrompt(prompt);
+        recordInfo("code file created: " + result.path);
+        return global.hostBridge.request(
+          "writeClipboard",
+          { text: prompt }
+        ).then(function () {
+          global.MacroDeskState.setLastError(null);
+          global.MacroDeskState.setBusyAction(null);
+          showToast(
+            "コードファイルを作成し、依頼文をコピーしました。",
+            "success");
+          announce(
+            "コードファイルを作成し、依頼文をクリップボードへ" +
+            "コピーしました。");
+          return result;
+        }, function (error) {
+          handleHostError(error, "");
+          global.MacroDeskState.setBusyAction(null);
+          return null;
+        });
       }, function (error) {
         handleHostError(error, "");
         global.MacroDeskState.setBusyAction(null);
         return null;
       });
+    }, function (error) {
+      handleHostError(error, "");
+      global.MacroDeskState.setBusyAction(null);
+      return null;
+    });
+  }
+
+  function copyRequestPrompt() {
+    var state = global.MacroDeskState.getState();
+
+    if (state.busyAction || !state.requestPrompt) {
+      return Promise.resolve(null);
+    }
+
+    global.MacroDeskState.setBusyAction("writeClipboard");
+    return global.hostBridge.request(
+      "writeClipboard",
+      { text: state.requestPrompt }
+    ).then(function () {
+      global.MacroDeskState.setLastError(null);
+      global.MacroDeskState.setBusyAction(null);
+      showToast("依頼文をコピーしました。", "success");
+      announce("依頼文をクリップボードへコピーしました。");
+      return true;
     }, function (error) {
       handleHostError(error, "");
       global.MacroDeskState.setBusyAction(null);
@@ -2443,7 +2604,7 @@
     });
   }
 
-  function acceptPastedText(value, moduleName) {
+  function acceptPastedText(value, moduleName, focusAction) {
     var state = global.MacroDeskState.getState();
     var name = moduleName || state.selectedModuleName;
     var module = global.MacroDeskState.findModule(name);
@@ -2458,7 +2619,7 @@
 
     normalizedText = normalizePastedText(value);
     if (normalizedText.length === 0) {
-      showPasteError();
+      showPasteError(focusAction);
       return false;
     }
 
@@ -2602,6 +2763,110 @@
     return true;
   }
 
+  function normalizeToLf(value) {
+    return String(
+      value === undefined || value === null ? "" : value)
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n");
+  }
+
+  function isEditDraftDirty() {
+    var state = global.MacroDeskState.getState();
+    var module;
+
+    if (!state.pasteEditing) {
+      return false;
+    }
+    module = global.MacroDeskState.findModule(
+      state.selectedModuleName);
+    if (!module) {
+      return false;
+    }
+    return normalizeToLf(pasteEditDraft) !==
+      normalizeToLf(module.pastedCode || "");
+  }
+
+  function guardEditDraft(action) {
+    if (!isEditDraftDirty()) {
+      action();
+      return true;
+    }
+    pendingEditDiscardAction = action;
+    elements.editDiscardModal.showModal();
+    return false;
+  }
+
+  function beginEditPaste() {
+    var state = global.MacroDeskState.getState();
+    var module = global.MacroDeskState.findModule(
+      state.selectedModuleName);
+
+    if (state.busyAction ||
+        !module ||
+        (module.status !== "changed" &&
+         module.status !== "unchanged")) {
+      return false;
+    }
+
+    pasteEditDraft = module.pastedCode || "";
+    if (!global.MacroDeskState.beginPasteEdit()) {
+      return false;
+    }
+    clearToast();
+    announce(module.name + " の手動修正を開始しました。");
+    global.setTimeout(function () {
+      var textarea = document.getElementById(
+        "paste-edit-textarea");
+      if (textarea) {
+        textarea.focus();
+      }
+    }, 0);
+    return true;
+  }
+
+  function applyPasteEdit() {
+    var state = global.MacroDeskState.getState();
+
+    if (!state.pasteEditing || state.busyAction) {
+      return false;
+    }
+    if (!acceptPastedText(
+        pasteEditDraft,
+        state.selectedModuleName,
+        "apply-paste-edit")) {
+      return false;
+    }
+    pasteEditDraft = "";
+    global.setTimeout(function () {
+      var button = document.querySelector(
+        '[data-action="edit-paste"]');
+      if (button) {
+        button.focus();
+      }
+    }, 0);
+    return true;
+  }
+
+  function requestCancelPasteEdit() {
+    var state = global.MacroDeskState.getState();
+
+    if (!state.pasteEditing) {
+      return false;
+    }
+    return guardEditDraft(function () {
+      pasteEditDraft = "";
+      global.MacroDeskState.cancelPasteEdit();
+      announce("手動修正をやめました。");
+      global.setTimeout(function () {
+        var button = document.querySelector(
+          '[data-action="edit-paste"]');
+        if (button) {
+          button.focus();
+        }
+      }, 0);
+    });
+  }
+
   function toggleModuleExcluded(moduleName) {
     var module = global.MacroDeskState.findModule(moduleName);
     var wasExcluded;
@@ -2682,11 +2947,13 @@
     if (!global.MacroDeskState.canNavigate(targetStep)) {
       return;
     }
-    if (targetStep === 4) {
-      goToBuildConfirmation();
-    } else if (global.MacroDeskState.navigate(targetStep)) {
-      elements.main.focus();
-    }
+    guardEditDraft(function () {
+      if (targetStep === 4) {
+        goToBuildConfirmation();
+      } else if (global.MacroDeskState.navigate(targetStep)) {
+        elements.main.focus();
+      }
+    });
   }
 
   function onModuleClick(event) {
@@ -2701,26 +2968,36 @@
       return;
     }
     if (newModuleButton) {
-      newModuleNameDraft = "";
-      global.MacroDeskState.setLastError(null);
-      clearToast();
-      global.MacroDeskState.beginNewModuleIntake();
-      global.setTimeout(function () {
-        var input = document.getElementById(
-          "new-module-name");
-        if (input) {
-          input.focus();
-        }
-      }, 0);
+      guardEditDraft(function () {
+        newModuleNameDraft = "";
+        global.MacroDeskState.setLastError(null);
+        clearToast();
+        global.MacroDeskState.beginNewModuleIntake();
+        global.setTimeout(function () {
+          var input = document.getElementById(
+            "new-module-name");
+          if (input) {
+            input.focus();
+          }
+        }, 0);
+      });
       return;
     }
     if (!button) {
       return;
     }
-    global.MacroDeskState.setLastError(null);
-    clearToast();
-    global.MacroDeskState.selectModule(
-      button.getAttribute("data-module-name"));
+    var moduleName = button.getAttribute("data-module-name");
+    var currentState = global.MacroDeskState.getState();
+
+    if (currentState.pasteEditing &&
+        currentState.selectedModuleName === moduleName) {
+      return;
+    }
+    guardEditDraft(function () {
+      global.MacroDeskState.setLastError(null);
+      clearToast();
+      global.MacroDeskState.selectModule(moduleName);
+    });
   }
 
   function onModuleContextMenu(event) {
@@ -2759,6 +3036,8 @@
       loadPreset(button.getAttribute("data-preset-file"));
     } else if (action === "create-request") {
       createRequestFile();
+    } else if (action === "copy-request-prompt") {
+      copyRequestPrompt();
     } else if (action === "step2-next") {
       global.MacroDeskState.navigate(3);
       elements.main.focus();
@@ -2769,6 +3048,12 @@
       pasteFromClipboard();
     } else if (action === "cancel-paste") {
       cancelSelectedPaste();
+    } else if (action === "edit-paste") {
+      beginEditPaste();
+    } else if (action === "apply-paste-edit") {
+      applyPasteEdit();
+    } else if (action === "cancel-paste-edit") {
+      requestCancelPasteEdit();
     } else if (action === "import-new-module") {
       importNewModuleFromClipboard();
     } else if (action === "cancel-new-module") {
@@ -2807,6 +3092,10 @@
       event.target.removeAttribute("aria-invalid");
       return;
     }
+    if (event.target.id === "paste-edit-textarea") {
+      pasteEditDraft = event.target.value;
+      return;
+    }
     if (event.target.id !== "request-text") {
       return;
     }
@@ -2821,6 +3110,14 @@
     var text = "";
 
     if (state.currentStep !== 3 || state.busyAction) {
+      return;
+    }
+    // Pastes aimed at editable controls (the manual-fix textarea,
+    // the new-module name field) must reach them untouched.
+    if (state.pasteEditing ||
+        (event.target &&
+         typeof event.target.closest === "function" &&
+         event.target.closest("textarea, input"))) {
       return;
     }
     selected = global.MacroDeskState.findModule(
@@ -2947,7 +3244,13 @@
       discardModalCancel: document.getElementById(
         "discard-modal-cancel"),
       discardModalConfirm: document.getElementById(
-        "discard-modal-confirm")
+        "discard-modal-confirm"),
+      editDiscardModal: document.getElementById(
+        "edit-discard-modal"),
+      editDiscardCancel: document.getElementById(
+        "edit-discard-cancel"),
+      editDiscardConfirm: document.getElementById(
+        "edit-discard-confirm")
     };
 
     elements.progressButtons.forEach(function (button) {
@@ -2982,6 +3285,34 @@
       pendingAttachPath = null;
       announce("ブックの差し替えをキャンセルしました。");
     });
+    elements.editDiscardCancel.addEventListener("click", function () {
+      pendingEditDiscardAction = null;
+      elements.editDiscardModal.close();
+      announce("手動修正に戻りました。");
+      global.setTimeout(function () {
+        var textarea = document.getElementById(
+          "paste-edit-textarea");
+        if (textarea) {
+          textarea.focus();
+        }
+      }, 0);
+    });
+    elements.editDiscardConfirm.addEventListener("click", function () {
+      var action = pendingEditDiscardAction;
+
+      pendingEditDiscardAction = null;
+      elements.editDiscardModal.close();
+      pasteEditDraft = "";
+      global.MacroDeskState.cancelPasteEdit();
+      announce("未反映の修正を破棄しました。");
+      if (action) {
+        action();
+      }
+    });
+    elements.editDiscardModal.addEventListener("cancel", function () {
+      pendingEditDiscardAction = null;
+      announce("手動修正に戻りました。");
+    });
 
     global.MacroDeskState.subscribe(render);
     if (hasDemoQuery()) {
@@ -3007,6 +3338,8 @@
     pickBook: pickBook,
     loadPreset: loadPreset,
     createRequestFile: createRequestFile,
+    copyRequestPrompt: copyRequestPrompt,
+    createCodeFileTimestamp: createCodeFileTimestamp,
     normalizePastedText: normalizePastedText,
     onWindowDragOver: onWindowDragOver,
     onWindowDragLeave: onWindowDragLeave,
@@ -3025,6 +3358,10 @@
     pasteFromClipboard: pasteFromClipboard,
     importNewModuleFromClipboard: importNewModuleFromClipboard,
     cancelSelectedPaste: cancelSelectedPaste,
+    beginEditPaste: beginEditPaste,
+    applyPasteEdit: applyPasteEdit,
+    requestCancelPasteEdit: requestCancelPasteEdit,
+    isEditDraftDirty: isEditDraftDirty,
     toggleModuleExcluded: toggleModuleExcluded,
     loadAppInfo: loadAppInfo,
     loadDemoState: global.MacroDeskState.loadDemoState

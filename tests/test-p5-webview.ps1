@@ -57,7 +57,7 @@ $bookDirectory = [IO.Path]::GetDirectoryName($resolvedBookPath)
 Assert-InsideDirectory $bookDirectory $testdataRoot
 $libDir = Join-Path $repoRoot 'lib'
 $requestLabel = [IO.File]::ReadAllText(
-    (Join-Path $repoRoot 'assets\messages\request-file-label.txt'),
+    (Join-Path $repoRoot 'assets\messages\code-file-label.txt'),
     [Text.Encoding]::UTF8).Trim()
 $cacheDir = Join-Path $testdataRoot (
     'p5-webview-cache-' + [Guid]::NewGuid().ToString('N'))
@@ -280,7 +280,8 @@ try {
         $preset.templateText.Contains(
             'templates\request-template.txt') -and
         $preset.templateText.Contains('{{REQUEST_TEXT}}') -and
-        $preset.templateText.Contains('{{MODULE_SOURCE_BLOCKS}}')) `
+        -not $preset.templateText.Contains(
+            '{{MODULE_SOURCE_BLOCKS}}')) `
         'Template notice does not explain its path and required insertions.'
     Assert-True ($preset.branch -eq 'L2-2') `
         'Step 2 lecture branch mismatch before creation.'
@@ -304,8 +305,18 @@ try {
         'Created request status text mismatch.'
     Assert-True ($success.next -eq $true) `
         'Step 2 next button is missing after creation.'
+    Assert-True ($success.copyAgain -eq $true) `
+        'Re-copy button is missing after creation.'
     Assert-True ($success.branch -eq 'L2-3') `
         'Step 2 lecture branch mismatch after creation.'
+    Assert-True ($result.fileCheck -eq 'match') `
+        'Code file does not match the builder output.'
+    Assert-True ($result.promptCheck -eq 'match') `
+        'Stored prompt does not match the builder output.'
+    Assert-True ($result.clipboardMatchesPrompt -eq $true) `
+        'Clipboard does not hold the request prompt.'
+    Assert-True ($result.clipboardHasCode -eq $false) `
+        'Clipboard contains module source code.'
 
     $attachLogs = @($logs | Where-Object {
         $_ -like 'attach: * (* modules)'
@@ -319,8 +330,8 @@ try {
             "Attach log module count mismatch: $entry"
     }
     Assert-True (
-        $logs -contains ('request created: ' + $requestPath)) `
-        'Request creation path was not logged.'
+        $logs -contains ('code file created: ' + $requestPath)) `
+        'Code file creation path was not logged.'
     Assert-True (
         ($logs -join "`n") -notmatch
         'Option Explicit|Attribute VB_|Debug\.Print') `
@@ -336,58 +347,33 @@ try {
     $actualContent = [IO.File]::ReadAllText(
         $requestPath,
         [Text.Encoding]::UTF8)
-    if ($actualContent -cne $result.expectedContent) {
-        $compareLength = [Math]::Min(
-            $actualContent.Length,
-            $result.expectedContent.Length)
-        $firstDifference = -1
-        for ($index = 0; $index -lt $compareLength; $index++) {
-            if (
-                $actualContent[$index] -cne
-                $result.expectedContent[$index]) {
-                $firstDifference = $index
-                break
-            }
-        }
-        $actualCode = if (
-            $firstDifference -ge 0 -and
-            $firstDifference -lt $actualContent.Length) {
-            [int]$actualContent[$firstDifference]
-        } else {
-            -1
-        }
-        $expectedCode = if (
-            $firstDifference -ge 0 -and
-            $firstDifference -lt $result.expectedContent.Length) {
-            [int]$result.expectedContent[$firstDifference]
-        } else {
-            -1
-        }
-        throw (
-            (
-                'Request content mismatch: actualLength={0}, ' +
-                'expectedLength={1}, first={2}, actualCode={3}, ' +
-                'expectedCode={4}') -f `
-            $actualContent.Length,
-            $result.expectedContent.Length,
-            $firstDifference,
-            $actualCode,
-            $expectedCode)
-    }
     Assert-True (
         $actualContent -notmatch '(?m)^Attribute VB_') `
-        'Request file contains an Attribute header.'
-    $moduleHeadingPrefix =
-        [string][char]0x25A0 + [string][char]0x0020
+        'Code file contains an Attribute header.'
+    Assert-True ($actualContent.Contains('MODULE INDEX')) `
+        'Code file is missing the module index.'
+    $bannerCount = @(
+        $actualContent -split "`r`n" |
+        Where-Object { $_ -match '^={80}$' }).Count
+    Assert-True ($bannerCount -eq 14) `
+        "Code file banner count mismatch: $bannerCount"
     $moduleHeadingCount = @(
         $actualContent -split "`r`n" |
-        Where-Object {
-            $_.StartsWith(
-                $moduleHeadingPrefix,
-                [StringComparison]::Ordinal)
-        }).Count
+        Where-Object { $_ -match '^ \S+\.(bas|cls|frm)$' }).Count
     Assert-True ($moduleHeadingCount -eq 6) `
-        'Request file does not contain all six modules.'
+        'Code file does not contain all six modules.'
+    Assert-True (
+        -not $actualContent.Contains([string][char]0x25A0) -and
+        -not $actualContent.Contains([string][char]0x3010)) `
+        'Code file contains prose heading markers.'
+    Assert-True (
+        -not $actualContent.Contains('existing request')) `
+        'Request text leaked into the code file.'
+    Assert-True (
+        -not $actualContent.Contains(
+            [string][char]0x73FE + [string][char]0x5728 +
+            [string][char]0x7A7A)) `
+        'Code file contains the empty-module note.'
 
     $selected = $false
     for ($attempt = 0; $attempt -lt 150; $attempt++) {

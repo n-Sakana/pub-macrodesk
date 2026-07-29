@@ -426,6 +426,150 @@ namespace MacroDesk.Tests
                         "'TimerUtils').pastedCode" +
                         "})");
 
+                    string editedLine =
+                        "Public Sub Test(): " +
+                        "Debug.Print \"edited\": End Sub";
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"edit-paste\"]').click();");
+                    await WaitFor(
+                        "MacroDeskState.getState().pasteEditing " +
+                        "=== true && document.getElementById(" +
+                        "'paste-edit-textarea') !== null");
+                    string editEntered = await ReadJson(
+                        "({" +
+                        "seeded:document.getElementById(" +
+                        "'paste-edit-textarea').value" +
+                        ".replace(/\\r\\n/g,'\\n')===" +
+                        "MacroDeskState.findModule('TimerUtils')" +
+                        ".pastedCode.replace(/\\r\\n/g,'\\n')," +
+                        "sourcePane:document.querySelector(" +
+                        "'.step-three-workspace--edit " +
+                        ".source-pane')!==null," +
+                        "guide:MacroDeskState.getGuideTarget().id," +
+                        "branch:document.getElementById(" +
+                        "'lecture-panel').dataset.branch," +
+                        "doneBar:document.querySelector(" +
+                        "'.step-done-bar')!==null" +
+                        "})");
+
+                    await Execute(
+                        "(function(){var t=document.getElementById(" +
+                        "'paste-edit-textarea');" +
+                        "var e=new Event('paste'," +
+                        "{bubbles:true,cancelable:true});" +
+                        "Object.defineProperty(e,'clipboardData'," +
+                        "{value:{getData:function(){" +
+                        "return 'HIJACK';}}});" +
+                        "t.dispatchEvent(e);" +
+                        "window.__p6EditPastePrevented=" +
+                        "e.defaultPrevented;}());");
+                    await Task.Delay(100);
+                    string editPasteGuard = await ReadJson(
+                        "({" +
+                        "prevented:window.__p6EditPastePrevented," +
+                        "editing:MacroDeskState.getState()" +
+                        ".pasteEditing," +
+                        "hijacked:MacroDeskState.findModule(" +
+                        "'TimerUtils').pastedCode" +
+                        ".indexOf('HIJACK')>=0" +
+                        "})");
+
+                    await Execute(
+                        "(function(){var t=document.getElementById(" +
+                        "'paste-edit-textarea');" +
+                        "t.value='```vba\\n'+t.value.replace(" +
+                        serializer.Serialize(newLine) + "," +
+                        serializer.Serialize(editedLine) + ");" +
+                        "t.dispatchEvent(new Event('input'," +
+                        "{bubbles:true}));}());");
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"apply-paste-edit\"]')" +
+                        ".click();");
+                    await WaitFor(
+                        "MacroDeskState.getState().pasteEditing " +
+                        "=== false && " +
+                        "MacroDeskState.findModule('TimerUtils')" +
+                        ".pastedCode.indexOf('edited')>=0");
+                    string editApplied = await ReadJson(
+                        "({" +
+                        "status:MacroDeskState.findModule(" +
+                        "'TimerUtils').status," +
+                        "count:MacroDeskState.findModule(" +
+                        "'TimerUtils').changedLineCount," +
+                        "fence:MacroDeskState.findModule(" +
+                        "'TimerUtils').pastedCode.indexOf('```')>=0," +
+                        "diffTable:document.querySelector(" +
+                        "'.diff-table')!==null," +
+                        "badge:document.querySelector(" +
+                        "'[data-module-row-name=\"TimerUtils\"] " +
+                        ".module-badge').textContent," +
+                        "editButton:document.querySelector(" +
+                        "'[data-action=\"edit-paste\"]')!==null" +
+                        "})");
+
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"edit-paste\"]').click();");
+                    await WaitFor(
+                        "MacroDeskState.getState().pasteEditing " +
+                        "=== true");
+                    await Execute(
+                        "(function(){var t=document.getElementById(" +
+                        "'paste-edit-textarea');" +
+                        "t.value=t.value+'DRAFT MARKER';" +
+                        "t.dispatchEvent(new Event('input'," +
+                        "{bubbles:true}));}());");
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-module-name=\"WindowUtils\"]')" +
+                        ".click();");
+                    await WaitFor(
+                        "document.getElementById(" +
+                        "'edit-discard-modal').open === true");
+                    await Execute(
+                        "document.getElementById(" +
+                        "'edit-discard-cancel').click();");
+                    await WaitFor(
+                        "document.getElementById(" +
+                        "'edit-discard-modal').open === false");
+                    string editKept = await ReadJson(
+                        "({" +
+                        "editing:MacroDeskState.getState()" +
+                        ".pasteEditing," +
+                        "selected:MacroDeskState.getState()" +
+                        ".selectedModuleName," +
+                        "draft:document.getElementById(" +
+                        "'paste-edit-textarea').value" +
+                        ".indexOf('DRAFT MARKER')>=0" +
+                        "})");
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-module-name=\"WindowUtils\"]')" +
+                        ".click();");
+                    await WaitFor(
+                        "document.getElementById(" +
+                        "'edit-discard-modal').open === true");
+                    await Execute(
+                        "document.getElementById(" +
+                        "'edit-discard-confirm').click();");
+                    await WaitFor(
+                        "MacroDeskState.getState()" +
+                        ".selectedModuleName === 'WindowUtils' && " +
+                        "MacroDeskState.getState().pasteEditing " +
+                        "=== false");
+                    string editDiscarded = await ReadJson(
+                        "({" +
+                        "selected:MacroDeskState.getState()" +
+                        ".selectedModuleName," +
+                        "marker:MacroDeskState.findModule(" +
+                        "'TimerUtils').pastedCode" +
+                        ".indexOf('DRAFT MARKER')>=0," +
+                        "status:MacroDeskState.findModule(" +
+                        "'TimerUtils').status" +
+                        "})");
+
                     await ClickModule("WindowUtils");
                     await Execute(
                         "document.querySelector(" +
@@ -1002,6 +1146,11 @@ namespace MacroDesk.Tests
                     result.Add("identical", identical);
                     result.Add("keyboard", keyboard);
                     result.Add("preserved", preserved);
+                    result.Add("editEntered", editEntered);
+                    result.Add("editPasteGuard", editPasteGuard);
+                    result.Add("editApplied", editApplied);
+                    result.Add("editKept", editKept);
+                    result.Add("editDiscarded", editDiscarded);
                     result.Add("excludedClick", excludedClick);
                     result.Add("excludedContext", excludedContext);
                     result.Add("empty", empty);

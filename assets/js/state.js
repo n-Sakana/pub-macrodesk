@@ -44,8 +44,10 @@
       modules: [],
       selectedModuleName: null,
       newModuleIntake: false,
+      pasteEditing: false,
       requestText: "",
       requestFilePath: null,
+      requestPrompt: null,
       returnedFromStep3: false,
       buildTimestamp: null,
       buildResult: null,
@@ -133,7 +135,7 @@
       }
       return {
         id: "create-request",
-        label: "［依頼ファイルを作成］"
+        label: "［依頼を準備する］"
       };
     }
     if (state.currentStep === 3) {
@@ -141,6 +143,12 @@
         return {
           id: "import-new-module",
           label: "［新規モジュールとして取り込む］"
+        };
+      }
+      if (state.pasteEditing) {
+        return {
+          id: "apply-paste-edit",
+          label: "［修正を反映］"
         };
       }
       if (pendingCount === 0) {
@@ -237,6 +245,7 @@
     }
 
     state.currentStep = step;
+    state.pasteEditing = false;
     if (step !== 3) {
       state.newModuleIntake = false;
     }
@@ -261,8 +270,10 @@
     });
     state.selectedModuleName = null;
     state.newModuleIntake = false;
+    state.pasteEditing = false;
     state.requestText = "";
     state.requestFilePath = null;
+    state.requestPrompt = null;
     state.returnedFromStep3 = false;
     state.buildTimestamp = null;
     state.buildResult = null;
@@ -294,6 +305,7 @@
 
     state.selectedModuleName = moduleName;
     state.newModuleIntake = false;
+    state.pasteEditing = false;
     notify();
     return true;
   }
@@ -324,13 +336,43 @@
     if (module.status === "unchanged") {
       module.changedLineCount = 0;
     }
+    if (module.isNew === true) {
+      module.lineCount = getLineCount(code);
+    }
     module.written = false;
     module.showChangesOnly = Math.max(
       module.lineCount || 0,
       getLineCount(code)) > 200;
     module.wrapDiff = true;
+    state.pasteEditing = false;
     notify();
     return module;
+  }
+
+  function beginPasteEdit() {
+    var module = findModule(state.selectedModuleName);
+
+    if (state.currentStep !== 3 ||
+        state.newModuleIntake ||
+        !module ||
+        (module.status !== "changed" &&
+         module.status !== "unchanged")) {
+      return false;
+    }
+
+    state.pasteEditing = true;
+    notify();
+    return true;
+  }
+
+  function cancelPasteEdit() {
+    if (!state.pasteEditing) {
+      return false;
+    }
+
+    state.pasteEditing = false;
+    notify();
+    return true;
   }
 
   function beginNewModuleIntake() {
@@ -340,6 +382,7 @@
 
     state.selectedModuleName = null;
     state.newModuleIntake = true;
+    state.pasteEditing = false;
     notify();
     return true;
   }
@@ -414,6 +457,7 @@
     module.written = false;
     module.showChangesOnly = module.lineCount > 200;
     module.wrapDiff = true;
+    state.pasteEditing = false;
     notify();
     return true;
   }
@@ -477,6 +521,11 @@
 
   function setRequestFilePath(requestFilePath) {
     state.requestFilePath = requestFilePath || null;
+    notify();
+  }
+
+  function setRequestPrompt(requestPrompt) {
+    state.requestPrompt = requestPrompt || null;
     notify();
   }
 
@@ -646,6 +695,8 @@
     selectModule: selectModule,
     findModule: findModule,
     acceptModuleCode: acceptModuleCode,
+    beginPasteEdit: beginPasteEdit,
+    cancelPasteEdit: cancelPasteEdit,
     beginNewModuleIntake: beginNewModuleIntake,
     cancelNewModuleIntake: cancelNewModuleIntake,
     addNewModule: addNewModule,
@@ -656,6 +707,7 @@
     setRequestState: setRequestState,
     setRequestText: setRequestText,
     setRequestFilePath: setRequestFilePath,
+    setRequestPrompt: setRequestPrompt,
     setBuildResult: setBuildResult,
     setBuildConfirmation: setBuildConfirmation,
     markModulesWritten: markModulesWritten,

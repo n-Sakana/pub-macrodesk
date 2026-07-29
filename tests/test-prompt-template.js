@@ -10,33 +10,6 @@ function assert(condition, message) {
   }
 }
 
-function joinWithBlankLine(parts) {
-  var result = "";
-
-  parts.forEach(function (part) {
-    var trailing;
-    var leading;
-    var breaks;
-
-    if (!result) {
-      result = part;
-      return;
-    }
-    trailing = result.match(/(?:(?:\r\n|\r|\n))+$/);
-    leading = part.match(/^(?:(?:\r\n|\r|\n))+/);
-    breaks = 0;
-    if (trailing) {
-      breaks += trailing[0].match(/\r\n|\r|\n/g).length;
-    }
-    if (leading) {
-      breaks += leading[0].match(/\r\n|\r|\n/g).length;
-    }
-    result += new Array(Math.max(0, 2 - breaks) + 1)
-      .join("\r\n") + part;
-  });
-  return result;
-}
-
 var root = path.resolve(__dirname, "..");
 var windowObject = {};
 var context = vm.createContext({
@@ -56,14 +29,137 @@ var defaultTemplate = fs.readFileSync(
   path.join(root, "templates", "request-template.txt"),
   "utf8");
 var crlf = "\r\n";
-var sectionLine =
-  "==================================================";
-var moduleLine =
-  "--------------------------------------------------";
-var expectedFixed = [
-  sectionLine,
-  "【出力形式の指定】※ここから下はツールが自動で付けた指定です",
-  sectionLine,
+var banner = new Array(81).join("=");
+var indexLine = new Array(41).join("-");
+
+var options = {
+  template: defaultTemplate,
+  requestText: "一行目\n二行目",
+  codeFileName: "台帳_コード全文_20260729_120000.txt",
+  book: {
+    name: "台帳.xlsm",
+    totalLines: 3
+  },
+  modules: [
+    {
+      name: "Module1",
+      type: "standard",
+      typeLabel: "標準モジュール",
+      ext: "bas",
+      lineCount: 3,
+      code: "Option Explicit\nPublic Sub Run()\nEnd Sub\n",
+      attributes: "Attribute VB_Name = \"Module1\"\r\n"
+    },
+    {
+      name: "ThisWorkbook",
+      type: "document",
+      typeLabel: "ドキュメントモジュール",
+      ext: "cls",
+      lineCount: 0,
+      code: "",
+      attributes: "Attribute VB_Name = \"ThisWorkbook\"\r\n"
+    }
+  ]
+};
+
+// ---- the attached code file: fixed format, code only ----
+
+var codeFile = promptApi.buildCodeFile({
+  book: options.book,
+  modules: options.modules,
+  generatedAt: "2026-07-29 12:00:00"
+});
+var expectedCodeFile = [
+  banner,
+  " 台帳.xlsm - VBA Source Code",
+  " Generated: 2026-07-29 12:00:00",
+  banner,
+  "",
+  "MODULE INDEX",
+  indexLine,
+  "",
+  "  Standard Modules:",
+  "    Module1.bas (3 lines)",
+  "",
+  "  Document Modules:",
+  "    ThisWorkbook.cls (0 lines)",
+  "",
+  "  Total: 3 lines across 2 modules",
+  "",
+  banner,
+  " Module1.bas",
+  banner,
+  "",
+  "Option Explicit",
+  "Public Sub Run()",
+  "End Sub",
+  "",
+  banner,
+  " ThisWorkbook.cls",
+  banner
+].join(crlf) + crlf;
+
+assert(
+  codeFile === expectedCodeFile,
+  "Generated code file mismatch.");
+assert(
+  codeFile.indexOf("【") < 0 &&
+    codeFile.indexOf("■") < 0 &&
+    codeFile.indexOf("現在空です") < 0 &&
+    codeFile.indexOf("```") < 0,
+  "The code file must contain no prose, notes, or fences.");
+assert(
+  codeFile.indexOf("Attribute VB_Name") < 0,
+  "Attribute headers leaked into the code file.");
+assert(
+  codeFile.replace(/\r\n/g, "").indexOf("\n") < 0 &&
+    codeFile.replace(/\r\n/g, "").indexOf("\r") < 0,
+  "The code file contains a lone LF or CR.");
+assert(
+  codeFile.slice(-2) === crlf &&
+    codeFile.slice(-4) !== crlf + crlf,
+  "The code file must end with exactly one CRLF.");
+
+var unknownTypeRejected = false;
+try {
+  promptApi.buildCodeFile({
+    book: options.book,
+    modules: [
+      {
+        name: "X",
+        type: "mystery",
+        ext: "bas",
+        lineCount: 1,
+        code: "A\n"
+      }
+    ],
+    generatedAt: "2026-07-29 12:00:00"
+  });
+} catch (error) {
+  unknownTypeRejected = true;
+}
+assert(
+  unknownTypeRejected,
+  "An unknown module type must raise an error.");
+
+// ---- the chat prompt: external template, no source blocks ----
+
+var expectedPrompt = [
+  "添付ファイル 台帳_コード全文_20260729_120000.txt は、" +
+    "Excel ブック 台帳.xlsm の VBA コード全文です",
+  "（2 モジュール、合計 3 行。省略はありません）。",
+  "ソースコードが欠落している・省略されていると判断せず、追加の資料を求めず、",
+  "添付ファイルの内容だけを対象に、下の【依頼】に従って改修してください。",
+  "",
+  "【依頼】",
+  "一行目",
+  "二行目",
+  "",
+  "【対象モジュール】※ 0 行のモジュールは元から空です",
+  "  - Module1 （標準モジュール, 3 行）",
+  "  - ThisWorkbook （ドキュメントモジュール, 0 行）",
+  "",
+  "【出力形式の指定】",
   "回答は、必ず次の形式・順序で出力してください。",
   "",
   "1. 最初に「■ 改修サマリー」という見出しを置き、改修したモジュール名と",
@@ -75,11 +171,12 @@ var expectedFixed = [
   "   全文を 1 つのコードブロックで出力してください。",
   "",
   "守ってください:",
+  "- 改修に必要な行だけを変更する。それ以外の行は、空白・インデント・コメント・",
+  "  変数宣言の並び・命名を含め、渡したものと一字一句同じにして返す。",
+  "  整形、リファクタリング、コメントの追加や削除、命名の変更はしない。",
   "- コードは必ずモジュールの先頭から末尾までの全文を出力する。一部だけの",
   "  出力や「'（以下変更なし）」のような省略はしない。",
   "- 変更していないモジュールは出力しない。",
-  "- 「このモジュールは現在空です」という注記は VBA コードへ含めない。空の",
-  "  モジュールも、改修対象なら改修後コードの全文を出し、未変更なら出力しない。",
   "- コードブロックの中には VBA コード以外の文章（説明・注釈・見出し）を",
   "  入れない。",
   "- モジュール先頭に「Attribute VB_」で始まる行を付けない（渡したコードにも",
@@ -88,127 +185,44 @@ var expectedFixed = [
   "  そこに共通の処理を置き、既存モジュールからは呼び出すだけにしてください。",
   "  新しいモジュールは「■ <新しいモジュール名>（新規）」の見出しで出力してください。",
   "- モジュール名の変更と、モジュールの削除はしない。"
-].join(crlf);
+].join(crlf) + crlf;
 
-var options = {
-  template: defaultTemplate,
-  requestText: "一行目\n二行目",
-  book: {
-    name: "台帳.xlsm",
-    totalLines: 3
-  },
-  modules: [
-    {
-      name: "Module1",
-      typeLabel: "標準モジュール",
-      lineCount: 3,
-      code: "Option Explicit\nPublic Sub Run()\nEnd Sub\n",
-      attributes: "Attribute VB_Name = \"Module1\"\r\n"
-    },
-    {
-      name: "ThisWorkbook",
-      typeLabel: "ドキュメントモジュール",
-      lineCount: 0,
-      code: "",
-      attributes: "Attribute VB_Name = \"ThisWorkbook\"\r\n"
-    }
-  ]
-};
-
-var expectedSource = [
-  sectionLine,
-  "【ソースコード】",
-  sectionLine,
-  "",
-  joinWithBlankLine([
-    [
-      "■ Module1（標準モジュール）",
-      moduleLine,
-      "Option Explicit",
-      "Public Sub Run()",
-      "End Sub",
-      ""
-    ].join(crlf),
-    [
-      "■ ThisWorkbook（ドキュメントモジュール）",
-      moduleLine,
-      "（このモジュールは現在空です。コードの省略ではありません）"
-    ].join(crlf)
-  ])
-].join(crlf);
-
-var expected = joinWithBlankLine([
-  [
-    "このファイルは Excel マクロ改修支援ツール「MacroDesk」が生成した、Excel マクロの改修依頼です。",
-    "下の【依頼】に従って、【ソースコード】にある VBA コードを改修してください。"
-  ].join(crlf),
-  [
-    sectionLine,
-    "【依頼】",
-    sectionLine,
-    "一行目",
-    "二行目"
-  ].join(crlf),
-  [
-    sectionLine,
-    "【対象ブック】",
-    sectionLine,
-    "ファイル名: 台帳.xlsm",
-    "モジュール数: 2（合計 3 行）※以下に全モジュールの全文を掲載しています。省略はありません。",
-    "",
-    "  - Module1 （標準モジュール, 3 行）",
-    "  - ThisWorkbook （ドキュメントモジュール, 0 行）"
-  ].join(crlf),
-  expectedSource,
-  expectedFixed
-]) + crlf;
-
-var actual = promptApi.buildRequestFile(options);
-assert(actual === expected, "Generated request template mismatch.");
+var actualPrompt = promptApi.buildRequestPrompt(options);
+assert(
+  actualPrompt === expectedPrompt,
+  "Generated request prompt mismatch.");
+assert(
+  actualPrompt.indexOf("Option Explicit") < 0 &&
+    actualPrompt.indexOf("End Sub") < 0,
+  "Module source leaked into the request prompt.");
+assert(
+  actualPrompt.indexOf("一字一句") >= 0 &&
+    actualPrompt.indexOf("省略はありません") >= 0 &&
+    actualPrompt.indexOf("欠落") >= 0,
+  "The default prompt must state completeness and minimal-change rules.");
+assert(
+  actualPrompt.replace(/\r\n/g, "").indexOf("\n") < 0 &&
+    actualPrompt.replace(/\r\n/g, "").indexOf("\r") < 0,
+  "Generated prompt contains a lone LF or CR.");
 assert(
   !Object.prototype.hasOwnProperty.call(
     promptApi,
-    "fixedInstructions"),
-  "The external template must be the only request text source.");
-assert(
-  actual.indexOf("Attribute VB_Name") < 0,
-  "Attribute header leaked into the request file.");
-assert(
-  actual.indexOf(
-    "■ ThisWorkbook（ドキュメントモジュール）\r\n" +
-    moduleLine + "\r\n" +
-    "（このモジュールは現在空です。コードの省略ではありません）") >= 0,
-  "An empty module must be identified as complete, not omitted.");
-assert(
-  actual.indexOf(
-    "End Sub\r\n\r\n■ ThisWorkbook") >= 0,
-  "Module blocks must have exactly one blank line.");
-assert(
-  actual.replace(/\r\n/g, "").indexOf("\n") < 0,
-  "Generated request contains a lone LF.");
-assert(
-  actual.replace(/\r\n/g, "").indexOf("\r") < 0,
-  "Generated request contains a lone CR.");
+    "buildRequestFile"),
+  "The single-file request builder must be removed.");
 
-var boundaryActual = promptApi.buildRequestFile({
+var boundaryPrompt = promptApi.buildRequestPrompt({
   template: defaultTemplate,
   requestText: "末尾改行あり\n",
+  codeFileName: options.codeFileName,
   book: options.book,
-  modules: [
-    options.modules[1],
-    options.modules[0]
-  ]
+  modules: options.modules
 });
 assert(
-  boundaryActual.indexOf(
-    "末尾改行あり\r\n\r\n" +
-    sectionLine + "\r\n【対象ブック】") >= 0,
-  "A request trailing newline changed the default section boundary.");
-assert(
-  boundaryActual.indexOf(
-    "End Sub\r\n\r\n" +
-    sectionLine + "\r\n【出力形式の指定】") >= 0,
-  "A module trailing newline changed the default section boundary.");
+  boundaryPrompt.indexOf(
+    "末尾改行あり\r\n\r\n【対象モジュール】") >= 0,
+  "A request trailing newline changed the section boundary.");
+
+// ---- preset append (unchanged behaviour) ----
 
 assert(
   promptApi.appendPreset("", "preset") === "preset",
@@ -230,74 +244,82 @@ assert(
     "request\r\n\r\npreset",
   "Preset leading break must count toward the blank line.");
 
+// ---- template validation ----
+
 var rejected = false;
 try {
-  promptApi.buildRequestFile({});
+  promptApi.buildRequestPrompt({});
 } catch (error) {
   rejected = true;
 }
 assert(rejected, "Missing prompt data must raise an error.");
 
 function buildWithTemplate(template, requestText) {
-  return promptApi.buildRequestFile({
+  return promptApi.buildRequestPrompt({
     template: template,
     requestText: requestText === undefined
       ? options.requestText
       : requestText,
+    codeFileName: options.codeFileName,
     book: options.book,
     modules: options.modules
   });
 }
 
-var minimal = buildWithTemplate(
-  "{{REQUEST_TEXT}}\n{{MODULE_SOURCE_BLOCKS}}\n");
+var minimal = buildWithTemplate("{{REQUEST_TEXT}}\n");
 assert(
   minimal.indexOf("一行目\r\n二行目\r\n") === 0,
   "A template may omit optional placeholders.");
 assert(
   minimal.slice(-2) === crlf &&
     minimal.slice(-4) !== crlf + crlf,
-  "Rendered requests must end with exactly one CRLF.");
+  "Rendered prompts must end with exactly one CRLF.");
 
 var repeated = buildWithTemplate(
-  "{{BOOK_NAME}}|{{BOOK_NAME}}\n" +
-    "{{REQUEST_TEXT}}\n{{MODULE_SOURCE_BLOCKS}}");
+  "{{CODE_FILE_NAME}}|{{CODE_FILE_NAME}}\n{{REQUEST_TEXT}}");
 assert(
-  repeated.indexOf("台帳.xlsm|台帳.xlsm\r\n") === 0,
+  repeated.indexOf(
+    options.codeFileName + "|" + options.codeFileName + "\r\n") === 0,
   "Known placeholders may be repeated.");
 
 var dollarText = buildWithTemplate(
-  "{{REQUEST_TEXT}}\n{{MODULE_SOURCE_BLOCKS}}",
+  "{{REQUEST_TEXT}}",
   "$&\n$1");
 assert(
   dollarText.indexOf("$&\r\n$1\r\n") === 0,
   "Placeholder values must not use replacement-string semantics.");
 
 var literalPlaceholderText = buildWithTemplate(
-  "{{REQUEST_TEXT}}\n{{MODULE_SOURCE_BLOCKS}}",
+  "{{REQUEST_TEXT}}",
   "{{BOOK_NAME}}\n{{MODULE_COUNT}}");
 assert(
   literalPlaceholderText.indexOf(
     "{{BOOK_NAME}}\r\n{{MODULE_COUNT}}\r\n") === 0,
   "Placeholder-like text inside a value must remain literal.");
 
+var sourceBlocksError = "";
+try {
+  buildWithTemplate(
+    "{{REQUEST_TEXT}}\n{{MODULE_SOURCE_BLOCKS}}");
+} catch (error) {
+  sourceBlocksError = error.message;
+}
+assert(
+  sourceBlocksError.indexOf("MODULE_SOURCE_BLOCKS") >= 0,
+  "A retired MODULE_SOURCE_BLOCKS placeholder must be " +
+    "rejected with a clear message.");
+
 [
   {
-    template: "{{REQUEST_TEXT}}",
-    label: "MODULE_SOURCE_BLOCKS"
-  },
-  {
-    template: "{{MODULE_SOURCE_BLOCKS}}",
+    template: "{{MODULE_LIST}}",
     label: "REQUEST_TEXT"
   },
   {
-    template:
-      "{{REQUEST_TEXT}}\n{{MODULE_SOURCE_BLOCKS}}\n{{BOOK_NAM}}",
+    template: "{{REQUEST_TEXT}}\n{{BOOK_NAM}}",
     label: "unknown"
   },
   {
-    template:
-      "{{REQUEST_TEXT}}\n{{MODULE_SOURCE_BLOCKS}}\n{{BOOK_NAME}",
+    template: "{{REQUEST_TEXT}}\n{{BOOK_NAME}",
     label: "malformed"
   }
 ].forEach(function (testCase) {
@@ -315,4 +337,4 @@ assert(
 
 console.log("test-prompt-template: PASS");
 console.log(
-  "external template, exact default, variables, CRLF, append 2A: PASS");
+  "code file format, exact default prompt, variables, CRLF, append: PASS");

@@ -66,6 +66,7 @@ var branchKeys = [
   "L3-5",
   "L3-6",
   "L3-7",
+  "L3-8",
   "L4-1",
   "L4-2",
   "L-E*"
@@ -75,6 +76,7 @@ var errorCodes = [
   "E-ATTACH-03",
   "E-GEN-01",
   "E-GEN-02",
+  "E-GEN-03",
   "E-PASTE-01",
   "E-BUILD-01",
   "E-BUILD-02",
@@ -96,8 +98,17 @@ assert(
   "L1-1 must describe formats and the open-Excel restriction.");
 assert(
   lecture.contentByKey["L2-3"].body.indexOf("チャット AI") >= 0 &&
-    lecture.contentByKey["L2-3"].body.indexOf("添付ファイルの依頼") >= 0,
-  "L2-3 must include the chat AI handoff.");
+    lecture.contentByKey["L2-3"].body.indexOf("貼り付け") >= 0 &&
+    lecture.contentByKey["L2-3"].body.indexOf("添付") >= 0,
+  "L2-3 must cover pasting the prompt and attaching the code file.");
+assert(
+  lecture.contentByKey["L2-2"].body.indexOf("コード全文ファイル") >= 0 &&
+    lecture.contentByKey["L2-2"].body.indexOf("クリップボード") >= 0,
+  "L2-2 must explain the code file and the clipboard copy.");
+assert(
+  lecture.errorContentByCode["E-GEN-03"].body.indexOf(
+    "もう一度コピー") >= 0,
+  "E-GEN-03 must point at the re-copy button.");
 assert(
   lecture.contentByKey["L3-3"].body.indexOf("赤") >= 0 &&
     lecture.contentByKey["L3-3"].body.indexOf("緑") >= 0,
@@ -111,6 +122,10 @@ assert(
   lecture.contentByKey["L3-7"].body.indexOf("標準モジュール") >= 0 &&
     lecture.contentByKey["L3-7"].body.indexOf("モジュール名") >= 0,
   "L3-7 must explain the fixed new-module type and name input.");
+assert(
+  lecture.contentByKey["L3-8"].body.indexOf("修正を反映") >= 0 &&
+    lecture.contentByKey["L3-8"].body.indexOf("軽微") >= 0,
+  "L3-8 must scope manual fixes to small edits and name the apply button.");
 assert(
   lecture.contentByKey["L4-1"].body.indexOf("元のブック") >= 0 &&
     lecture.contentByKey["L4-1"].body.indexOf("変更しません") >= 0,
@@ -139,6 +154,17 @@ var changedState = {
   lastError: null,
   buildResult: null
 };
+var editingState = {
+  currentStep: 3,
+  modules: [
+    { name: "A", status: "changed" },
+    { name: "B", status: "pending" }
+  ],
+  selectedModuleName: "A",
+  pasteEditing: true,
+  lastError: null,
+  buildResult: null
+};
 
 assert(
   lecture.getBranchKey(noChangeState) === "L3-6",
@@ -151,6 +177,9 @@ assert(
   lecture.getContent(changedState, "L3-6").title ===
     lecture.contentByKey["L3-6"].title,
   "Changed L3-6 guidance mismatch.");
+assert(
+  lecture.getBranchKey(editingState) === "L3-8",
+  "Manual edit state must use the L3-8 guidance.");
 assert(
   lecture.getContent({
     lastError: { code: "E-UNKNOWN" },
@@ -181,4 +210,4 @@ assert(
   "Production assets still ask users to collect internal diagnostics.");
 
 console.log("test-p8-lecture: PASS");
-console.log("branches=16, errors=10, body-lines=2-4, L3-6=dynamic");
+console.log("branches=17, errors=11, body-lines=2-4, L3-6=dynamic");

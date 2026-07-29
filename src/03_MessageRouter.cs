@@ -145,9 +145,12 @@ namespace MacroDesk
                         GetString(parameters, "file"));
                 case "readRequestTemplate":
                     return services.ReadRequestTemplate();
-                case "writeRequestFile":
-                    return services.WriteRequestFile(
+                case "writeCodeFile":
+                    return services.WriteCodeFile(
                         GetString(parameters, "content"));
+                case "writeClipboard":
+                    return services.WriteClipboard(
+                        GetString(parameters, "text"));
                 case "readClipboard":
                     return services.ReadClipboard();
                 case "buildBook":
