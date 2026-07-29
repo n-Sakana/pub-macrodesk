@@ -199,16 +199,8 @@ namespace MacroDesk
             project.DirEntry = dirEntry;
             project.VbaStorage = vbaStorage;
 
-            // Adding modules rewrites dir, PROJECT and PROJECTwm, so that
-            // feature stays available only while every record was read
-            // strictly and the three agree with each other.
-            bool metadataIsExact =
-                strictDir &&
-                projectTypes.Count == dirModules.Count &&
-                (projectWmEntry == null || projectWmMatches);
-            project.ProjectModulesOffset =
-                metadataIsExact ? projectModulesOffset : -1;
-            if (!metadataIsExact)
+            if (projectTypes.Count != dirModules.Count ||
+                (projectWmEntry != null && !projectWmMatches))
             {
                 project.HasReadWarnings = true;
             }
@@ -216,6 +208,7 @@ namespace MacroDesk
             HashSet<int> usedStreamIds = new HashSet<int>();
             HashSet<string> usedModuleNames =
                 new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            bool dirModulesComplete = true;
             int index;
             for (index = 0; index < dirModules.Count; index++)
             {
@@ -233,13 +226,16 @@ namespace MacroDesk
                     project.HasReadWarnings = true;
                 }
 
-                TryAddModule(
+                if (!TryAddModule(
                     project,
                     record,
                     kind,
                     true,
                     usedStreamIds,
-                    usedModuleNames);
+                    usedModuleNames))
+                {
+                    dirModulesComplete = false;
+                }
             }
 
             // Modules that dir lost but PROJECT still lists.
@@ -263,6 +259,7 @@ namespace MacroDesk
                     usedStreamIds,
                     usedModuleNames))
                 {
+                    dirModulesComplete = false;
                     project.HasReadWarnings = true;
                 }
             }
@@ -299,10 +296,23 @@ namespace MacroDesk
                         usedStreamIds,
                         usedModuleNames))
                     {
+                        dirModulesComplete = false;
                         project.HasReadWarnings = true;
                     }
                 }
             }
+
+            // Adding a module appends to dir, PROJECT and PROJECTwm and
+            // the writer checks the recorded PROJECTMODULES count against
+            // the module list. Keep the dir offset only while that
+            // assumption holds: dir read strictly and every module in the
+            // list came from a dir record.
+            project.ProjectModulesOffset =
+                strictDir &&
+                dirModulesComplete &&
+                project.Modules.Count == dirModules.Count ?
+                projectModulesOffset :
+                -1;
 
             project.HasReadWarnings =
                 project.HasReadWarnings || ole2.HasReadWarnings;

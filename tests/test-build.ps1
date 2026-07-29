@@ -307,6 +307,12 @@ $knownNames = @(
     'mini_to_regular.xlsm',
     'regular_to_mini.xlsm',
     'multiple_modules.xlsm',
+    'project_dir_mismatch.xlsm',
+    'project_dir_mismatch_built.xlsm',
+    'renamed_input.xls',
+    'renamed_output.xls',
+    'no_macro_input.xlsm',
+    'no_macro_output.xlsm',
     'unsupported_input.xls',
     'unsupported_output.xls',
     'all_or_nothing_failure.xlsm'
@@ -379,6 +385,83 @@ Assert-OtherZipEntries $resolvedBookPath $additionPath
     Result = $additionResult
     Project = $additionProject
 })
+
+# A PROJECT stream that lists a module dir does not know is a metadata
+# inconsistency, not a reason to refuse adding a module: dir itself is
+# intact, and the writer checks the PROJECTMODULES count it depends on.
+$ghostSourceProject = [MacroDesk.BookIO]::ReadProject($resolvedBookPath)
+$ghostText = $ghostSourceProject.ProjectText
+$ghostInsert = "Module=GhostModule`r`n"
+$ghostRegex = New-Object Text.RegularExpressions.Regex('(?m)^Module=')
+$ghostText = $ghostRegex.Replace(
+    $ghostText,
+    ($ghostInsert + 'Module='),
+    1)
+$ghostBytes = $ghostSourceProject.Encoding.GetBytes($ghostText)
+$ghostChanges = New-Object `
+    'System.Collections.Generic.Dictionary[int,byte[]]'
+$ghostChanges.Add($ghostSourceProject.ProjectEntry.Id, $ghostBytes)
+$ghostVbaBytes = [MacroDesk.Ole2Writer]::Rebuild(
+    $ghostSourceProject.Ole2,
+    $ghostChanges)
+$ghostPath = Join-Path $fullOutputRoot 'project_dir_mismatch.xlsm'
+[IO.File]::Copy($resolvedBookPath, $ghostPath, $true)
+$ghostZip = [IO.Compression.ZipFile]::Open(
+    $ghostPath,
+    [IO.Compression.ZipArchiveMode]::Update)
+try {
+    $ghostEntry = $ghostZip.Entries |
+        Where-Object { $_.Name -eq 'vbaProject.bin' } |
+        Select-Object -First 1
+    $ghostStream = $ghostEntry.Open()
+    try {
+        $ghostStream.SetLength(0)
+        $ghostStream.Write($ghostVbaBytes, 0, $ghostVbaBytes.Length)
+    } finally {
+        $ghostStream.Dispose()
+    }
+} finally {
+    $ghostZip.Dispose()
+}
+
+$ghostProject = [MacroDesk.BookIO]::ReadProject($ghostPath)
+Assert-True $ghostProject.HasReadWarnings `
+    'A PROJECT/dir mismatch did not produce a read warning.'
+Assert-True ($ghostProject.Modules.Count -eq 6) `
+    'A PROJECT/dir mismatch changed the readable module list.'
+Assert-True ($ghostProject.ProjectModulesOffset -ge 0) `
+    'A PROJECT/dir mismatch disabled module addition.'
+
+$ghostAddChanges = New-Object `
+    'System.Collections.Generic.Dictionary[string,string]'
+$ghostAddList = New-Object `
+    'System.Collections.Generic.List[MacroDesk.VbaModuleAddition]'
+$ghostAddList.Add(
+    (New-Object MacroDesk.VbaModuleAddition(
+        'MismatchHelpers',
+        $additionCode)))
+$ghostOutput = Join-Path $fullOutputRoot 'project_dir_mismatch_built.xlsm'
+$ghostResult = [MacroDesk.BookIO]::BuildCopy(
+    $ghostPath,
+    $ghostOutput,
+    $ghostAddChanges,
+    $ghostAddList)
+Assert-True $ghostResult.Success `
+    ("Adding a module to a mismatched project failed: " +
+        $ghostResult.Message)
+$ghostBuilt = [MacroDesk.BookIO]::ReadProject($ghostOutput)
+Assert-True ($ghostBuilt.Modules.Count -eq 7) `
+    'The added module is missing after a mismatched-project build.'
+Assert-True (
+    (Get-Module $ghostBuilt 'MismatchHelpers').Code -ceq $additionCode) `
+    'The added module code changed after a mismatched-project build.'
+foreach ($sourceModule in $sourceProject.Modules) {
+    Assert-True (
+        (Get-Module $ghostBuilt $sourceModule.Name).FullCode -ceq
+        $sourceModule.FullCode) `
+        ("Existing VBA source changed after a mismatched-project " +
+            "build: " + $sourceModule.Name)
+}
 
 $oneLineCode = [regex]::Replace(
     $appController.FullCode,
