@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Text;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows;
@@ -325,6 +326,17 @@ namespace MacroDesk.Tests
                         "})");
                     await Capture(diffScreenshot);
 
+                    string layout = await MeasureDiffLayout(originalCode);
+
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"paste-response\"]').click();");
+                    await WaitFor(
+                        "MacroDeskState.getState().busyAction === null");
+                    await WaitFor(
+                        "MacroDeskState.findModule('TimerUtils')" +
+                        ".status === 'changed'");
+
                     await Execute(
                         "document.querySelector(" +
                         "'[data-action=\"cancel-paste\"]').click();");
@@ -619,13 +631,9 @@ namespace MacroDesk.Tests
                         "gaps:document.querySelectorAll(" +
                         "'.diff-gap').length" +
                         "})");
-                    await Execute(
-                        "document.querySelector(" +
-                        "'[data-action=\"toggle-diff-wrap\"]')" +
-                        ".click();");
-                    await WaitFor(
-                        "MacroDeskState.findModule('WindowUtils')" +
-                        ".wrapDiff === true");
+                    // Wrapping is the default so both panes stay in the
+                    // visible area; the toggle turns it off for an
+                    // exact-column reading, scrolling inside the pane.
                     string largeWrapped = await ReadJson(
                         "({" +
                         "pressed:document.querySelector(" +
@@ -638,6 +646,34 @@ namespace MacroDesk.Tests
                         "document.querySelector('.diff-code'))" +
                         ".whiteSpace" +
                         "})");
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"toggle-diff-wrap\"]')" +
+                        ".click();");
+                    await WaitFor(
+                        "MacroDeskState.findModule('WindowUtils')" +
+                        ".wrapDiff === false");
+                    string largeNoWrap = await ReadJson(
+                        "({" +
+                        "pressed:document.querySelector(" +
+                        "'[data-action=\"toggle-diff-wrap\"]')" +
+                        ".getAttribute('aria-pressed')," +
+                        "wrapped:document.querySelector(" +
+                        "'.diff-table-scroller').classList" +
+                        ".contains('is-wrapped')," +
+                        "whiteSpace:getComputedStyle(" +
+                        "document.querySelector('.diff-code'))" +
+                        ".whiteSpace," +
+                        "horizontal:document.documentElement" +
+                        ".scrollWidth>innerWidth" +
+                        "})");
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"toggle-diff-wrap\"]')" +
+                        ".click();");
+                    await WaitFor(
+                        "MacroDeskState.findModule('WindowUtils')" +
+                        ".wrapDiff === true");
                     await Execute(
                         "document.querySelector(" +
                         "'[data-action=\"toggle-diff-context\"]')" +
@@ -961,6 +997,7 @@ namespace MacroDesk.Tests
                     result.Add("initial", initial);
                     result.Add("waiting", waiting);
                     result.Add("normal", normal);
+                    result.Add("layout", layout);
                     result.Add("undone", undone);
                     result.Add("identical", identical);
                     result.Add("keyboard", keyboard);
@@ -974,6 +1011,7 @@ namespace MacroDesk.Tests
                     result.Add("largeFull", largeFull);
                     result.Add("largeExpanded", largeExpanded);
                     result.Add("largeWrapped", largeWrapped);
+                    result.Add("largeNoWrap", largeNoWrap);
                     result.Add("largeContext", largeContext);
                     result.Add(
                         "buildConfirmation",
@@ -1079,6 +1117,91 @@ namespace MacroDesk.Tests
                 await WaitFor(
                     "MacroDeskState.getState().selectedModuleName === " +
                     nameJson);
+            }
+
+            private async Task<string> MeasureDiffLayout(
+                string originalCode)
+            {
+                // Paste a long-line, many-line version so the layout is
+                // measured against content that used to need a window
+                // wide horizontal scroll.
+                StringBuilder builder = new StringBuilder();
+                builder.Append(originalCode);
+                if (!originalCode.EndsWith("\n"))
+                {
+                    builder.Append("\r\n");
+                }
+
+                int index;
+                for (index = 0; index < 200; index++)
+                {
+                    builder.Append("    total = total + ");
+                    builder.Append(index.ToString());
+                    builder.Append("\r\n");
+                }
+                builder.Append("    Call LayoutProbe(");
+                for (index = 0; index < 12; index++)
+                {
+                    if (index > 0)
+                    {
+                        builder.Append(", ");
+                    }
+                    builder.Append("\"aVeryLongArgumentValueNumber");
+                    builder.Append(index.ToString());
+                    builder.Append("\"");
+                }
+                builder.Append(")\r\n");
+
+                await Execute(
+                    "MacroDeskApp.acceptPastedText(" +
+                    serializer.Serialize(builder.ToString()) +
+                    ",'TimerUtils');");
+                await WaitFor(
+                    "MacroDeskState.findModule('TimerUtils')" +
+                    ".status === 'changed' && " +
+                    "document.querySelector(" +
+                    "'.diff-table-scroller') !== null");
+
+                return await ReadJson(
+                    "(function(){" +
+                    "var sc=document.querySelector(" +
+                    "'.diff-table-scroller');" +
+                    "var right=document.querySelector(" +
+                    "'.diff-code--right');" +
+                    "var head=document.querySelector(" +
+                    "'.diff-table thead th');" +
+                    "sc.scrollTop=sc.scrollHeight;" +
+                    "var rows=document.querySelectorAll('.diff-row');" +
+                    "var last=rows[rows.length-1]" +
+                    ".getBoundingClientRect();" +
+                    "var box=sc.getBoundingClientRect();" +
+                    "var longRow=null;var i;" +
+                    "for(i=0;i<rows.length;i+=1){" +
+                    "if(rows[i].textContent.length>200){" +
+                    "longRow=rows[i];break;}}" +
+                    "var lr=longRow?longRow.querySelector(" +
+                    "'.diff-code--left').getBoundingClientRect():null;" +
+                    "var rr=longRow?longRow.querySelector(" +
+                    "'.diff-code--right').getBoundingClientRect():null;" +
+                    "return {" +
+                    "documentWidth:document.documentElement.scrollWidth," +
+                    "viewportWidth:innerWidth," +
+                    "verticalOverflow:sc.scrollHeight>sc.clientHeight," +
+                    "scrolledToBottom:Math.abs(sc.scrollTop+" +
+                    "sc.clientHeight-sc.scrollHeight)<2," +
+                    "lastRowVisible:last.bottom<=box.bottom+2&&" +
+                    "last.top>=box.top-2," +
+                    "innerHorizontal:sc.scrollWidth-sc.clientWidth," +
+                    "stickyHeader:Math.abs(" +
+                    "head.getBoundingClientRect().top-box.top)<2," +
+                    "rightVisible:right.getBoundingClientRect().right" +
+                    "<=innerWidth+1," +
+                    "longFound:longRow!==null," +
+                    "longWrapped:(lr&&rr)?" +
+                    "Math.max(lr.height,rr.height)>25:false," +
+                    "longAligned:(lr&&rr)?(Math.abs(lr.top-rr.top)<1&&" +
+                    "Math.abs(lr.height-rr.height)<1):false" +
+                    "};}())");
             }
 
             private async Task Execute(string script)

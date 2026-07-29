@@ -314,11 +314,8 @@ namespace MacroDesk.Tests
 
                     string[] errorCodes = new string[]
                     {
-                        "E-ATTACH-01",
                         "E-ATTACH-02",
                         "E-ATTACH-03",
-                        "E-ATTACH-04",
-                        "E-ATTACH-05",
                         "E-GEN-01",
                         "E-GEN-02",
                         "E-SYS-01",

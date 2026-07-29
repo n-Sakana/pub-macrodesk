@@ -206,6 +206,7 @@ try {
     $largeFull = $result.largeFull | ConvertFrom-Json
     $largeExpanded = $result.largeExpanded | ConvertFrom-Json
     $largeWrapped = $result.largeWrapped | ConvertFrom-Json
+    $largeNoWrap = $result.largeNoWrap | ConvertFrom-Json
     $largeContext = $result.largeContext | ConvertFrom-Json
     $buildConfirmation =
         $result.buildConfirmation | ConvertFrom-Json
@@ -279,6 +280,30 @@ try {
         'Attach or paste log leaked code content.'
     Assert-True (-not $normal.horizontal) `
         'Diff screen has document-level horizontal scroll.'
+
+    $layout = $result.layout | ConvertFrom-Json
+    Assert-True (
+        [double]$layout.documentWidth -le
+        [double]$layout.viewportWidth) `
+        'A long diff forced document-level horizontal scroll.'
+    Assert-True ($layout.rightVisible -eq $true) `
+        'The right diff pane is outside the visible area.'
+    Assert-True ($layout.verticalOverflow -eq $true) `
+        'The long diff did not exceed its scroll container.'
+    Assert-True ($layout.scrolledToBottom -eq $true) `
+        'The diff area cannot be scrolled to its last row.'
+    Assert-True ($layout.lastRowVisible -eq $true) `
+        'The last diff row stays outside the visible area.'
+    Assert-True ([double]$layout.innerHorizontal -eq 0) `
+        'Wrapped diff rows still overflow horizontally.'
+    Assert-True ($layout.stickyHeader -eq $true) `
+        'The diff column headings do not stay visible while scrolling.'
+    Assert-True ($layout.longFound -eq $true) `
+        'The long-line probe row was not rendered.'
+    Assert-True ($layout.longWrapped -eq $true) `
+        'A long VBA line was not wrapped.'
+    Assert-True ($layout.longAligned -eq $true) `
+        'Wrapped diff rows lost left/right alignment.'
 
     Assert-True ($undone.status -eq 'pending') `
         'Undo did not restore pending status.'
@@ -391,7 +416,14 @@ try {
         $largeWrapped.pressed -eq 'true' -and
         $largeWrapped.wrapped -and
         $largeWrapped.whiteSpace -eq 'pre-wrap') `
-        'The diff wrap toggle did not change line wrapping.'
+        'Line wrapping must be on by default.'
+    Assert-True (
+        $largeNoWrap.pressed -eq 'false' -and
+        -not $largeNoWrap.wrapped -and
+        $largeNoWrap.whiteSpace -eq 'pre') `
+        'The diff wrap toggle did not turn wrapping off.'
+    Assert-True (-not $largeNoWrap.horizontal) `
+        'Unwrapped diff must scroll inside the pane, not the window.'
     Assert-True ($largeContext.rows -eq 5001) `
         'Expanded large-module view row count mismatch.'
     Assert-True ($largeContext.gaps -eq 0) `

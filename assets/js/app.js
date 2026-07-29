@@ -6,6 +6,8 @@
   var presetFeedbackTimer = null;
   var pendingAttachPath = null;
   var newModuleNameDraft = "";
+  var dropActive = false;
+  var dragDepth = 0;
 
   var typeIcons = {
     document:
@@ -66,16 +68,10 @@
   };
 
   var attachErrorMessages = {
-    "E-ATTACH-01":
-      "対応していないファイル形式です。.xlsm、.xlam、.xlsb のいずれかを選んでください。",
     "E-ATTACH-02":
-      "ブックを開けませんでした。Excel で開いている場合は閉じて、もう一度お試しください。",
+      "ファイルを読み取れませんでした。移動や削除がないか、アクセス権を確認してください。",
     "E-ATTACH-03":
-      "このブックにはマクロがありません。選んだファイルが正しいか確認してください。",
-    "E-ATTACH-04":
-      "ブックのマクロ構造を解析できませんでした。ログを添えて配布元へ連絡してください。",
-    "E-ATTACH-05":
-      ".xlsb は現在検証中の形式です。Excel で .xlsm 形式に保存し直してお試しください。"
+      "このブックにはマクロがありません。選んだファイルが正しいか確認してください。"
   };
 
   var generalErrorMessages = {
@@ -88,7 +84,7 @@
     "E-SYS-01":
       "WebView2 Runtime が見つかりません。起動時の案内に従って配布元へ連絡してください。",
     "E-SYS-02":
-      "処理を完了できませんでした。再発する場合は %LOCALAPPDATA%\\MacroDesk\\logs\\ のログを添えて配布元へ連絡してください。"
+      "処理を完了できませんでした。作業状態を保ったまま、もう一度お試しください。"
   };
 
   var buildErrorMessages = {
@@ -185,9 +181,11 @@
       "toast-label",
       tone === "error"
         ? "確認してください"
-        : tone === "info"
-          ? "お知らせ"
-          : "完了");
+        : tone === "warning"
+          ? "注意"
+          : tone === "info"
+            ? "お知らせ"
+            : "完了");
     toast.setAttribute(
       "role",
       tone === "error" ? "alert" : "status");
@@ -625,7 +623,7 @@
       dropText.appendChild(createElement(
         "p",
         "",
-        "対応形式: .xlsm / .xlam / .xlsb"));
+        "対応形式: .xlsm / .xlam / .xlsb / .xls"));
     }
     pickButton.disabled = state.busyAction !== null;
     if (state.busyAction === "attachBook") {
@@ -1132,18 +1130,6 @@
     return workspace;
   }
 
-  function createDiffHeadings() {
-    var headings = createElement("div", "diff-column-headings");
-    var left = createElement("div", "diff-column-heading");
-    var right = createElement("div", "diff-column-heading");
-
-    left.appendChild(createElement("strong", "", "現在のコード"));
-    right.appendChild(createElement("strong", "", "貼り付けたコード"));
-    headings.appendChild(left);
-    headings.appendChild(right);
-    return headings;
-  }
-
   function createDiffWorkspace(state, module) {
     var workspace = createElement(
       "div",
@@ -1225,10 +1211,11 @@
       "toggle-diff-wrap");
     wrapToggle.setAttribute(
       "aria-pressed",
-      module.wrapDiff ? "true" : "false");
+      module.wrapDiff !== false ? "true" : "false");
     wrapToggle.classList.toggle(
       "is-active",
-      module.wrapDiff === true);
+      module.wrapDiff !== false);
+    wrapToggle.title = "長い行を折り返して左右を並べて表示します";
     actions.appendChild(contextToggle);
     actions.appendChild(wrapToggle);
 
@@ -1244,13 +1231,12 @@
     toolbar.appendChild(resultGroup);
     toolbar.appendChild(actions);
     workspace.appendChild(toolbar);
-    workspace.appendChild(createDiffHeadings());
     workspace.appendChild(tableHost);
     global.MacroDeskDiffView.renderDiff(
       tableHost,
       rows,
       module.showChangesOnly === true,
-      module.wrapDiff === true);
+      module.wrapDiff !== false);
     if (module.isNew === true) {
       var placeholder = createElement(
         "div",
@@ -1954,6 +1940,13 @@
     renderMain(state);
   }
 
+  function getAttachWarningMessage(data) {
+    if (data && data.warning === true) {
+      return "一部に不整合があります。読み取れる範囲で処理を続行します。";
+    }
+    return "";
+  }
+
   function getHostErrorMessage(error) {
     if (error &&
         error.data &&
@@ -2217,10 +2210,16 @@
       "attachBook",
       { path: path }
     ).then(function (data) {
+      var warningMessage;
+
       newModuleNameDraft = "";
       global.MacroDeskState.setBook(data.book, data.modules);
       global.MacroDeskState.setBusyAction(null);
       clearToast();
+      warningMessage = getAttachWarningMessage(data);
+      if (warningMessage) {
+        showToast(warningMessage, "warning");
+      }
       announce(
         data.book.name + "、" +
         data.modules.length + " モジュールを読み込みました。");
@@ -2647,7 +2646,7 @@
     }
     return global.MacroDeskState.setModuleWrapDiff(
       module.name,
-      !module.wrapDiff);
+      module.wrapDiff === false);
   }
 
   function jumpSelectedDiff(direction) {
@@ -2855,6 +2854,78 @@
     jumpSelectedDiff(event.key === "ArrowUp" ? -1 : 1);
   }
 
+  function hasFileDrag(event) {
+    var transfer = event.dataTransfer;
+    var types = transfer && transfer.types ? transfer.types : null;
+    var index;
+
+    if (!types) {
+      return false;
+    }
+    for (index = 0; index < types.length; index += 1) {
+      if (types[index] === "Files") {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function setDropActive(active) {
+    if (dropActive === active) {
+      return;
+    }
+    dropActive = active;
+    document.body.classList.toggle("is-file-drag", active);
+  }
+
+  function onWindowDragOver(event) {
+    if (!hasFileDrag(event)) {
+      return;
+    }
+
+    // The page must accept the drag for the drop event to fire at all.
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = "copy";
+    }
+    dragDepth = 1;
+    setDropActive(true);
+  }
+
+  function onWindowDragLeave(event) {
+    if (event.relatedTarget) {
+      return;
+    }
+    dragDepth = 0;
+    setDropActive(false);
+  }
+
+  function onWindowDrop(event) {
+    var files = event.dataTransfer ? event.dataTransfer.files : null;
+
+    if (!hasFileDrag(event)) {
+      return;
+    }
+    event.preventDefault();
+    dragDepth = 0;
+    setDropActive(false);
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    global.hostBridge.resolveDroppedFiles(files).then(
+      function (paths) {
+        if (!paths || paths.length === 0) {
+          return null;
+        }
+        return attachPath(paths[0]);
+      },
+      function (error) {
+        handleHostError(error, "");
+        return null;
+      });
+  }
+
   function hasDemoQuery() {
     var query = global.location.search || "";
     return /(?:^\?|&)demo=1(?:&|$)/.test(query);
@@ -2889,6 +2960,11 @@
     elements.main.addEventListener("click", onMainClick);
     elements.main.addEventListener("input", onMainInput);
     document.addEventListener("paste", onDocumentPaste);
+    document.addEventListener("dragenter", onWindowDragOver);
+    document.addEventListener("dragover", onWindowDragOver);
+    document.addEventListener("dragleave", onWindowDragLeave);
+    document.addEventListener("dragend", onWindowDragLeave);
+    document.addEventListener("drop", onWindowDrop);
     document.addEventListener("keydown", onDocumentKeyDown);
     elements.discardModalCancel.addEventListener("click", function () {
       pendingAttachPath = null;
@@ -2916,6 +2992,7 @@
 
     global.MacroDeskLecture.initialize();
     global.hostBridge.on("bookDropped", function (data) {
+      setDropActive(false);
       attachPath(data.path);
     });
     loadAppInfo();
@@ -2931,6 +3008,10 @@
     loadPreset: loadPreset,
     createRequestFile: createRequestFile,
     normalizePastedText: normalizePastedText,
+    onWindowDragOver: onWindowDragOver,
+    onWindowDragLeave: onWindowDragLeave,
+    onWindowDrop: onWindowDrop,
+    getAttachWarningMessage: getAttachWarningMessage,
     createOutputTimestamp: createOutputTimestamp,
     createBuildOutputName: createBuildOutputName,
     getHostErrorMessage: getHostErrorMessage,

@@ -80,6 +80,7 @@ namespace MacroDesk
         public List<int> DifatSectorIds;
         public List<Ole2DirectoryEntry> Entries;
         public Ole2DirectoryEntry RootEntry;
+        public bool HasReadWarnings;
 
         private Ole2File(byte[] source)
         {
@@ -90,6 +91,7 @@ namespace MacroDesk
             FatSectorIds = new List<int>();
             DifatSectorIds = new List<int>();
             Entries = new List<Ole2DirectoryEntry>();
+            HasReadWarnings = false;
         }
 
         public byte[] Bytes
@@ -149,8 +151,8 @@ namespace MacroDesk
                 {
                     if (found != null)
                     {
-                        throw new InvalidDataException(
-                            "Duplicate OLE2 child entry: " + name);
+                        HasReadWarnings = true;
+                        continue;
                     }
 
                     found = entry;
@@ -175,14 +177,25 @@ namespace MacroDesk
             {
                 return new byte[0];
             }
-            if (entry.Size > int.MaxValue)
-            {
-                throw new InvalidDataException(
-                    "OLE2 stream is too large to read: " + entry.Name);
-            }
-
             if (entry.Size < MiniStreamCutoff)
             {
+                // Some producers store small streams in the regular FAT
+                // chain while the root mini stream is missing entirely.
+                // Only in that case fall back to the regular chain; a
+                // partially readable mini stream keeps its honest
+                // partial result instead of unrelated sector data.
+                if (miniStreamData.Length == 0)
+                {
+                    byte[] regular = ReadRegularStream(
+                        entry.StartSector,
+                        entry.Size,
+                        "stream " + entry.Name);
+                    if (regular.Length > 0)
+                    {
+                        HasReadWarnings = true;
+                        return regular;
+                    }
+                }
                 return ReadMiniStream(entry);
             }
 
@@ -205,7 +218,8 @@ namespace MacroDesk
             {
                 if (bytes[index] != signature[index])
                 {
-                    throw new InvalidDataException("Invalid OLE2 signature.");
+                    HasReadWarnings = true;
+                    break;
                 }
             }
 
@@ -214,32 +228,50 @@ namespace MacroDesk
             ushort sectorShift = ReadUInt16(30);
             ushort miniSectorShift = ReadUInt16(32);
 
-            if (MajorVersion != 3 && MajorVersion != 4)
-            {
-                throw new InvalidDataException(
-                    "Unsupported OLE2 major version: " + MajorVersion);
-            }
             if (byteOrder != 0xFFFE)
             {
-                throw new InvalidDataException("Unsupported OLE2 byte order.");
+                HasReadWarnings = true;
             }
-            if ((MajorVersion == 3 && sectorShift != 9) ||
-                (MajorVersion == 4 && sectorShift != 12))
+
+            if (sectorShift == 12)
             {
-                throw new InvalidDataException(
-                    "Invalid OLE2 sector shift for the major version.");
+                if (MajorVersion != 4)
+                {
+                    HasReadWarnings = true;
+                }
+                MajorVersion = 4;
             }
-            if (miniSectorShift != 6)
+            else if (sectorShift == 9)
             {
-                throw new InvalidDataException("Invalid OLE2 mini sector shift.");
+                if (MajorVersion != 3)
+                {
+                    HasReadWarnings = true;
+                }
+                MajorVersion = 3;
+            }
+            else
+            {
+                HasReadWarnings = true;
+                sectorShift = MajorVersion == 4 ? (ushort)12 : (ushort)9;
+                MajorVersion = sectorShift == 12 ? (ushort)4 : (ushort)3;
             }
 
             SectorSize = 1 << sectorShift;
-            MiniSectorSize = 1 << miniSectorShift;
-            if (bytes.Length < SectorSize || bytes.Length % SectorSize != 0)
+            if (bytes.Length < SectorSize)
             {
-                throw new InvalidDataException(
-                    "OLE2 file length is not aligned to the sector size.");
+                HasReadWarnings = true;
+                SectorSize = 512;
+                MajorVersion = 3;
+            }
+            if (miniSectorShift != 6)
+            {
+                HasReadWarnings = true;
+                miniSectorShift = 6;
+            }
+            MiniSectorSize = 1 << miniSectorShift;
+            if (bytes.Length % SectorSize != 0)
+            {
+                HasReadWarnings = true;
             }
 
             sectorCount = bytes.Length / SectorSize - 1;
@@ -254,13 +286,15 @@ namespace MacroDesk
 
             if (MajorVersion == 3 && NumberOfDirectorySectors != 0)
             {
-                throw new InvalidDataException(
-                    "OLE2 version 3 directory sector count must be zero.");
+                HasReadWarnings = true;
             }
             if (MiniStreamCutoff != 0x1000)
             {
-                throw new InvalidDataException(
-                    "Invalid OLE2 mini stream cutoff size.");
+                HasReadWarnings = true;
+                if (MiniStreamCutoff == 0)
+                {
+                    MiniStreamCutoff = 0x1000;
+                }
             }
         }
 
@@ -281,8 +315,7 @@ namespace MacroDesk
                 }
                 else if (sectorId != FreeSector)
                 {
-                    throw new InvalidDataException(
-                        "Invalid sector marker in the header DIFAT.");
+                    HasReadWarnings = true;
                 }
             }
 
@@ -290,10 +323,15 @@ namespace MacroDesk
             int entriesPerDifatSector = SectorSize / 4 - 1;
             for (index = 0; index < difatCount; index++)
             {
-                ValidateSectorId(current, "DIFAT sector");
+                if (!IsValidSectorId(current))
+                {
+                    HasReadWarnings = true;
+                    break;
+                }
                 if (!difatIds.Add(current))
                 {
-                    throw new InvalidDataException("Cycle in the DIFAT chain.");
+                    HasReadWarnings = true;
+                    break;
                 }
 
                 DifatSectorIds.Add(current);
@@ -308,8 +346,7 @@ namespace MacroDesk
                     }
                     else if (fatSectorId != FreeSector)
                     {
-                        throw new InvalidDataException(
-                            "Invalid sector marker in a DIFAT sector.");
+                        HasReadWarnings = true;
                     }
                 }
 
@@ -322,20 +359,17 @@ namespace MacroDesk
                 if (FirstDifatSector != EndOfChain &&
                     FirstDifatSector != FreeSector)
                 {
-                    throw new InvalidDataException(
-                        "Unexpected first DIFAT sector.");
+                    HasReadWarnings = true;
                 }
             }
             else if (current != EndOfChain)
             {
-                throw new InvalidDataException(
-                    "DIFAT chain does not end with ENDOFCHAIN.");
+                HasReadWarnings = true;
             }
 
             if (FatSectorIds.Count != fatCount)
             {
-                throw new InvalidDataException(
-                    "FAT sector count does not match the DIFAT.");
+                HasReadWarnings = true;
             }
         }
 
@@ -344,18 +378,22 @@ namespace MacroDesk
             int expectedCount,
             HashSet<int> seen)
         {
-            ValidateSectorId(sectorId, "FAT sector");
-            if (FatSectorIds.Count >= expectedCount)
+            if (!IsValidSectorId(sectorId))
             {
-                throw new InvalidDataException(
-                    "DIFAT contains more FAT sectors than the header count.");
+                HasReadWarnings = true;
+                return;
             }
             if (!seen.Add(sectorId))
             {
-                throw new InvalidDataException("Duplicate FAT sector in DIFAT.");
+                HasReadWarnings = true;
+                return;
             }
 
             FatSectorIds.Add(sectorId);
+            if (FatSectorIds.Count > expectedCount)
+            {
+                HasReadWarnings = true;
+            }
         }
 
         private void ParseFat()
@@ -390,8 +428,7 @@ namespace MacroDesk
                 int sectorId = FatSectorIds[fatIndex];
                 if (sectorId >= fat.Length || fat[sectorId] != FatSector)
                 {
-                    throw new InvalidDataException(
-                        "FAT sector is not marked as FATSECT.");
+                    HasReadWarnings = true;
                 }
             }
 
@@ -403,8 +440,7 @@ namespace MacroDesk
                 int sectorId = DifatSectorIds[difatIndex];
                 if (sectorId >= fat.Length || fat[sectorId] != DifatSector)
                 {
-                    throw new InvalidDataException(
-                        "DIFAT sector is not marked as DIFSECT.");
+                    HasReadWarnings = true;
                 }
             }
         }
@@ -424,11 +460,9 @@ namespace MacroDesk
                 expectedSectors,
                 "directory stream");
 
-            if (directoryBytes.Length == 0 ||
-                directoryBytes.Length % 128 != 0)
+            if (directoryBytes.Length % 128 != 0)
             {
-                throw new InvalidDataException(
-                    "Invalid OLE2 directory stream length.");
+                HasReadWarnings = true;
             }
 
             int entryCount = directoryBytes.Length / 128;
@@ -444,13 +478,17 @@ namespace MacroDesk
                     objectType != 2 &&
                     objectType != 5)
                 {
-                    throw new InvalidDataException(
-                        "Invalid OLE2 directory object type.");
+                    HasReadWarnings = true;
+                    objectType = 0;
                 }
                 if (nameLength > 64 || (nameLength & 1) != 0)
                 {
-                    throw new InvalidDataException(
-                        "Invalid OLE2 directory name length.");
+                    HasReadWarnings = true;
+                    nameLength = (ushort)Math.Min((int)nameLength, 64);
+                    if ((nameLength & 1) != 0)
+                    {
+                        nameLength--;
+                    }
                 }
 
                 string name = string.Empty;
@@ -463,8 +501,7 @@ namespace MacroDesk
                 }
                 else if (objectType != 0)
                 {
-                    throw new InvalidDataException(
-                        "OLE2 directory entry has no name.");
+                    HasReadWarnings = true;
                 }
 
                 byte[] classIdBytes = new byte[16];
@@ -507,13 +544,28 @@ namespace MacroDesk
                 Entries.Add(entry);
             }
 
-            if (Entries.Count == 0 || Entries[0].ObjectType != 5)
+            RootEntry = null;
+            for (entryIndex = 0; entryIndex < Entries.Count; entryIndex++)
             {
-                throw new InvalidDataException(
-                    "OLE2 root directory entry is missing.");
+                if (Entries[entryIndex].ObjectType == 5)
+                {
+                    RootEntry = Entries[entryIndex];
+                    break;
+                }
             }
-
-            RootEntry = Entries[0];
+            if (RootEntry == null)
+            {
+                HasReadWarnings = true;
+                RootEntry = new Ole2DirectoryEntry();
+                RootEntry.Id = Entries.Count;
+                RootEntry.Name = "Root Entry";
+                RootEntry.ObjectType = 5;
+                Entries.Add(RootEntry);
+            }
+            else if (RootEntry.Id != 0)
+            {
+                HasReadWarnings = true;
+            }
             int storageIndex;
             for (storageIndex = 0;
                 storageIndex < Entries.Count;
@@ -547,25 +599,25 @@ namespace MacroDesk
                 }
                 if (id >= Entries.Count)
                 {
-                    throw new InvalidDataException(
-                        "OLE2 directory tree contains an invalid stream ID.");
+                    HasReadWarnings = true;
+                    continue;
                 }
                 if (!visited.Add(id))
                 {
-                    throw new InvalidDataException(
-                        "Cycle in an OLE2 directory sibling tree.");
+                    HasReadWarnings = true;
+                    continue;
                 }
 
                 Ole2DirectoryEntry entry = Entries[(int)id];
                 if (entry.ObjectType == 0 || entry.ObjectType == 5)
                 {
-                    throw new InvalidDataException(
-                        "Invalid child in an OLE2 directory tree.");
+                    HasReadWarnings = true;
+                    continue;
                 }
                 if (entry.ParentId != -1 && entry.ParentId != storage.Id)
                 {
-                    throw new InvalidDataException(
-                        "OLE2 directory entry has multiple parents.");
+                    HasReadWarnings = true;
+                    continue;
                 }
 
                 entry.ParentId = storage.Id;
@@ -592,12 +644,14 @@ namespace MacroDesk
                 if (FirstMiniFatSector != EndOfChain &&
                     FirstMiniFatSector != FreeSector)
                 {
-                    throw new InvalidDataException(
-                        "Unexpected first mini FAT sector.");
+                    HasReadWarnings = true;
+                    expectedSectors = -1;
                 }
-
-                miniFat = new int[0];
-                return;
+                else
+                {
+                    miniFat = new int[0];
+                    return;
+                }
             }
 
             byte[] miniFatBytes = ReadSectorChainBytes(
@@ -614,7 +668,7 @@ namespace MacroDesk
 
         private void BuildMiniStream()
         {
-            if (RootEntry.Size == 0)
+            if (RootEntry == null || RootEntry.Size == 0)
             {
                 miniStreamData = new byte[0];
                 return;
@@ -628,69 +682,68 @@ namespace MacroDesk
 
         private byte[] ReadMiniStream(Ole2DirectoryEntry entry)
         {
-            int length = (int)entry.Size;
-            int expectedSectors =
-                (length + MiniSectorSize - 1) / MiniSectorSize;
-            if (entry.StartSector < 0)
+            int length;
+            if (entry.Size > (ulong)miniStreamData.Length)
             {
-                throw new InvalidDataException(
-                    "Invalid mini stream start sector: " + entry.Name);
+                HasReadWarnings = true;
+                length = miniStreamData.Length;
             }
-
-            byte[] result = new byte[length];
+            else
+            {
+                length = (int)entry.Size;
+            }
             HashSet<int> visited = new HashSet<int>();
             int current = entry.StartSector;
-            int outputOffset = 0;
-            int count = 0;
-
-            while (current != EndOfChain)
+            using (MemoryStream output = new MemoryStream(length))
             {
-                if (current < 0 || current >= miniFat.Length)
+                while (output.Length < length &&
+                    current != EndOfChain)
                 {
-                    throw new InvalidDataException(
-                        "Mini stream chain is outside the mini FAT.");
-                }
-                if (!visited.Add(current))
-                {
-                    throw new InvalidDataException(
-                        "Cycle in a mini stream chain.");
-                }
-                if (count >= expectedSectors)
-                {
-                    throw new InvalidDataException(
-                        "Mini stream chain is longer than its size.");
+                    if (current < 0 || current >= miniFat.Length)
+                    {
+                        HasReadWarnings = true;
+                        break;
+                    }
+                    if (!visited.Add(current))
+                    {
+                        HasReadWarnings = true;
+                        break;
+                    }
+
+                    long sourceOffset =
+                        (long)current * (long)MiniSectorSize;
+                    int copyLength = Math.Min(
+                        MiniSectorSize,
+                        length - (int)output.Length);
+                    if (sourceOffset < 0 ||
+                        sourceOffset >= miniStreamData.Length)
+                    {
+                        HasReadWarnings = true;
+                        break;
+                    }
+
+                    int available = Math.Min(
+                        copyLength,
+                        miniStreamData.Length - (int)sourceOffset);
+                    output.Write(
+                        miniStreamData,
+                        (int)sourceOffset,
+                        available);
+                    if (available < copyLength)
+                    {
+                        HasReadWarnings = true;
+                        break;
+                    }
+
+                    current = miniFat[current];
                 }
 
-                long sourceOffset =
-                    (long)current * (long)MiniSectorSize;
-                int copyLength = Math.Min(
-                    MiniSectorSize,
-                    length - outputOffset);
-                if (sourceOffset < 0 ||
-                    sourceOffset + copyLength > miniStreamData.Length)
+                if (output.Length < length)
                 {
-                    throw new InvalidDataException(
-                        "Mini stream sector is outside the root mini stream.");
+                    HasReadWarnings = true;
                 }
-
-                Buffer.BlockCopy(
-                    miniStreamData,
-                    (int)sourceOffset,
-                    result,
-                    outputOffset,
-                    copyLength);
-                outputOffset += copyLength;
-                count++;
-                current = miniFat[current];
+                return output.ToArray();
             }
-
-            if (count != expectedSectors)
-            {
-                throw new InvalidDataException(
-                    "Mini stream chain is shorter than its size.");
-            }
-
-            return result;
         }
 
         private byte[] ReadRegularStream(
@@ -702,21 +755,36 @@ namespace MacroDesk
             {
                 return new byte[0];
             }
-            if (size > int.MaxValue)
+
+            ulong maximumLength = (ulong)bytes.Length;
+            int length;
+            if (size > maximumLength)
             {
-                throw new InvalidDataException(
-                    "OLE2 stream is too large: " + label);
+                HasReadWarnings = true;
+                length = bytes.Length;
+            }
+            else
+            {
+                length = (int)size;
             }
 
-            int length = (int)size;
-            int expectedSectors =
-                (length + SectorSize - 1) / SectorSize;
+            int expectedSectors = (int)(
+                ((long)length + (long)SectorSize - 1L) /
+                (long)SectorSize);
             byte[] chainBytes = ReadSectorChainBytes(
                 startSector,
                 expectedSectors,
                 label);
-            byte[] result = new byte[length];
-            Buffer.BlockCopy(chainBytes, 0, result, 0, length);
+            int copyLength = Math.Min(length, chainBytes.Length);
+            byte[] result = new byte[copyLength];
+            if (copyLength > 0)
+            {
+                Buffer.BlockCopy(chainBytes, 0, result, 0, copyLength);
+            }
+            if (copyLength < length)
+            {
+                HasReadWarnings = true;
+            }
             return result;
         }
 
@@ -766,38 +834,33 @@ namespace MacroDesk
                 if (startSector != EndOfChain &&
                     startSector != FreeSector)
                 {
-                    throw new InvalidDataException(
-                        "Non-empty start sector for empty " + label + ".");
+                    HasReadWarnings = true;
                 }
 
                 return chain;
             }
             if (startSector < 0)
             {
-                throw new InvalidDataException(
-                    "Invalid start sector for " + label + ".");
+                HasReadWarnings = true;
+                return chain;
             }
 
             HashSet<int> visited = new HashSet<int>();
             int current = startSector;
-            while (current != EndOfChain)
+            while (current != EndOfChain &&
+                (expectedSectors < 0 ||
+                    chain.Count < expectedSectors))
             {
-                ValidateSectorId(current, label);
-                if (current >= fat.Length)
+                if (!IsValidSectorId(current) ||
+                    current >= fat.Length)
                 {
-                    throw new InvalidDataException(
-                        "Sector chain is outside the FAT: " + label);
+                    HasReadWarnings = true;
+                    break;
                 }
                 if (!visited.Add(current))
                 {
-                    throw new InvalidDataException(
-                        "Cycle in OLE2 sector chain: " + label);
-                }
-                if (expectedSectors >= 0 &&
-                    chain.Count >= expectedSectors)
-                {
-                    throw new InvalidDataException(
-                        "Sector chain is longer than expected: " + label);
+                    HasReadWarnings = true;
+                    break;
                 }
 
                 chain.Add(current);
@@ -805,10 +868,9 @@ namespace MacroDesk
             }
 
             if (expectedSectors >= 0 &&
-                chain.Count != expectedSectors)
+                chain.Count < expectedSectors)
             {
-                throw new InvalidDataException(
-                    "Sector chain is shorter than expected: " + label);
+                HasReadWarnings = true;
             }
 
             return chain;
@@ -829,11 +891,16 @@ namespace MacroDesk
 
         private void ValidateSectorId(int sectorId, string label)
         {
-            if (sectorId < 0 || sectorId >= sectorCount)
+            if (!IsValidSectorId(sectorId))
             {
                 throw new InvalidDataException(
                     "Invalid OLE2 sector for " + label + ": " + sectorId);
             }
+        }
+
+        private bool IsValidSectorId(int sectorId)
+        {
+            return sectorId >= 0 && sectorId < sectorCount;
         }
 
         private void RequireRange(int offset, int count, string label)
@@ -910,12 +977,12 @@ namespace MacroDesk
             }
         }
 
-        private static int ToIntCount(uint value, string label)
+        private int ToIntCount(uint value, string label)
         {
-            if (value > int.MaxValue)
+            if (value > (uint)sectorCount)
             {
-                throw new InvalidDataException(
-                    "OLE2 " + label + " is too large.");
+                HasReadWarnings = true;
+                return sectorCount;
             }
 
             return (int)value;

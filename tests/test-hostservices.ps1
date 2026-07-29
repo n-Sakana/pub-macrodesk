@@ -144,23 +144,69 @@ for ($index = 0; $index -lt $modules.Count; $index++) {
         "Module type label is empty at $index."
 }
 
-$lockErrorCode = ''
+# A damaged container must still hand the real VBA source to the UI:
+# a warning is allowed, an empty module list is not.
+$damagedAttachPath = Join-Path $testdataRoot (
+    'host-damaged-' + [Guid]::NewGuid().ToString('N') + '.xlsm')
+Assert-InsideDirectory $damagedAttachPath $testdataRoot
+try {
+    [byte[]]$damagedBytes = [IO.File]::ReadAllBytes($resolvedBookPath)
+    for ($index = 0; $index -lt $damagedBytes.Length - 3; $index++) {
+        if ($damagedBytes[$index] -eq 0x50 -and
+            $damagedBytes[$index + 1] -eq 0x4B -and
+            $damagedBytes[$index + 2] -eq 0x05 -and
+            $damagedBytes[$index + 3] -eq 0x06) {
+            $damagedBytes[$index + 2] = 0x00
+            $damagedBytes[$index + 3] = 0x00
+        }
+    }
+    [IO.File]::WriteAllBytes($damagedAttachPath, $damagedBytes)
+    $damagedAttached = $service.AttachBook($damagedAttachPath)
+    Assert-True ($damagedAttached['warning'] -eq $true) `
+        'A damaged workbook did not report a read warning.'
+    Assert-True ($damagedAttached['modules'].Count -eq $modules.Count) `
+        'A damaged workbook returned an empty module list.'
+    for ($index = 0; $index -lt $modules.Count; $index++) {
+        Assert-True (
+            $damagedAttached['modules'][$index]['code'] -ceq
+            $modules[$index]['code']) `
+            "Damaged-workbook VBA source changed at $index."
+    }
+} finally {
+    Assert-InsideDirectory $damagedAttachPath $testdataRoot
+    if ([IO.File]::Exists($damagedAttachPath)) {
+        [IO.File]::Delete($damagedAttachPath)
+    }
+}
+
+# A workbook that another process holds open (Excel) is still read.
 $held = [IO.File]::Open(
     $resolvedBookPath,
     [IO.FileMode]::Open,
     [IO.FileAccess]::Read,
     [IO.FileShare]::ReadWrite)
 try {
-    try {
-        $service.AttachBook($resolvedBookPath)
-    } catch [MacroDesk.MacroDeskException] {
-        $lockErrorCode = $_.Exception.ErrorCode
-    }
+    $sharedAttached = $service.AttachBook($resolvedBookPath)
+    Assert-True ($sharedAttached['modules'].Count -eq $modules.Count) `
+        'A shared-locked workbook lost modules.'
+    Assert-True ($sharedAttached['warning'] -eq $false) `
+        'A shared-locked workbook produced a read warning.'
 } finally {
     $held.Dispose()
 }
+
+# An unreadable path still reports a clear attach error.
+$missingAttachPath = Join-Path $testdataRoot (
+    'host-missing-' + [Guid]::NewGuid().ToString('N') + '.xlsm')
+Assert-InsideDirectory $missingAttachPath $testdataRoot
+$lockErrorCode = ''
+try {
+    $service.AttachBook($missingAttachPath)
+} catch [MacroDesk.MacroDeskException] {
+    $lockErrorCode = $_.Exception.ErrorCode
+}
 Assert-True ($lockErrorCode -eq 'E-ATTACH-02') `
-    "Open workbook error mismatch: $lockErrorCode"
+    "Missing workbook error mismatch: $lockErrorCode"
 
 $tempBase = Join-Path $testdataRoot (
     'p3-host-' + [Guid]::NewGuid().ToString('N'))

@@ -33,7 +33,12 @@ namespace MacroDesk
             rootGrid.AllowDrop = true;
 
             webView = new WebView2();
-            webView.AllowExternalDrop = false;
+            // The WebView2 child window owns the whole client area, so it
+            // receives every external drop before WPF can. External drops
+            // must stay enabled for the page to see them; the page turns
+            // them into host requests carrying the real file paths.
+            webView.AllowExternalDrop = true;
+            webView.AllowDrop = true;
             webView.DefaultBackgroundColor = System.Drawing.Color.FromArgb(20, 22, 28);
             webView.Visibility = Visibility.Hidden;
             rootGrid.Children.Add(webView);
@@ -183,6 +188,8 @@ namespace MacroDesk
 
         private void OnPreviewDrop(object sender, DragEventArgs e)
         {
+            // Secondary route: drops that reach WPF instead of the page
+            // (window chrome, or hosts where the page never sees them).
             if (!e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 return;
@@ -200,6 +207,7 @@ namespace MacroDesk
             Dictionary<string, object> data =
                 new Dictionary<string, object>();
             data.Add("path", paths[0]);
+            data.Add("paths", paths);
             messageRouter.PushEvent("bookDropped", data);
         }
     }

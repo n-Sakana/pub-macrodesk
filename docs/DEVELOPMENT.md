@@ -105,6 +105,7 @@ Node test（UI ロジックの単体検証）:
 ```powershell
 node tests\test-build-payload.js
 node tests\test-diff.js
+node tests\test-file-drop.js
 node tests\test-diff-view.js
 node tests\test-diff-report.js
 node tests\test-host-bridge.js
@@ -148,6 +149,7 @@ node tests\test-vba-highlight.js
 |---|---|---|
 | CFB シリアライザの作り込み不足 | 出力ブック破損 | 上記リリースゲート 3 点 + all-or-nothing（検証を通らない出力は必ず破棄） |
 | MS-OVBA 圧縮器の不具合 | ビルド不能/破損 | 圧縮・展開のラウンドトリップ試験を必須。非圧縮チャンク格納の代替経路は要実機確認 |
-| xlsb 未検証 | xlsb 添付で失敗 | 実物入手までは E-ATTACH-05 の明示エラーで受ける |
+| xlsb 未検証 | 読み取れるモジュールが限定される可能性 | 解析警告を表示し、読める範囲のモジュールを返す |
+| 容器（ZIP / CFB）の破損 | 解析不能で添付できない | SPEC §5.1.1 の 6 経路で読み直し、最後は生バイト走査で復元する。読めたソースは必ず保持し、警告は一度だけ |
 | D&D でパスが取れない | UX 低下のみ | ファイル選択ボタン（方式C）を常設 |
 | Add-Type の C# 5.0 制約違反の混入 | 起動不能 | §1 を各ファイル着手前に再確認。`tests\test-app-compile.ps1` で検出できる |

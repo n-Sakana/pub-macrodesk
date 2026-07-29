@@ -484,9 +484,46 @@ $multiple = Invoke-BuildCase `
     }
 [void]$cases.Add($multiple)
 
-$unsupportedInput = Join-Path $fullOutputRoot 'unsupported_input.xls'
-$unsupportedOutput = Join-Path $fullOutputRoot 'unsupported_output.xls'
-[IO.File]::Copy($resolvedBookPath, $unsupportedInput, $false)
+# The extension does not decide anything: the same workbook content
+# builds under an unfamiliar extension.
+$renamedInput = Join-Path $fullOutputRoot 'renamed_input.xls'
+$renamedOutput = Join-Path $fullOutputRoot 'renamed_output.xls'
+[IO.File]::Copy($resolvedBookPath, $renamedInput, $false)
+$renamedChanges = New-Object `
+    'System.Collections.Generic.Dictionary[string,string]'
+$renamedChanges.Add(
+    'AppController',
+    ([regex]::Replace($appController.FullCode, '(\r\n|\r|\n)+$', '') +
+        "`r`n' renamed extension build`r`n"))
+$renamedResult = [MacroDesk.BookIO]::BuildCopy(
+    $renamedInput,
+    $renamedOutput,
+    $renamedChanges)
+Assert-True $renamedResult.Success `
+    'A renamed workbook extension blocked the build.'
+Assert-True (Test-Path -LiteralPath $renamedOutput) `
+    'A renamed workbook build produced no output.'
+[IO.File]::Delete($renamedInput)
+[IO.File]::Delete($renamedOutput)
+
+# A workbook with no VBA container still fails cleanly.
+$unsupportedInput = Join-Path $fullOutputRoot 'no_macro_input.xlsm'
+$unsupportedOutput = Join-Path $fullOutputRoot 'no_macro_output.xlsm'
+$emptyArchive = [IO.Compression.ZipFile]::Open(
+    $unsupportedInput,
+    [IO.Compression.ZipArchiveMode]::Create)
+try {
+    $emptyEntry = $emptyArchive.CreateEntry('xl/workbook.xml')
+    $emptyStream = $emptyEntry.Open()
+    try {
+        [byte[]]$emptyPayload = [Text.Encoding]::ASCII.GetBytes('<x/>')
+        $emptyStream.Write($emptyPayload, 0, $emptyPayload.Length)
+    } finally {
+        $emptyStream.Dispose()
+    }
+} finally {
+    $emptyArchive.Dispose()
+}
 $unsupportedChanges = New-Object `
     'System.Collections.Generic.Dictionary[string,string]'
 $unsupportedResult = [MacroDesk.BookIO]::BuildCopy(
@@ -494,11 +531,11 @@ $unsupportedResult = [MacroDesk.BookIO]::BuildCopy(
     $unsupportedOutput,
     $unsupportedChanges)
 Assert-True (-not $unsupportedResult.Success) `
-    'Unsupported input build succeeded.'
-Assert-True ($unsupportedResult.ErrorCode -eq 'E-ATTACH-01') `
-    'Unsupported input error code mismatch.'
+    'A macro-free input build succeeded.'
+Assert-True ($unsupportedResult.ErrorCode -eq 'E-ATTACH-03') `
+    'Macro-free input error code mismatch.'
 Assert-True (-not (Test-Path -LiteralPath $unsupportedOutput)) `
-    'Unsupported input left an output file.'
+    'A macro-free input left an output file.'
 [IO.File]::Delete($unsupportedInput)
 
 $invalidCode = (

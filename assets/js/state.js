@@ -257,7 +257,7 @@
       module.written = false;
       module.pastedCode = null;
       module.showChangesOnly = module.lineCount > 200;
-      module.wrapDiff = false;
+      module.wrapDiff = true;
     });
     state.selectedModuleName = null;
     state.newModuleIntake = false;
@@ -328,7 +328,7 @@
     module.showChangesOnly = Math.max(
       module.lineCount || 0,
       getLineCount(code)) > 200;
-    module.wrapDiff = false;
+    module.wrapDiff = true;
     notify();
     return module;
   }
@@ -379,7 +379,7 @@
       status: "changed",
       changedLineCount: changedLineCount || 0,
       showChangesOnly: lineCount > 200,
-      wrapDiff: false,
+      wrapDiff: true,
       written: false,
       isNew: true
     };
@@ -413,7 +413,7 @@
     module.pastedCode = null;
     module.written = false;
     module.showChangesOnly = module.lineCount > 200;
-    module.wrapDiff = false;
+    module.wrapDiff = true;
     notify();
     return true;
   }
@@ -459,7 +459,7 @@
       return false;
     }
 
-    module.wrapDiff = wrapDiff === true;
+    module.wrapDiff = wrapDiff !== false;
     notify();
     return true;
   }

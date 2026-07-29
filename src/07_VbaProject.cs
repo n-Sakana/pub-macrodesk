@@ -74,6 +74,8 @@ namespace MacroDesk
         public List<VbaModule> Modules;
         public string FilePath;
         public bool IsZip;
+        public string VbaEntryName;
+        public bool HasReadWarnings;
 
         public VbaProjectData()
         {
@@ -86,6 +88,9 @@ namespace MacroDesk
             DirDecompressed = new byte[0];
             Modules = new List<VbaModule>();
             FilePath = string.Empty;
+            VbaEntryName = string.Empty;
+            ProjectModulesOffset = -1;
+            HasReadWarnings = false;
         }
     }
 
@@ -98,108 +103,119 @@ namespace MacroDesk
                 throw new ArgumentNullException("ole2Bytes");
             }
 
+            // A healthy workbook takes exactly the strict path below.
+            // Anything that does not hold is recorded as a warning and the
+            // reader keeps going, so a structural defect never costs the
+            // VBA source that is physically present.
+            VbaProjectData project = new VbaProjectData();
             Ole2File ole2 = Ole2File.Parse(ole2Bytes);
-            Ole2DirectoryEntry projectEntry = ole2.FindChild(
-                ole2.RootEntry,
-                "PROJECT",
-                2);
-            Ole2DirectoryEntry vbaStorage = ole2.FindChild(
-                ole2.RootEntry,
+            project.Ole2Bytes = ole2Bytes;
+            project.Ole2 = ole2;
+            project.HasReadWarnings = ole2.HasReadWarnings;
+
+            Ole2DirectoryEntry vbaStorage = FindEntry(
+                project,
+                null,
                 "VBA",
                 1);
-            Ole2DirectoryEntry projectWmEntry = ole2.FindChild(
-                ole2.RootEntry,
+            Ole2DirectoryEntry projectEntry = FindEntry(
+                project,
+                null,
+                "PROJECT",
+                2);
+            Ole2DirectoryEntry projectWmEntry = FindEntry(
+                project,
+                null,
                 "PROJECTwm",
                 2);
-            if (projectEntry == null)
-            {
-                throw new InvalidDataException(
-                    "PROJECT stream was not found in the VBA project.");
-            }
-            if (vbaStorage == null)
-            {
-                throw new InvalidDataException(
-                    "VBA storage was not found in the VBA project.");
-            }
-
-            Ole2DirectoryEntry dirEntry = ole2.FindChild(
+            Ole2DirectoryEntry dirEntry = FindEntry(
+                project,
                 vbaStorage,
                 "dir",
                 2);
-            if (dirEntry == null)
+            if (projectEntry == null || vbaStorage == null ||
+                dirEntry == null)
             {
-                throw new InvalidDataException(
-                    "dir stream was not found in the VBA storage.");
+                project.HasReadWarnings = true;
             }
 
-            byte[] dirCompressed = ole2.ReadStream(dirEntry);
-            byte[] dirDecompressed = VbaCompression.Decompress(dirCompressed);
-            int codePage;
-            int projectModulesOffset;
-            List<VbaDirModule> dirModules = ReadDirModules(
-                dirDecompressed,
-                out codePage,
-                out projectModulesOffset);
-            Encoding encoding = GetStrictEncoding(codePage);
+            byte[] dirCompressed = new byte[0];
+            byte[] dirDecompressed = new byte[0];
+            int codePage = 932;
+            int projectModulesOffset = -1;
+            bool strictDir = false;
+            List<VbaDirModule> dirModules = new List<VbaDirModule>();
+            if (dirEntry != null)
+            {
+                dirCompressed = ole2.ReadStream(dirEntry);
+                dirDecompressed = DecompressDir(project, dirCompressed);
+                dirModules = ReadDirModulesPermissive(
+                    dirDecompressed,
+                    out codePage,
+                    out projectModulesOffset,
+                    out strictDir);
+                if (!strictDir)
+                {
+                    project.HasReadWarnings = true;
+                }
+            }
 
-            byte[] projectBytes = ole2.ReadStream(projectEntry);
-            string projectText = encoding.GetString(projectBytes);
+            Encoding encoding = ResolveEncoding(codePage);
+            project.CodePage = encoding.CodePage;
+            project.Encoding = encoding;
+
+            byte[] projectBytes = new byte[0];
+            string projectText = string.Empty;
+            if (projectEntry != null)
+            {
+                projectBytes = ole2.ReadStream(projectEntry);
+                projectText = encoding.GetString(projectBytes);
+            }
             Dictionary<string, VbaModuleKind> projectTypes =
                 ParseProjectTypes(projectText);
-            if (projectTypes.Count != dirModules.Count)
-            {
-                throw new InvalidDataException(
-                    "PROJECT and dir module counts do not match.");
-            }
 
             byte[] projectWmBytes = new byte[0];
             List<string> projectWmNames = new List<string>();
+            bool projectWmMatches = false;
             if (projectWmEntry != null)
             {
                 projectWmBytes = ole2.ReadStream(projectWmEntry);
-                projectWmNames = ReadProjectWmNames(
+                projectWmNames = ReadProjectWmNamesPermissive(
                     projectWmBytes,
                     encoding);
-                if (projectWmNames.Count != dirModules.Count)
-                {
-                    throw new InvalidDataException(
-                        "PROJECTwm and dir module counts do not match.");
-                }
-
-                int nameIndex;
-                for (nameIndex = 0;
-                    nameIndex < dirModules.Count;
-                    nameIndex++)
-                {
-                    if (!string.Equals(
-                        projectWmNames[nameIndex],
-                        dirModules[nameIndex].Name,
-                        StringComparison.Ordinal))
-                    {
-                        throw new InvalidDataException(
-                            "PROJECTwm and dir module names do not match.");
-                    }
-                }
+                projectWmMatches = MatchesDirNames(
+                    projectWmNames,
+                    dirModules);
             }
 
-            VbaProjectData project = new VbaProjectData();
-            project.Ole2Bytes = ole2Bytes;
-            project.Ole2 = ole2;
-            project.CodePage = codePage;
-            project.Encoding = encoding;
             project.ProjectBytes = projectBytes;
             project.ProjectText = projectText;
             project.ProjectWmBytes = projectWmBytes;
             project.ProjectWmNames = projectWmNames;
             project.DirCompressed = dirCompressed;
             project.DirDecompressed = dirDecompressed;
-            project.ProjectModulesOffset = projectModulesOffset;
             project.ProjectEntry = projectEntry;
             project.ProjectWmEntry = projectWmEntry;
             project.DirEntry = dirEntry;
             project.VbaStorage = vbaStorage;
 
+            // Adding modules rewrites dir, PROJECT and PROJECTwm, so that
+            // feature stays available only while every record was read
+            // strictly and the three agree with each other.
+            bool metadataIsExact =
+                strictDir &&
+                projectTypes.Count == dirModules.Count &&
+                (projectWmEntry == null || projectWmMatches);
+            project.ProjectModulesOffset =
+                metadataIsExact ? projectModulesOffset : -1;
+            if (!metadataIsExact)
+            {
+                project.HasReadWarnings = true;
+            }
+
             HashSet<int> usedStreamIds = new HashSet<int>();
+            HashSet<string> usedModuleNames =
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             int index;
             for (index = 0; index < dirModules.Count; index++)
             {
@@ -207,66 +223,89 @@ namespace MacroDesk
                 VbaModuleKind kind;
                 if (!projectTypes.TryGetValue(record.Name, out kind))
                 {
-                    throw new InvalidDataException(
-                        "dir module is missing from PROJECT: " +
-                        record.Name);
+                    kind = record.TypeId == 0x0022 ?
+                        VbaModuleKind.Class :
+                        VbaModuleKind.Standard;
+                    project.HasReadWarnings = true;
                 }
-
-                ValidateModuleType(record, kind);
-                Ole2DirectoryEntry streamEntry = ole2.FindChild(
-                    vbaStorage,
-                    record.StreamName,
-                    2);
-                if (streamEntry == null)
+                else if (!MatchesModuleType(record, kind))
                 {
-                    throw new InvalidDataException(
-                        "Module stream was not found: logical=" +
-                        record.Name +
-                        ", stream=" +
-                        record.StreamName);
-                }
-                if (!usedStreamIds.Add(streamEntry.Id))
-                {
-                    throw new InvalidDataException(
-                        "Multiple modules refer to the same stream: " +
-                        record.StreamName);
+                    project.HasReadWarnings = true;
                 }
 
-                byte[] streamData = ole2.ReadStream(streamEntry);
-                if (record.SourceOffset > int.MaxValue ||
-                    record.SourceOffset >= streamData.Length)
-                {
-                    throw new InvalidDataException(
-                        "MODULEOFFSET is outside the module stream: " +
-                        record.Name);
-                }
-
-                byte[] fullSourceBytes = VbaCompression.Decompress(
-                    streamData,
-                    (int)record.SourceOffset);
-                string fullCode = encoding.GetString(fullSourceBytes);
-                string attributeHeader;
-                string code;
-                SplitAttributeHeader(
-                    fullCode,
-                    out attributeHeader,
-                    out code);
-
-                VbaModule module = new VbaModule();
-                module.Name = record.Name;
-                module.StreamName = record.StreamName;
-                module.Kind = kind;
-                module.Extension = GetExtension(kind);
-                module.SourceOffset = record.SourceOffset;
-                module.StreamData = streamData;
-                module.FullSourceBytes = fullSourceBytes;
-                module.FullCode = fullCode;
-                module.AttributeHeader = attributeHeader;
-                module.Code = code;
-                module.StreamEntry = streamEntry;
-                project.Modules.Add(module);
+                TryAddModule(
+                    project,
+                    record,
+                    kind,
+                    true,
+                    usedStreamIds,
+                    usedModuleNames);
             }
 
+            // Modules that dir lost but PROJECT still lists.
+            foreach (KeyValuePair<string, VbaModuleKind> pair
+                in projectTypes)
+            {
+                if (usedModuleNames.Contains(pair.Key))
+                {
+                    continue;
+                }
+
+                VbaDirModule record = new VbaDirModule();
+                record.Name = pair.Key;
+                record.StreamName = pair.Key;
+                record.SourceOffset = uint.MaxValue;
+                if (TryAddModule(
+                    project,
+                    record,
+                    pair.Value,
+                    false,
+                    usedStreamIds,
+                    usedModuleNames))
+                {
+                    project.HasReadWarnings = true;
+                }
+            }
+
+            // Streams under the VBA storage that neither dir nor PROJECT
+            // named. Reached only when the project metadata itself is
+            // damaged.
+            if (vbaStorage != null)
+            {
+                int childIndex;
+                for (childIndex = 0;
+                    childIndex < vbaStorage.Children.Count;
+                    childIndex++)
+                {
+                    Ole2DirectoryEntry child = ole2.Entries[
+                        vbaStorage.Children[childIndex]];
+                    if (child.ObjectType != 2 ||
+                        usedStreamIds.Contains(child.Id) ||
+                        usedModuleNames.Contains(child.Name) ||
+                        IsReservedVbaStreamName(child.Name))
+                    {
+                        continue;
+                    }
+
+                    VbaDirModule record = new VbaDirModule();
+                    record.Name = child.Name;
+                    record.StreamName = child.Name;
+                    record.SourceOffset = uint.MaxValue;
+                    if (TryAddModule(
+                        project,
+                        record,
+                        VbaModuleKind.Standard,
+                        false,
+                        usedStreamIds,
+                        usedModuleNames))
+                    {
+                        project.HasReadWarnings = true;
+                    }
+                }
+            }
+
+            project.HasReadWarnings =
+                project.HasReadWarnings || ole2.HasReadWarnings;
             project.Modules.Sort(delegate(VbaModule left, VbaModule right)
             {
                 int typeResult = ((int)left.Kind).CompareTo((int)right.Kind);
@@ -292,6 +331,669 @@ namespace MacroDesk
                 dirDecompressed,
                 out codePage,
                 out projectModulesOffset);
+        }
+
+        public static Encoding ResolveEncoding(int codePage)
+        {
+            try
+            {
+                return Encoding.GetEncoding(codePage);
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+
+            try
+            {
+                return Encoding.GetEncoding(932);
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+
+            return Encoding.UTF8;
+        }
+
+        public static bool TryFindCodePage(byte[] data, out int codePage)
+        {
+            codePage = 0;
+            if (data == null)
+            {
+                return false;
+            }
+
+            int position = 0;
+            while (position + 6 <= data.Length)
+            {
+                ushort id = BitConverter.ToUInt16(data, position);
+                int size = BitConverter.ToInt32(data, position + 2);
+                if (size < 0 ||
+                    (long)position + 6L + (long)size > data.Length)
+                {
+                    return false;
+                }
+                if (id == 0x0003 && size >= 2)
+                {
+                    codePage = BitConverter.ToUInt16(data, position + 6);
+                    return true;
+                }
+                position += 6 + size;
+                if (id == 0x0009 && position + 2 <= data.Length)
+                {
+                    position += 2;
+                }
+            }
+
+            return false;
+        }
+
+        private static byte[] DecompressDir(
+            VbaProjectData project,
+            byte[] dirCompressed)
+        {
+            try
+            {
+                return VbaCompression.Decompress(dirCompressed);
+            }
+            catch (InvalidDataException)
+            {
+            }
+
+            project.HasReadWarnings = true;
+            bool hadWarnings;
+            return VbaCompression.DecompressBestEffort(
+                dirCompressed,
+                out hadWarnings);
+        }
+
+        private static List<VbaDirModule> ReadDirModulesPermissive(
+            byte[] dirDecompressed,
+            out int codePage,
+            out int projectModulesOffset,
+            out bool strict)
+        {
+            try
+            {
+                List<VbaDirModule> modules = ReadDirModules(
+                    dirDecompressed,
+                    out codePage,
+                    out projectModulesOffset);
+                strict = true;
+                return modules;
+            }
+            catch (InvalidDataException)
+            {
+            }
+            catch (DecoderFallbackException)
+            {
+            }
+
+            // The strict record walk failed. Fall back to a tolerant walk
+            // that keeps whatever module records are readable; the exact
+            // dir offset is dropped so the writer will not rewrite dir.
+            strict = false;
+            projectModulesOffset = -1;
+            if (!TryFindCodePage(dirDecompressed, out codePage) ||
+                codePage == 0)
+            {
+                codePage = 932;
+            }
+
+            Encoding encoding = ResolveEncoding(codePage);
+            List<int> offsets = FindProjectModulesOffsets(dirDecompressed);
+            int index;
+            for (index = 0; index < offsets.Count; index++)
+            {
+                List<VbaDirModule> modules = ParseDirModulesTolerant(
+                    dirDecompressed,
+                    offsets[index],
+                    encoding);
+                if (modules.Count > 0)
+                {
+                    return modules;
+                }
+            }
+
+            return new List<VbaDirModule>();
+        }
+
+        private static List<VbaDirModule> ParseDirModulesTolerant(
+            byte[] data,
+            int modulesOffset,
+            Encoding encoding)
+        {
+            // Records are walked as plain id/size/payload entries, so an
+            // unexpected, reordered or truncated record ends the walk
+            // instead of discarding the modules already recovered.
+            List<VbaDirModule> modules = new List<VbaDirModule>();
+            int position = modulesOffset;
+            while (position + 2 <= data.Length &&
+                ReadUInt16(data, position) != 0x0019)
+            {
+                position += 2;
+                if (position + 4 > data.Length)
+                {
+                    return modules;
+                }
+
+                uint size = ReadUInt32(data, position);
+                position += 4;
+                int available = data.Length - position;
+                int step = size > (uint)available ? available : (int)size;
+                position += step;
+            }
+
+            while (position + 2 <= data.Length &&
+                ReadUInt16(data, position) == 0x0019)
+            {
+                VbaDirModule module = ParseDirModuleTolerant(
+                    data,
+                    ref position,
+                    encoding);
+                if (module == null)
+                {
+                    break;
+                }
+                modules.Add(module);
+            }
+
+            return modules;
+        }
+
+        private static VbaDirModule ParseDirModuleTolerant(
+            byte[] data,
+            ref int position,
+            Encoding encoding)
+        {
+            string name = null;
+            string unicodeName = null;
+            string streamName = null;
+            string unicodeStreamName = null;
+            uint sourceOffset = 0;
+            bool hasSourceOffset = false;
+            ushort typeId = 0;
+
+            while (position + 6 <= data.Length)
+            {
+                ushort id = ReadUInt16(data, position);
+                if (id == 0x0010 || (id == 0x0019 && name != null))
+                {
+                    break;
+                }
+
+                position += 2;
+                uint size = ReadUInt32(data, position);
+                position += 4;
+                int available = data.Length - position;
+                int byteLength =
+                    size > (uint)available ? available : (int)size;
+                bool truncated = byteLength < (long)size;
+
+                if (id == 0x0019)
+                {
+                    name = encoding.GetString(data, position, byteLength);
+                }
+                else if (id == 0x0047)
+                {
+                    unicodeName = Encoding.Unicode.GetString(
+                        data,
+                        position,
+                        byteLength & ~1);
+                }
+                else if (id == 0x001A)
+                {
+                    streamName = encoding.GetString(
+                        data,
+                        position,
+                        byteLength);
+                }
+                else if (id == 0x0032)
+                {
+                    unicodeStreamName = Encoding.Unicode.GetString(
+                        data,
+                        position,
+                        byteLength & ~1);
+                }
+                else if (id == 0x0031 && byteLength >= 4)
+                {
+                    sourceOffset = ReadUInt32(data, position);
+                    hasSourceOffset = true;
+                }
+                else if (id == 0x0021 || id == 0x0022)
+                {
+                    typeId = id;
+                }
+
+                position += byteLength;
+                if (id == 0x002B || truncated)
+                {
+                    break;
+                }
+            }
+
+            string resolvedName =
+                unicodeName != null && unicodeName.Length > 0 ?
+                unicodeName :
+                name;
+            if (string.IsNullOrEmpty(resolvedName))
+            {
+                return null;
+            }
+
+            string resolvedStreamName =
+                unicodeStreamName != null && unicodeStreamName.Length > 0 ?
+                unicodeStreamName :
+                streamName;
+            VbaDirModule module = new VbaDirModule();
+            module.Name = resolvedName;
+            module.StreamName =
+                string.IsNullOrEmpty(resolvedStreamName) ?
+                resolvedName :
+                resolvedStreamName;
+            module.SourceOffset =
+                hasSourceOffset ? sourceOffset : uint.MaxValue;
+            module.TypeId = typeId;
+            return module;
+        }
+
+        private static List<string> ReadProjectWmNamesPermissive(
+            byte[] projectWmBytes,
+            Encoding encoding)
+        {
+            try
+            {
+                return ReadProjectWmNames(projectWmBytes, encoding);
+            }
+            catch (InvalidDataException)
+            {
+                return new List<string>();
+            }
+            catch (DecoderFallbackException)
+            {
+                return new List<string>();
+            }
+        }
+
+        private static bool MatchesDirNames(
+            List<string> projectWmNames,
+            List<VbaDirModule> dirModules)
+        {
+            if (projectWmNames.Count != dirModules.Count)
+            {
+                return false;
+            }
+
+            int index;
+            for (index = 0; index < dirModules.Count; index++)
+            {
+                if (!string.Equals(
+                    projectWmNames[index],
+                    dirModules[index].Name,
+                    StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool MatchesModuleType(
+            VbaDirModule record,
+            VbaModuleKind kind)
+        {
+            ushort expectedType =
+                kind == VbaModuleKind.Standard ?
+                (ushort)0x0021 :
+                (ushort)0x0022;
+            return record.TypeId == expectedType;
+        }
+
+        private static Ole2DirectoryEntry FindEntry(
+            VbaProjectData project,
+            Ole2DirectoryEntry parent,
+            string name,
+            byte objectType)
+        {
+            if (parent != null)
+            {
+                Ole2DirectoryEntry scoped = project.Ole2.FindChild(
+                    parent,
+                    name,
+                    objectType);
+                if (scoped != null)
+                {
+                    return scoped;
+                }
+            }
+            else
+            {
+                Ole2DirectoryEntry rootChild = project.Ole2.FindChild(
+                    project.Ole2.RootEntry,
+                    name,
+                    objectType);
+                if (rootChild != null)
+                {
+                    return rootChild;
+                }
+            }
+
+            // The directory tree may be damaged; fall back to a flat scan
+            // so an unlinked entry is still found.
+            Ole2DirectoryEntry found = null;
+            int index;
+            for (index = 0; index < project.Ole2.Entries.Count; index++)
+            {
+                Ole2DirectoryEntry entry = project.Ole2.Entries[index];
+                if (entry.ObjectType != objectType ||
+                    !string.Equals(
+                        entry.Name,
+                        name,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+                if (found != null)
+                {
+                    project.HasReadWarnings = true;
+                    continue;
+                }
+
+                found = entry;
+                project.HasReadWarnings = true;
+            }
+
+            return found;
+        }
+
+        private static bool TryAddModule(
+            VbaProjectData project,
+            VbaDirModule record,
+            VbaModuleKind kind,
+            bool useDirOffset,
+            HashSet<int> usedStreamIds,
+            HashSet<string> usedModuleNames)
+        {
+            if (record == null ||
+                string.IsNullOrEmpty(record.Name) ||
+                usedModuleNames.Contains(record.Name))
+            {
+                project.HasReadWarnings = true;
+                return false;
+            }
+
+            try
+            {
+                return AddModuleCore(
+                    project,
+                    record,
+                    kind,
+                    useDirOffset,
+                    usedStreamIds,
+                    usedModuleNames);
+            }
+            catch (OutOfMemoryException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                // One unreadable module must not abort the others.
+                project.HasReadWarnings = true;
+                return false;
+            }
+        }
+
+        private static bool AddModuleCore(
+            VbaProjectData project,
+            VbaDirModule record,
+            VbaModuleKind kind,
+            bool useDirOffset,
+            HashSet<int> usedStreamIds,
+            HashSet<string> usedModuleNames)
+        {
+            string streamName =
+                string.IsNullOrEmpty(record.StreamName) ?
+                record.Name :
+                record.StreamName;
+            Ole2DirectoryEntry streamEntry = FindEntry(
+                project,
+                project.VbaStorage,
+                streamName,
+                2);
+            if (streamEntry == null &&
+                !string.Equals(
+                    record.Name,
+                    streamName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                streamEntry = FindEntry(
+                    project,
+                    project.VbaStorage,
+                    record.Name,
+                    2);
+            }
+            if (streamEntry == null ||
+                !usedStreamIds.Add(streamEntry.Id))
+            {
+                project.HasReadWarnings = true;
+                return false;
+            }
+
+            byte[] streamData = project.Ole2.ReadStream(streamEntry);
+            int sourceOffset = -1;
+            byte[] fullSourceBytes = null;
+            string fullCode = null;
+            byte[] offsetSourceBytes = null;
+            string offsetCode = null;
+            int offsetSourceOffset = -1;
+            bool sourceHadWarnings = false;
+            bool attemptHadWarnings;
+            if (useDirOffset &&
+                record.SourceOffset <= int.MaxValue &&
+                record.SourceOffset < streamData.Length)
+            {
+                sourceOffset = (int)record.SourceOffset;
+                TryReadSource(
+                    streamData,
+                    sourceOffset,
+                    project.Encoding,
+                    out fullSourceBytes,
+                    out fullCode,
+                    out attemptHadWarnings);
+                sourceHadWarnings =
+                    sourceHadWarnings || attemptHadWarnings;
+                if (fullCode == null || !HasModuleMarker(fullCode))
+                {
+                    // MODULEOFFSET did not yield module source. Keep the
+                    // bytes as a last resort but do not trust the offset:
+                    // scan the stream for the real compressed container.
+                    offsetSourceBytes = fullSourceBytes;
+                    offsetCode = fullCode;
+                    offsetSourceOffset = sourceOffset;
+                    fullSourceBytes = null;
+                    fullCode = null;
+                    sourceOffset = -1;
+                    sourceHadWarnings = true;
+                }
+            }
+            if (fullSourceBytes == null)
+            {
+                if (TryFindSource(
+                    streamData,
+                    project.Encoding,
+                    out sourceOffset,
+                    out fullSourceBytes,
+                    out fullCode,
+                    out attemptHadWarnings))
+                {
+                    sourceHadWarnings =
+                        sourceHadWarnings || attemptHadWarnings;
+                }
+                else if (offsetCode != null && offsetCode.Length > 0)
+                {
+                    fullSourceBytes = offsetSourceBytes;
+                    fullCode = offsetCode;
+                    sourceOffset = offsetSourceOffset;
+                    sourceHadWarnings = true;
+                }
+                else
+                {
+                    project.HasReadWarnings = true;
+                    return false;
+                }
+            }
+            if (sourceHadWarnings)
+            {
+                project.HasReadWarnings = true;
+            }
+
+            string attributeHeader;
+            string code;
+            SplitAttributeHeader(
+                fullCode,
+                out attributeHeader,
+                out code);
+
+            VbaModule module = new VbaModule();
+            module.Name = record.Name;
+            module.StreamName = streamEntry.Name;
+            module.Kind = kind;
+            module.Extension = GetExtension(kind);
+            module.SourceOffset = (uint)sourceOffset;
+            module.StreamData = streamData;
+            module.FullSourceBytes = fullSourceBytes;
+            module.FullCode = fullCode;
+            module.AttributeHeader = attributeHeader;
+            module.Code = code;
+            module.StreamEntry = streamEntry;
+            project.Modules.Add(module);
+            usedModuleNames.Add(module.Name);
+            return true;
+        }
+
+        private static bool TryFindSource(
+            byte[] streamData,
+            Encoding encoding,
+            out int sourceOffset,
+            out byte[] fullSourceBytes,
+            out string fullCode,
+            out bool hadWarnings)
+        {
+            sourceOffset = -1;
+            fullSourceBytes = null;
+            fullCode = null;
+            hadWarnings = false;
+            int offset;
+            for (offset = streamData.Length - 3; offset >= 0; offset--)
+            {
+                if (streamData[offset] != 0x01)
+                {
+                    continue;
+                }
+                ushort header = BitConverter.ToUInt16(
+                    streamData,
+                    offset + 1);
+                if (((header >> 12) & 0x0007) != 3)
+                {
+                    continue;
+                }
+
+                byte[] candidateBytes;
+                string candidateCode;
+                bool candidateWarnings;
+                if (TryReadSource(
+                    streamData,
+                    offset,
+                    encoding,
+                    out candidateBytes,
+                    out candidateCode,
+                    out candidateWarnings) &&
+                    HasModuleMarker(candidateCode))
+                {
+                    sourceOffset = offset;
+                    fullSourceBytes = candidateBytes;
+                    fullCode = candidateCode;
+                    hadWarnings = candidateWarnings;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool TryReadSource(
+            byte[] streamData,
+            int sourceOffset,
+            Encoding encoding,
+            out byte[] fullSourceBytes,
+            out string fullCode,
+            out bool hadWarnings)
+        {
+            fullSourceBytes = null;
+            fullCode = null;
+            hadWarnings = false;
+            try
+            {
+                fullSourceBytes = VbaCompression.Decompress(
+                    streamData,
+                    sourceOffset);
+                fullCode = encoding.GetString(fullSourceBytes);
+                return true;
+            }
+            catch (InvalidDataException)
+            {
+                fullSourceBytes =
+                    VbaCompression.DecompressBestEffort(
+                        streamData,
+                        sourceOffset,
+                        out hadWarnings);
+                if (fullSourceBytes.Length == 0)
+                {
+                    fullSourceBytes = null;
+                    return false;
+                }
+            }
+            fullCode = encoding.GetString(fullSourceBytes);
+            return true;
+        }
+
+        private static bool HasModuleMarker(string code)
+        {
+            return code.IndexOf(
+                "Attribute VB_Name",
+                StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool IsReservedVbaStreamName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                return true;
+            }
+            if (string.Equals(
+                name,
+                "dir",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            if (string.Equals(
+                name,
+                "_VBA_PROJECT",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return name.StartsWith(
+                "__SRP_",
+                StringComparison.OrdinalIgnoreCase);
         }
 
         private static List<VbaDirModule> ReadDirModules(
@@ -1122,6 +1824,29 @@ namespace MacroDesk
             return result;
         }
 
+        private static Encoding GetWriteEncoding(VbaProjectData project)
+        {
+            // Reading tolerates bytes the declared code page cannot map;
+            // writing must not. A character that cannot be encoded fails
+            // the build instead of reaching the workbook as a
+            // substitution.
+            try
+            {
+                return Encoding.GetEncoding(
+                    project.CodePage,
+                    EncoderFallback.ExceptionFallback,
+                    DecoderFallback.ExceptionFallback);
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+
+            return project.Encoding;
+        }
+
         public static byte[] CreateModuleStream(
             VbaProjectData project,
             VbaModule module,
@@ -1157,7 +1882,8 @@ namespace MacroDesk
                     module.Name);
             }
 
-            byte[] sourceBytes = project.Encoding.GetBytes(fullCode);
+            byte[] sourceBytes =
+                GetWriteEncoding(project).GetBytes(fullCode);
             byte[] compressed = VbaCompression.Compress(sourceBytes);
             int prefixLength = (int)module.SourceOffset;
             int outputLength;
@@ -1302,7 +2028,7 @@ namespace MacroDesk
                 VbaCompression.Compress(dirBytes));
             streamChanges.Add(
                 project.ProjectEntry.Id,
-                project.Encoding.GetBytes(projectText));
+                GetWriteEncoding(project).GetBytes(projectText));
             streamChanges.Add(
                 project.ProjectWmEntry.Id,
                 projectWmBytes);
@@ -1366,7 +2092,7 @@ namespace MacroDesk
 
             string fullCode = CreateNewModuleFullCode(name, code);
             byte[] sourceBytes =
-                project.Encoding.GetBytes(fullCode);
+                GetWriteEncoding(project).GetBytes(fullCode);
             return VbaCompression.Compress(sourceBytes);
         }
 
@@ -1411,7 +2137,7 @@ namespace MacroDesk
             }
 
             byte[] record = CreateDirModuleRecord(
-                project.Encoding,
+                GetWriteEncoding(project),
                 name);
             byte[] result = new byte[
                 source.Length + record.Length];
@@ -1611,7 +2337,7 @@ namespace MacroDesk
             }
 
             byte[] ansiName =
-                project.Encoding.GetBytes(name);
+                GetWriteEncoding(project).GetBytes(name);
             byte[] unicodeName =
                 Encoding.Unicode.GetBytes(name);
             int mapLength = ansiName.Length +

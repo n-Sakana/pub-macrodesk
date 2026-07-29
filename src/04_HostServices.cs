@@ -172,6 +172,7 @@ namespace MacroDesk
                 new Dictionary<string, object>();
             result.Add("book", book);
             result.Add("modules", modules);
+            result.Add("warning", project.HasReadWarnings);
 
             attachedBookPath = fullPath;
             return result;
@@ -545,35 +546,9 @@ namespace MacroDesk
                     ex);
             }
 
-            string extension =
-                Path.GetExtension(fullPath).ToLowerInvariant();
-            if (extension != ".xlsm" &&
-                extension != ".xlam" &&
-                extension != ".xlsb")
-            {
-                throw new MacroDeskException(
-                    "E-ATTACH-01",
-                    "The file extension is not supported.");
-            }
-
-            try
-            {
-                using (FileStream probe = new FileStream(
-                    fullPath,
-                    FileMode.Open,
-                    FileAccess.Read,
-                    FileShare.None))
-                {
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new MacroDeskException(
-                    "E-ATTACH-02",
-                    "The workbook is open or cannot be read.",
-                    ex);
-            }
-
+            // No extension gate and no exclusive-lock probe here: the
+            // container kind is decided from the file content by BookIO,
+            // and books stay attachable while they are open in Excel.
             return fullPath;
         }
 

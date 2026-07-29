@@ -266,11 +266,8 @@ try {
     }
 
     foreach ($code in @(
-        'E-ATTACH-01',
         'E-ATTACH-02',
         'E-ATTACH-03',
-        'E-ATTACH-04',
-        'E-ATTACH-05',
         'E-GEN-01',
         'E-GEN-02',
         'E-PASTE-01',
@@ -314,7 +311,7 @@ try {
     $errorLogs = @($logs | Where-Object {
         $_.level -eq 'ERROR'
     })
-    Assert-True ($errorLogs.Count -ge 9) `
+    Assert-True ($errorLogs.Count -ge 6) `
         'Client error paths were not linked to writeLog.'
     foreach ($entry in $errorLogs) {
         Assert-True (
@@ -325,7 +322,7 @@ try {
 
     Assert-True (
         $lecture.branches -eq 16 -and
-        $lecture.errors -eq 13 -and
+        $lecture.errors -eq 10 -and
         $lecture.branchLines -and
         $lecture.errorLines) `
         'Lecture branch/error table is incomplete.'
@@ -340,7 +337,7 @@ try {
 
     Write-Host 'test-p8-webview: PASS'
     Write-Host (
-        'lecture=16 branches/13 errors, glow=exclusive, ' +
+        'lecture=16 branches/10 errors, glow=exclusive, ' +
         'focus/font/logging=PASS')
     Write-Host (
         'errors=toast/card/build-screen, screenshots=created')

@@ -55,6 +55,8 @@
   --l-red-3: #C25560;
   --l-red-4: #B03E48;
   --l-red-5: #93343C;
+  --l-amber-4: #A2701C;
+  --l-amber-5: #7A5314;
   --l-syn-keyword: #2C5EA8;
   --l-syn-comment: #567545;
   --l-syn-string: #A0582C;
@@ -100,6 +102,8 @@
   --d-red-3: #C96A75;
   --d-red-4: #C25560;
   --d-red-5: #ED9AA3;
+  --d-amber-4: #B58A3C;
+  --d-amber-5: #E4C179;
   --d-syn-keyword: #82B3E8;
   --d-syn-comment: #94B37E;
   --d-syn-string: #D19A72;
@@ -151,6 +155,8 @@
   --danger: var(--l-red-4);
   --danger-text: var(--l-red-5);
   --danger-soft: var(--l-red-0);
+  --caution: var(--l-amber-4);
+  --caution-text: var(--l-amber-5);
   --success: var(--l-green-4);
   --success-text: var(--l-green-5);
   --success-soft: var(--l-green-0);
@@ -359,6 +365,8 @@
   --danger: var(--d-red-4);
   --danger-text: var(--d-red-5);
   --danger-soft: var(--d-red-0);
+  --caution: var(--d-amber-4);
+  --caution-text: var(--d-amber-5);
   --success: var(--d-green-4);
   --success-text: var(--d-green-5);
   --success-soft: var(--d-green-0);

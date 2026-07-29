@@ -126,13 +126,15 @@ macrodesk/
 
 ### 2.5 対応ファイル形式
 
-| 拡張子 | 中身 | v1 の扱い |
+判定は**拡張子ではなくファイルの中身**で行う。拡張子は入口のブロッカーにしない。
+
+| 拡張子 | 中身 | 扱い |
 |---|---|---|
 | `.xlsm` | zip 内 `xl/vbaProject.bin`（OLE2） | 対応 |
 | `.xlam` | 同上 | 対応 |
-| `.xls`  | ファイル全体が OLE2 | **v1 対象外**（添付時に E-ATTACH-01 の明示エラー） |
-| `.xlsb` | zip 内 `xl/vbaProject.bin`（OLE2） | 対応予定。機構上は xlsm と同一経路で動くはずだが**未検証**（§15） |
-| その他 | — | 添付時に「対応形式ではありません」 |
+| `.xlsb` | 同上 | 対応。機構上は xlsm と同一経路（§15） |
+| `.xls`  | ファイル全体が OLE2 | 読み取り対応。ビルドは検証（§9）を通った場合のみ成功 |
+| その他 | — | zip なら vbaProject.bin を、OLE2 なら本体を VBA コンテナとして読む。どこにも VBA が無い場合だけ E-ATTACH-03 |
 
 補足:
 - VBA プロジェクトにパスワード保護が掛かったブック: 保護は VBE の閲覧ゲートであり
@@ -281,12 +283,42 @@ diff 描画は自前実装（Monaco 不使用）。§13.1 参照。
 処理フロー:
 
 1. D&D またはファイル選択でパスを受け取る（D&D の実装方式は §7.4）。
-2. 拡張子チェック（§2.5）→ 非対応なら E-ATTACH-01。
+2. 入口では拡張子も排他ロックも検査しない。Excel で開いたままのブックも添付できる
+   （読み込みは共有読み取りで、元ファイルは変更しない）。
 3. エンジンでブックを読み込む（コピーをメモリに読むだけ。元ファイルはロックしない。
-   読み込み後にファイルハンドルを保持しない）。
+   読み込み後にファイルハンドルを保持しない）。読取は多経路で再試行する（§5.1.1）。
+   ある経路が失敗しても別経路で読み直し、読めたモジュールとソースは必ず保持する。
+   「解析できないので中断」も「警告だけ出して中身が空」も不可。
 4. 成功: メイン画面にブック情報カード（ファイル名 / モジュール数 / 合計行数）を表示し、
    左カラムにモジュール一覧（全部「未処理」バッジ）を表示。［次へ］が光る。
-5. 失敗: §12 のエラー分岐。
+   部分的な不整合があった場合は Attach を成功させたうえで警告を一度だけ表示し、
+   その後の操作を禁止しない。
+5. 失敗: §12 のエラー分岐。どの経路でも VBA が見つからない場合だけ E-ATTACH-03。
+
+#### 5.1.1 VBA 読取の経路
+
+上から順に試し、**モジュールが 1 つでも読めた時点で採用**する。後段へ落ちた場合は
+警告（`warning:true`）を 1 度だけ出し、操作は継続する。
+
+| # | 経路 | 使う場面 |
+|---|---|---|
+| 1 | ZipArchive で `vbaProject.bin`（名前一致 → 大小無視 → `.bin` かつ VBA ストレージを持つもの） | 正常な xlsm / xlam / xlsb |
+| 2 | ZIP central directory を自前で走査して local header から取り出す | EOCD やアーカイブ構造が壊れている |
+| 3 | ファイル全体から local file header を走査（stored / deflate 双方） | central directory が失われている |
+| 4 | ファイル先頭が OLE2 署名ならファイル自体をコンテナとみなす | xls など |
+| 5 | ファイル中の任意位置の OLE2 署名から VBA コンテナを探す | 非圧縮格納されたメンバなど |
+| 6 | 生バイトから MS-OVBA 圧縮コンテナを走査し、`Attribute VB_Name` を持つものをモジュールとして復元 | CFB directory ごと壊れている |
+
+モジュール単位でも同様に多経路で読む。dir の MODULEOFFSET を使い、そこに
+`Attribute VB_Name` が無ければストリームを後方から再走査する。1 つのモジュールの
+失敗が他のモジュールを巻き込まないよう、モジュール単位で例外を閉じる。
+dir が壊れていれば PROJECT ストリームの列挙を、PROJECT も壊れていれば VBA ストレージ
+配下のストリームを直接読む。
+
+新規モジュール追加は dir / PROJECT / PROJECTwm を書き換えるため、**3 者が厳密に読めて
+互いに一致している場合だけ**有効にする（`ProjectModulesOffset` を保持する条件）。
+書き込み時の文字コード変換は常に厳密（表現できない文字はビルド失敗にし、
+置換文字をブックへ書かない）。
 
 別ブックの添付し直し: ① に戻っていつでも可能。ただし貼り付け済みモジュールが
 1 件でもあれば HTML の確認モーダル「取り込み済みの内容を破棄しますか？」を表示する。
@@ -530,19 +562,25 @@ WebView2 (JS)  … host-bridge.js が id で Promise 解決
 
 ### 7.4 ドラッグ＆ドロップ
 
-WebView2 の HTML 側 D&D では**ファイルのフルパスが取れない**（ブラウザの
-サンドボックス仕様）ため、次の優先順で実装する。
+WebView2 はクライアント領域全面を占める子ウィンドウを持つため、外部ドロップは
+**まず WebView2 が受け取る**。`AllowExternalDrop = false` にすると WebView2 が
+ドロップを拒否し、WPF 側の `Drop` にも届かない（実機で D&D が無反応だった原因）。
+したがって次の構成で実装する。
 
-1. **方式A（第一候補）**: `CoreWebView2Controller.AllowExternalDrop = false` を設定し、
-   WPF 側（Window / WebView2 要素の親）の `AllowDrop=true` + `Drop` イベントで
-   `DataFormats.FileDrop` からパスを得る。得たパスを `bookDropped` イベントで JS へ。
-2. **方式B（フォールバック）**: JS 側 drop で
-   `chrome.webview.postMessageWithAdditionalObjects()` を使い、C# 側で
-   `e.AdditionalObjects` の `CoreWebView2File.Path` を読む（SDK 1.0.3856.49 は対応版）。
+1. **方式B（主経路）**: `AllowExternalDrop = true` を設定し、ページ側の
+   `dragover`/`drop` で `chrome.webview.postMessageWithAdditionalObjects()` を使って
+   `File` を host へ渡す。host は `e.AdditionalObjects` の `CoreWebView2File.Path`
+   からフルパスを読み、`resolveDroppedFiles` の応答として JS へ返す。JS は通常の
+   attach 経路（確認ダイアログ・警告表示を含む）でそのパスを添付する。
+   （`postMessageWithAdditionalObjects` / `CoreWebView2File` は SDK 1.0.3856.49 対応）
+2. **方式A（副経路）**: WPF 側 `PreviewDragOver`/`PreviewDrop` は残す。ページに届かない
+   ドロップ（ウィンドウ枠など）を `DataFormats.FileDrop` から拾い、`bookDropped`
+   イベントで JS へ渡す。
 3. **方式C（常設の保険）**: 「ファイルを選ぶ」ボタン（OpenFileDialog）。
 
-実装では**方式A が成立したため方式A を採用**している。方式C は常設の保険として
-残しており、D&D が使えない環境でも機能は成立する。
+ドラッグ中は `body.is-file-drag` を付け、ドロップ先が分かるようにする。
+MacroDesk と Explorer の整合性レベルが異なる場合（片方だけ昇格実行）は UIPI により
+OS がドロップ自体を拒否する。この場合は方式C を使う。
 
 ### 7.5 ログ
 
@@ -772,11 +810,8 @@ in-place 不能だった。「コードが増える」のが常態である以�
 
 | ID | 事象 | 検知箇所 | 画面挙動 | レクチャー表示（要旨） |
 |---|---|---|---|---|
-| E-ATTACH-01 | 対応外の拡張子 | attach 入口 | トースト | 対応形式一覧（§2.5） |
-| E-ATTACH-02 | ファイルが開けない（共有違反等） | attach | トースト | Excel で開いたままなら閉じて再度 |
-| E-ATTACH-03 | vbaProject.bin が無い（マクロ無しブック） | attach | メインにカード表示 | このブックにはマクロが無い。ファイル間違いの可能性 |
-| E-ATTACH-04 | OLE2/VBA 構造の解析失敗 | attach | トースト + 詳細ログ | 解析できない形式。ログを添えて配布元へ連絡 |
-| E-ATTACH-05 | .xlsb で解析失敗（未検証形式） | attach | トースト | xlsb は現在検証中。xlsm に変換して再度（Excel の「名前を付けて保存」） |
+| E-ATTACH-02 | ファイル自体を読めない（消失・権限など） | attach | トースト | 場所とアクセス権を確認 |
+| E-ATTACH-03 | どの経路でも VBA が見つからない（マクロ無しブック） | attach | メインにカード表示 | このブックにはマクロが無い。ファイル間違いの可能性 |
 | E-GEN-01 | 依頼ファイルの書き込み失敗 | writeRequestFile | トースト | フォルダの書き込み権限 / 空き容量を確認 |
 | E-GEN-02 | 依頼テンプレートの欠落・読取不可・UTF-8不正・変数不正 | readRequestTemplate / template render | トースト | `templates\request-template.txt` の存在、UTF-8 形式、差し込み変数を確認 |
 | E-PASTE-01 | クリップボードが空 / 正規化後に空 | 貼り付け | トースト（状態不変） | コピーボタンで「コード」をコピーしたか確認 |

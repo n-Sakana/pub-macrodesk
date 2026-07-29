@@ -1037,6 +1037,14 @@
   border-left-color: var(--danger);
 }
 
+.toast--warning {
+  border-left-color: var(--caution);
+}
+
+.toast--warning .toast-label {
+  color: var(--caution-text);
+}
+
 .toast--success {
   border-left-color: var(--success);
 }
@@ -1103,4 +1111,25 @@
   .toast {
     animation: none;
   }
+}
+
+/* Feedback while a file is dragged anywhere over the window. */
+body.is-file-drag .book-drop-zone {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--surface-raised);
+}
+
+body.is-file-drag .drop-zone-icon {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+body.is-file-drag .app-shell::after {
+  position: fixed;
+  z-index: 90;
+  inset: 0;
+  border: var(--spinner-border-w) solid var(--accent);
+  content: "";
+  pointer-events: none;
 }

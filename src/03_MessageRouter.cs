@@ -79,7 +79,14 @@ namespace MacroDesk
                 Dictionary<string, object> parameters =
                     GetParameters(message);
                 object data;
-                if (IsEngineAction(action))
+                if (action == "resolveDroppedFiles")
+                {
+                    // Dropped files arrive as CoreWebView2File objects
+                    // next to the message; only the host can read their
+                    // real paths.
+                    data = CreateDroppedFileResult(e);
+                }
+                else if (IsEngineAction(action))
                 {
                     data = await Task.Run<object>(delegate()
                     {
@@ -165,6 +172,34 @@ namespace MacroDesk
                         "E-SYS-02",
                         "Unknown host action: " + action);
             }
+        }
+
+        private static Dictionary<string, object> CreateDroppedFileResult(
+            CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            List<string> paths = new List<string>();
+            IReadOnlyList<object> additional = e.AdditionalObjects;
+            if (additional != null)
+            {
+                int index;
+                for (index = 0; index < additional.Count; index++)
+                {
+                    CoreWebView2File file =
+                        additional[index] as CoreWebView2File;
+                    if (file == null ||
+                        string.IsNullOrEmpty(file.Path))
+                    {
+                        continue;
+                    }
+
+                    paths.Add(file.Path);
+                }
+            }
+
+            Dictionary<string, object> result =
+                new Dictionary<string, object>();
+            result.Add("paths", paths);
+            return result;
         }
 
         private static bool IsEngineAction(string action)

@@ -117,12 +117,24 @@ $nestedPath = Join-Path $testdataPath ("bookio-nested-$suffix.xlam")
 $emptyPath = Join-Path $testdataPath ("bookio-empty-$suffix.xlsm")
 $invalidXlsbPath = Join-Path $testdataPath ("bookio-invalid-$suffix.xlsb")
 $missingPath = Join-Path $testdataPath ("bookio-missing-$suffix.xlsm")
+$caseNamePath = Join-Path $testdataPath ("bookio-case-$suffix.xlsm")
+$unknownExtPath = Join-Path $testdataPath ("bookio-ext-$suffix.dat")
+$brokenDirectoryPath = Join-Path $testdataPath (
+    "bookio-broken-dir-$suffix.xlsm")
+$blindDirectoryPath = Join-Path $testdataPath (
+    "bookio-blind-dir-$suffix.xlsm")
+$olePath = Join-Path $testdataPath ("bookio-ole-$suffix.xls")
 
 foreach ($path in @(
     $nestedPath,
     $emptyPath,
     $invalidXlsbPath,
-    $missingPath)) {
+    $missingPath,
+    $caseNamePath,
+    $unknownExtPath,
+    $brokenDirectoryPath,
+    $blindDirectoryPath,
+    $olePath)) {
     $fullPath = [IO.Path]::GetFullPath($path)
     Assert-True (
         $fullPath.StartsWith(
@@ -151,29 +163,116 @@ try {
         [MacroDesk.BookIO]::ReadVbaProjectBytes($emptyPath)
     } 'E-ATTACH-03'
 
+    # Unreadable VBA data is a warning, not a blocked attach.
     New-ZipWithEntry `
         $invalidXlsbPath `
         'custom/location/vbaProject.bin' `
         $dummy
-    Assert-ErrorCode {
-        [MacroDesk.BookIO]::ReadProject($invalidXlsbPath)
-    } 'E-ATTACH-05'
+    $invalidXlsb = [MacroDesk.BookIO]::ReadProject($invalidXlsbPath)
+    Assert-True $invalidXlsb.HasReadWarnings `
+        'Invalid xlsb VBA data did not produce a read warning.'
+    Assert-True ($invalidXlsb.Modules.Count -eq 0) `
+        'Invalid xlsb VBA data returned an invented module.'
 
-    Assert-ErrorCode {
-        [MacroDesk.BookIO]::ReadVbaProjectBytes(
-            [IO.Path]::ChangeExtension($resolvedBookPath, '.xls'))
-    } 'E-ATTACH-01'
+    # A ZIP entry whose name differs only in case must still be found.
+    New-ZipWithEntry `
+        $caseNamePath `
+        'xl/VBAPROJECT.BIN' `
+        $content.VbaProjectBytes
+    $caseProject = [MacroDesk.BookIO]::ReadProject($caseNamePath)
+    Assert-True ($caseProject.Modules.Count -eq $project.Modules.Count) `
+        'A case-variant vbaProject.bin name lost modules.'
+    Assert-True ($caseProject.VbaEntryName.Length -gt 0) `
+        'The ZIP entry name was not recorded.'
 
-    Assert-ErrorCode {
-        [MacroDesk.BookIO]::ReadVbaProjectBytes(
-            [IO.Path]::ChangeExtension($resolvedBookPath, '.txt'))
-    } 'E-ATTACH-01'
+    # The extension does not decide the container kind.
+    New-ZipWithEntry `
+        $unknownExtPath `
+        'xl/vbaProject.bin' `
+        $content.VbaProjectBytes
+    $unknownExtProject = [MacroDesk.BookIO]::ReadProject($unknownExtPath)
+    Assert-True (
+        $unknownExtProject.Modules.Count -eq $project.Modules.Count) `
+        'An unfamiliar extension blocked a readable workbook.'
+
+    # A destroyed central directory must not lose the VBA project.
+    [byte[]]$brokenBytes = [IO.File]::ReadAllBytes($resolvedBookPath)
+    for ($index = 0; $index -lt $brokenBytes.Length - 3; $index++) {
+        if ($brokenBytes[$index] -eq 0x50 -and
+            $brokenBytes[$index + 1] -eq 0x4B -and
+            $brokenBytes[$index + 2] -eq 0x05 -and
+            $brokenBytes[$index + 3] -eq 0x06) {
+            $brokenBytes[$index + 2] = 0x00
+            $brokenBytes[$index + 3] = 0x00
+        }
+    }
+    [IO.File]::WriteAllBytes($brokenDirectoryPath, $brokenBytes)
+    $brokenProject = [MacroDesk.BookIO]::ReadProject($brokenDirectoryPath)
+    Assert-True $brokenProject.HasReadWarnings `
+        'A broken ZIP directory did not produce a read warning.'
+    Assert-True (
+        $brokenProject.Modules.Count -eq $project.Modules.Count) `
+        'A broken ZIP directory lost readable modules.'
+    for ($index = 0; $index -lt $project.Modules.Count; $index++) {
+        Assert-True (
+            $brokenProject.Modules[$index].FullCode -ceq
+            $project.Modules[$index].FullCode) `
+            "Broken-directory VBA source changed at $index."
+    }
+
+    # An OLE2 container whose directory cannot be read at all still
+    # yields its VBA source through the raw salvage scan.
+    [byte[]]$blindBytes = New-Object byte[] (
+        $content.VbaProjectBytes.Length)
+    [Buffer]::BlockCopy(
+        $content.VbaProjectBytes,
+        0,
+        $blindBytes,
+        0,
+        $blindBytes.Length)
+    [Buffer]::BlockCopy(
+        [BitConverter]::GetBytes([int](-1)),
+        0,
+        $blindBytes,
+        48,
+        4)
+    New-ZipWithEntry $blindDirectoryPath 'xl/vbaProject.bin' $blindBytes
+    $blindProject = [MacroDesk.BookIO]::ReadProject($blindDirectoryPath)
+    Assert-True $blindProject.HasReadWarnings `
+        'An unreadable OLE2 directory did not produce a warning.'
+    Assert-True ($blindProject.Modules.Count -eq $project.Modules.Count) `
+        'An unreadable OLE2 directory lost every module.'
+    foreach ($sourceModule in $project.Modules) {
+        $recovered = $blindProject.Modules |
+            Where-Object { $_.Name -eq $sourceModule.Name } |
+            Select-Object -First 1
+        Assert-True (
+            $null -ne $recovered -and
+            $recovered.FullCode -ceq $sourceModule.FullCode) `
+            ("Salvaged VBA source changed: " + $sourceModule.Name)
+    }
+
+    # An OLE2 file is its own VBA container.
+    [IO.File]::WriteAllBytes($olePath, $content.VbaProjectBytes)
+    $oleProject = [MacroDesk.BookIO]::ReadProject($olePath)
+    Assert-True (-not $oleProject.IsZip) `
+        'An OLE2 workbook was treated as a ZIP.'
+    Assert-True ($oleProject.Modules.Count -eq $project.Modules.Count) `
+        'An OLE2 container lost readable modules.'
 
     Assert-ErrorCode {
         [MacroDesk.BookIO]::ReadVbaProjectBytes($missingPath)
     } 'E-ATTACH-02'
 } finally {
-    foreach ($path in @($nestedPath, $emptyPath, $invalidXlsbPath)) {
+    foreach ($path in @(
+        $nestedPath,
+        $emptyPath,
+        $invalidXlsbPath,
+        $caseNamePath,
+        $unknownExtPath,
+        $brokenDirectoryPath,
+        $blindDirectoryPath,
+        $olePath)) {
         if ([IO.File]::Exists($path)) {
             [IO.File]::Delete($path)
         }

@@ -71,11 +71,8 @@ var branchKeys = [
   "L-E*"
 ];
 var errorCodes = [
-  "E-ATTACH-01",
   "E-ATTACH-02",
   "E-ATTACH-03",
-  "E-ATTACH-04",
-  "E-ATTACH-05",
   "E-GEN-01",
   "E-GEN-02",
   "E-PASTE-01",
@@ -119,9 +116,8 @@ assert(
     lecture.contentByKey["L4-1"].body.indexOf("変更しません") >= 0,
   "L4-1 must explain that the source is unchanged.");
 assert(
-  lecture.errorContentByCode["E-SYS-02"].body.indexOf(
-    "%LOCALAPPDATA%\\MacroDesk\\logs\\") >= 0,
-  "E-SYS-02 must include the log location.");
+  lecture.errorContentByCode["E-SYS-02"].body.indexOf("もう一度") >= 0,
+  "E-SYS-02 must provide a retry path.");
 
 var noChangeState = {
   currentStep: 3,
@@ -162,5 +158,27 @@ assert(
   }, "L-E*") === lecture.errorContentByCode["E-SYS-02"],
   "Unknown errors must use E-SYS-02 guidance.");
 
+assert(
+  !lecture.errorContentByCode["E-ATTACH-" + "01"] &&
+    !lecture.errorContentByCode["E-ATTACH-" + "04"] &&
+    !lecture.errorContentByCode["E-ATTACH-" + "05"],
+  "Entry gates and parse failures still have guidance branches.");
+assert(
+  lecture.contentByKey["L1-1"].body.indexOf("開いたまま") >= 0,
+  "L1-1 must say an open workbook can still be attached.");
+
+var productionCopy = [
+  path.join(root, "assets", "js", "app.js"),
+  path.join(root, "assets", "js", "lecture.js")
+].map(function (filePath) {
+  return fs.readFileSync(filePath, "utf8");
+}).join("\n");
+assert(
+  productionCopy.indexOf(["解析できない", "ブック"].join("")) < 0,
+  "Production assets still contain the fatal attach heading.");
+assert(
+  productionCopy.indexOf(["ログを", "添えて"].join("")) < 0,
+  "Production assets still ask users to collect internal diagnostics.");
+
 console.log("test-p8-lecture: PASS");
-console.log("branches=16, errors=13, body-lines=2-4, L3-6=dynamic");
+console.log("branches=16, errors=10, body-lines=2-4, L3-6=dynamic");

@@ -71,7 +71,7 @@
     webview.addEventListener("message", handleMessage);
   }
 
-  function request(action, params) {
+  function send(action, params, additionalObjects) {
     return new Promise(function (resolve, reject) {
       if (!webview) {
         reject(makeError(
@@ -88,6 +88,16 @@
           "The host action is empty.",
           null,
           ""
+        ));
+        return;
+      }
+      if (additionalObjects &&
+          typeof webview.postMessageWithAdditionalObjects !== "function") {
+        reject(makeError(
+          "E-SYS-02",
+          "This WebView2 runtime cannot pass dropped files.",
+          null,
+          action
         ));
         return;
       }
@@ -114,12 +124,20 @@
         timer: timer
       };
 
+      var message = {
+        id: id,
+        action: action,
+        params: params || {}
+      };
+
       try {
-        webview.postMessage({
-          id: id,
-          action: action,
-          params: params || {}
-        });
+        if (additionalObjects) {
+          webview.postMessageWithAdditionalObjects(
+            message,
+            additionalObjects);
+        } else {
+          webview.postMessage(message);
+        }
       } catch (error) {
         removePending(key);
         reject(makeError(
@@ -130,6 +148,22 @@
         ));
       }
     });
+  }
+
+  function request(action, params) {
+    return send(action, params, null);
+  }
+
+  function resolveDroppedFiles(files) {
+    return send("resolveDroppedFiles", {}, files).then(function (result) {
+      return result && result.paths ? result.paths : [];
+    });
+  }
+
+  function canResolveDroppedFiles() {
+    return Boolean(
+      webview &&
+      typeof webview.postMessageWithAdditionalObjects === "function");
   }
 
   function on(eventName, handler) {
@@ -160,6 +194,8 @@
 
   global.hostBridge = {
     request: request,
+    resolveDroppedFiles: resolveDroppedFiles,
+    canResolveDroppedFiles: canResolveDroppedFiles,
     on: on,
     off: off
   };

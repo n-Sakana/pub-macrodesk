@@ -136,7 +136,6 @@
   display: grid;
   grid-template-rows:
     var(--diff-toolbar-h)
-    var(--pane-header-h)
     minmax(0, 1fr);
   background: var(--surface-code);
 }
@@ -223,13 +222,6 @@
 
 .diff-actions [data-action="repaste-response"] {
   margin-left: auto;
-}
-
-.diff-column-headings {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
 }
 
 .diff-column-heading {
@@ -510,4 +502,57 @@
   .diff-change-counter {
     display: none;
   }
+}
+
+/* Column headings ride with the table so they cannot drift out of
+   alignment with the columns, and stay visible while scrolling. */
+.diff-table thead th {
+  /* .diff-column-heading makes the cell a flex box, which stops it from
+     being a table cell and disables sticky positioning. */
+  display: table-cell;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: var(--pane-header-h);
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: var(--type-note-size);
+  font-weight: 600;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.diff-table thead .code-pane-note {
+  margin-left: var(--space-2);
+}
+
+.diff-separator--heading {
+  padding: 0;
+  background: var(--border);
+}
+
+.diff-table td,
+.diff-table th {
+  vertical-align: top;
+}
+
+.diff-table thead th {
+  vertical-align: middle;
+}
+
+.diff-table-scroller.is-wrapped .diff-code {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Wrapped mode divides the visible width between the two panes instead
+   of letting the code columns claim their natural width. */
+.diff-table-scroller.is-wrapped .diff-column--code {
+  width: auto;
+  min-width: 0;
 }

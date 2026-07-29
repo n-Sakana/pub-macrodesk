@@ -311,6 +311,36 @@
     });
   }
 
+  function createHeaderCell(documentObject, title, note) {
+    var cell = createElement(documentObject, "th", "diff-column-heading");
+    var label = createElement(documentObject, "span", "", title);
+
+    cell.colSpan = 2;
+    cell.scope = "colgroup";
+    cell.appendChild(label);
+    cell.appendChild(
+      createElement(documentObject, "span", "code-pane-note", note));
+    return cell;
+  }
+
+  function createHeader(documentObject) {
+    var head = documentObject.createElement("thead");
+    var row = documentObject.createElement("tr");
+    var separator = createElement(
+      documentObject,
+      "th",
+      "diff-separator diff-separator--heading");
+
+    separator.setAttribute("aria-hidden", "true");
+    row.appendChild(
+      createHeaderCell(documentObject, "現在のコード", "ORIGINAL"));
+    row.appendChild(separator);
+    row.appendChild(
+      createHeaderCell(documentObject, "貼り付けたコード", "COPILOT"));
+    head.appendChild(row);
+    return head;
+  }
+
   function renderDiff(container, rows, contextOnly, wrapLines) {
     var documentObject = container.ownerDocument || global.document;
     var scroller = createElement(
@@ -346,6 +376,9 @@
 
     table.appendChild(caption);
     table.appendChild(columns);
+    // The column headings live inside the table so they always line up
+    // with the columns they name and stay visible while scrolling.
+    table.appendChild(createHeader(documentObject));
     table.appendChild(body);
     scroller.appendChild(table);
     scroller.classList.toggle("is-wrapped", wrapLines === true);

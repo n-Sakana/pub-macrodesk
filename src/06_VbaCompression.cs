@@ -92,6 +92,196 @@ namespace MacroDesk
             return output.ToArray();
         }
 
+        public static byte[] DecompressBestEffort(
+            byte[] data,
+            out bool hadWarnings)
+        {
+            return DecompressBestEffort(data, 0, out hadWarnings);
+        }
+
+        public static byte[] DecompressBestEffort(
+            byte[] data,
+            int offset,
+            out bool hadWarnings)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException("data");
+            }
+
+            hadWarnings = false;
+            if (offset < 0 ||
+                offset >= data.Length ||
+                data[offset] != 0x01)
+            {
+                hadWarnings = true;
+                return new byte[0];
+            }
+
+            List<byte> output = new List<byte>();
+            int position = offset + 1;
+            while (position < data.Length)
+            {
+                if (position + 2 > data.Length)
+                {
+                    hadWarnings = true;
+                    break;
+                }
+
+                int chunkStart = position;
+                ushort header = BitConverter.ToUInt16(data, position);
+                position += 2;
+
+                int chunkSize = (header & 0x0FFF) + 3;
+                int chunkSignature = (header >> 12) & 0x0007;
+                bool isCompressed = (header & 0x8000) != 0;
+                long declaredEnd =
+                    (long)chunkStart + (long)chunkSize;
+                int chunkEnd;
+                if (declaredEnd > data.Length)
+                {
+                    hadWarnings = true;
+                    chunkEnd = data.Length;
+                }
+                else
+                {
+                    chunkEnd = (int)declaredEnd;
+                }
+                if (chunkSignature != 3)
+                {
+                    hadWarnings = true;
+                }
+
+                int decompressedChunkStart = output.Count;
+                if (!isCompressed)
+                {
+                    int rawLength = Math.Min(
+                        4096,
+                        Math.Max(0, chunkEnd - position));
+                    if (chunkSize != 4098 || rawLength != 4096)
+                    {
+                        hadWarnings = true;
+                    }
+
+                    int rawIndex;
+                    for (rawIndex = 0;
+                        rawIndex < rawLength;
+                        rawIndex++)
+                    {
+                        output.Add(data[position + rawIndex]);
+                    }
+                }
+                else
+                {
+                    DecompressChunkBestEffort(
+                        data,
+                        ref position,
+                        chunkEnd,
+                        decompressedChunkStart,
+                        output,
+                        ref hadWarnings);
+                }
+
+                position = chunkEnd;
+            }
+
+            return output.ToArray();
+        }
+
+        public static byte[] DecompressUntilInvalid(
+            byte[] data,
+            int offset,
+            int maximumLength,
+            out int endOffset)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException("data");
+            }
+
+            endOffset = offset;
+            if (offset < 0 ||
+                offset >= data.Length ||
+                data[offset] != 0x01)
+            {
+                return new byte[0];
+            }
+
+            // Raw container scanning has no stream boundary to stop at,
+            // so every chunk must parse exactly. The first chunk that
+            // does not ends the container instead of appending the bytes
+            // that follow it in the file.
+            List<byte> output = new List<byte>();
+            int position = offset + 1;
+            endOffset = position;
+            while (position + 2 <= data.Length)
+            {
+                int chunkStart = position;
+                ushort header = BitConverter.ToUInt16(data, position);
+                int chunkSize = (header & 0x0FFF) + 3;
+                int chunkSignature = (header >> 12) & 0x0007;
+                bool isCompressed = (header & 0x8000) != 0;
+                long chunkEndLong = (long)chunkStart + (long)chunkSize;
+                if (chunkSignature != 3 || chunkEndLong > data.Length)
+                {
+                    break;
+                }
+
+                int chunkEnd = (int)chunkEndLong;
+                int chunkPosition = chunkStart + 2;
+                int decompressedChunkStart = output.Count;
+                if (!isCompressed)
+                {
+                    if (chunkSize != 4098)
+                    {
+                        break;
+                    }
+
+                    int index;
+                    for (index = 0; index < 4096; index++)
+                    {
+                        output.Add(data[chunkPosition + index]);
+                    }
+                    chunkPosition = chunkEnd;
+                }
+                else
+                {
+                    try
+                    {
+                        DecompressChunk(
+                            data,
+                            ref chunkPosition,
+                            chunkEnd,
+                            decompressedChunkStart,
+                            output);
+                    }
+                    catch (InvalidDataException)
+                    {
+                        output.RemoveRange(
+                            decompressedChunkStart,
+                            output.Count - decompressedChunkStart);
+                        break;
+                    }
+                    if (chunkPosition != chunkEnd)
+                    {
+                        output.RemoveRange(
+                            decompressedChunkStart,
+                            output.Count - decompressedChunkStart);
+                        break;
+                    }
+                }
+
+                position = chunkEnd;
+                endOffset = chunkEnd;
+                if (maximumLength > 0 && output.Count >= maximumLength)
+                {
+                    break;
+                }
+            }
+
+            return output.ToArray();
+        }
+
         public static byte[] Compress(byte[] data)
         {
             if (data == null)
@@ -319,6 +509,99 @@ namespace MacroDesk
                             output);
                     }
                 }
+            }
+        }
+
+        private static void DecompressChunkBestEffort(
+            byte[] data,
+            ref int position,
+            int chunkEnd,
+            int decompressedChunkStart,
+            List<byte> output,
+            ref bool hadWarnings)
+        {
+            while (position < chunkEnd &&
+                output.Count - decompressedChunkStart < 4096)
+            {
+                byte flagByte = data[position];
+                position++;
+
+                int bit;
+                for (bit = 0; bit < 8 && position < chunkEnd; bit++)
+                {
+                    int decompressedPosition =
+                        output.Count - decompressedChunkStart;
+                    if (decompressedPosition >= 4096)
+                    {
+                        hadWarnings = true;
+                        return;
+                    }
+
+                    bool isCopyToken =
+                        (flagByte & (1 << bit)) != 0;
+                    if (!isCopyToken)
+                    {
+                        output.Add(data[position]);
+                        position++;
+                        continue;
+                    }
+                    if (position + 2 > chunkEnd)
+                    {
+                        hadWarnings = true;
+                        position = chunkEnd;
+                        break;
+                    }
+
+                    ushort token = BitConverter.ToUInt16(
+                        data,
+                        position);
+                    position += 2;
+                    decompressedPosition =
+                        output.Count - decompressedChunkStart;
+                    if (decompressedPosition <= 0)
+                    {
+                        hadWarnings = true;
+                        continue;
+                    }
+
+                    int bitCount = GetOffsetBitCount(
+                        decompressedPosition);
+                    int lengthMask = 0xFFFF >> bitCount;
+                    int copyLength = (token & lengthMask) + 3;
+                    int copyOffset =
+                        (token >> (16 - bitCount)) + 1;
+                    if (copyOffset > decompressedPosition)
+                    {
+                        hadWarnings = true;
+                        continue;
+                    }
+                    if (decompressedPosition + copyLength > 4096)
+                    {
+                        hadWarnings = true;
+                        copyLength = 4096 - decompressedPosition;
+                    }
+
+                    int copyIndex;
+                    for (copyIndex = 0;
+                        copyIndex < copyLength;
+                        copyIndex++)
+                    {
+                        int sourceIndex =
+                            output.Count - copyOffset;
+                        if (sourceIndex < decompressedChunkStart ||
+                            sourceIndex >= output.Count)
+                        {
+                            hadWarnings = true;
+                            break;
+                        }
+                        output.Add(output[sourceIndex]);
+                    }
+                }
+            }
+
+            if (position < chunkEnd)
+            {
+                hadWarnings = true;
             }
         }
 
