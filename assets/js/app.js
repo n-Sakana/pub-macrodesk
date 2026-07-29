@@ -3,70 +3,22 @@
 
   var elements = null;
   var toastTimer = null;
-  var presetFeedbackTimer = null;
+  var lastRenderedScreen = null;
   var pendingAttachPath = null;
+  var pendingRestart = false;
+  var buildStarted = false;
+  var disclosureOpen = {};
   var newModuleNameDraft = "";
   var pasteEditDraft = "";
   var pendingEditDiscardAction = null;
   var dropActive = false;
   var dragDepth = 0;
 
-  var typeIcons = {
-    document:
-      '<svg viewBox="0 0 20 20" aria-hidden="true">' +
-      '<path d="M5 2.5h6l4 4V17.5H5Z"></path>' +
-      '<path d="M11 2.5v4h4"></path>' +
-      "</svg>",
-    form:
-      '<svg viewBox="0 0 20 20" aria-hidden="true">' +
-      '<rect x="3" y="4" width="14" height="12" rx="1.5"></rect>' +
-      '<path d="M3 7h14"></path><path d="M6 10h3v3H6Z"></path>' +
-      "</svg>",
-    standard:
-      '<svg viewBox="0 0 20 20" aria-hidden="true">' +
-      '<path d="m7 5-4 5 4 5"></path>' +
-      '<path d="m13 5 4 5-4 5"></path>' +
-      '<path d="m11.5 3-3 14"></path>' +
-      "</svg>",
-    "class":
-      '<svg viewBox="0 0 20 20" aria-hidden="true">' +
-      '<rect x="3.5" y="3.5" width="13" height="13" rx="2"></rect>' +
-      '<path d="M12.5 7.5a3 3 0 1 0 0 5"></path>' +
-      "</svg>"
-  };
-
   var typeNames = {
     document: "ドキュメントモジュール",
     form: "フォームモジュール",
     standard: "標準モジュール",
     "class": "クラスモジュール"
-  };
-
-  var badgeDetails = {
-    pending: {
-      text: "未",
-      label: "未処理"
-    },
-    changed: {
-      text: "+0",
-      label: "取り込み済み、変更あり"
-    },
-    "new": {
-      text: "新+0",
-      label: "新規、変更あり"
-    },
-    unchanged: {
-      text: "同",
-      label: "取り込み済み、変更なし"
-    },
-    excluded: {
-      text: "外",
-      label: "対象外"
-    },
-    written: {
-      text: "✓済",
-      label: "書き戻し済み"
-    }
   };
 
   var attachErrorMessages = {
@@ -85,6 +37,8 @@
       "依頼文をクリップボードへコピーできませんでした。［依頼文をもう一度コピー］でやり直してください。",
     "E-PASTE-01":
       "貼り付けるコードがありません。チャット AI のコードブロックをコピーして、もう一度お試しください。",
+    "E-PRESET-01":
+      "ひな形を読み取れませんでした。presets フォルダの Markdown を確認してください。",
     "E-SYS-01":
       "WebView2 Runtime が見つかりません。起動時の案内に従って配布元へ連絡してください。",
     "E-SYS-02":
@@ -121,28 +75,28 @@
     return element;
   }
 
+  // The older helper kept its call sites; it now produces the same
+  // button as the rest of the flow.
   function createActionButton(label, className, action) {
-    var button = createElement(
-      "button",
-      "action-button " + className,
-      label);
-    button.type = "button";
-    button.setAttribute("data-action", action);
-    return button;
-  }
+    var classes = String(className || "");
+    var kind = "";
+    var extra = classes
+      .split(/\s+/)
+      .filter(function (name) {
+        return name && name.indexOf("action-button") !== 0;
+      })
+      .join(" ");
 
-  function createIconButton(label, action) {
-    var button = createElement("button", "icon-button");
-
-    button.type = "button";
-    button.title = label;
-    button.setAttribute("aria-label", label);
-    button.setAttribute("data-action", action);
-    button.innerHTML =
-      '<svg viewBox="0 0 20 20" aria-hidden="true">' +
-      '<rect x="6.5" y="6.5" width="10" height="10" rx="1.5"></rect>' +
-      '<path d="M13.5 6.5v-3h-10v10h3"></path></svg>';
-    return button;
+    if (classes.indexOf("action-button--primary") >= 0) {
+      kind = "primary";
+    } else if (classes.indexOf("action-button--danger") >= 0) {
+      kind = "danger";
+    }
+    return createFlowButton(label, action, {
+      kind: kind,
+      compact: classes.indexOf("action-button--compact") >= 0,
+      className: extra
+    });
   }
 
   function getFileName(path) {
@@ -162,12 +116,6 @@
     return selected;
   }
 
-  function isGuideTarget(id) {
-    var target = global.MacroDeskState.getGuideTarget();
-
-    return target !== null && target.id === id;
-  }
-
   function showToast(message, tone) {
     var toast;
     var label;
@@ -177,6 +125,7 @@
     }
 
     clearToast();
+    elements.toastRegion.textContent = "";
     toast = createElement(
       "div",
       "toast toast--" + (tone || "info"));
@@ -198,9 +147,23 @@
     elements.toastRegion.appendChild(toast);
 
     toastTimer = global.setTimeout(function () {
-      elements.toastRegion.textContent = "";
       toastTimer = null;
+      dismissToast(toast);
     }, 5000);
+  }
+
+  // Leaving the screen is an animation too: the toast fades out rather
+  // than disappearing between two frames.
+  function dismissToast(toast) {
+    if (!toast || !toast.parentNode) {
+      return;
+    }
+    toast.classList.add("is-leaving");
+    global.setTimeout(function () {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 220);
   }
 
   function clearToast() {
@@ -211,7 +174,9 @@
       global.clearTimeout(toastTimer);
       toastTimer = null;
     }
-    elements.toastRegion.textContent = "";
+    Array.prototype.slice.call(
+      elements.toastRegion.children
+    ).forEach(dismissToast);
   }
 
   function copyText(value, label) {
@@ -247,671 +212,589 @@
     }, 0);
   }
 
-  function renderProgress(state) {
-    elements.progressButtons.forEach(function (button) {
-      var step = Number(button.getAttribute("data-step"));
-      var current = step === state.currentStep;
-      var available = global.MacroDeskState.canNavigate(step);
-      var complete = step < state.currentStep;
-      var stepFourReady = step === 4 && !current && available;
-      var number = button.querySelector(".progress-number");
-      var item = button.parentNode;
+  var iconPaths = {
+    file: '<path d="M6 2h8l4 4v16H6z"/><path d="M14 2v5h5"/>',
+    folder: '<path d="M3 6h7l2 2h9v11H3z"/><path d="M3 8V5h7l2 3"/>',
+    copy: '<rect x="8" y="8" width="11" height="12" rx="2"/>' +
+      '<path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2"/>',
+    check: '<path d="m5 12 4 4L19 6"/>',
+    template: '<path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/>',
+    code: '<path d="m8 9-4 3 4 3M16 9l4 3-4 3M14 5l-4 14"/>',
+    arrowLeft: '<path d="m15 18-6-6 6-6"/>',
+    arrowRight: '<path d="m9 18 6-6-6-6"/>',
+    arrowUp: '<path d="m6 15 6-6 6 6"/>',
+    arrowDown: '<path d="m6 9 6 6 6-6"/>',
+    restart: '<path d="M4 4v6h6"/><path d="M5.5 15a8 8 0 1 0 .8-7.7L4 10"/>',
+    chevron: '<path d="m9 6 6 6-6 6"/>'
+  };
 
-      button.disabled = state.busyAction !== null ||
-        current ||
-        !available;
-      button.classList.toggle("is-complete", complete);
-      button.classList.toggle("is-unavailable", !current && !available);
-      button.classList.toggle(
-        "is-ready",
-        stepFourReady);
-      item.classList.toggle("is-complete", complete);
-      number.textContent = complete ? "✓" : String(step);
-      if (current) {
-        button.setAttribute("aria-current", "step");
-      } else {
-        button.removeAttribute("aria-current");
-      }
-    });
-  }
-
-  function createModuleIcon(type) {
-    var icon = createElement(
+  function createIcon(name, className) {
+    var element = createElement(
       "span",
-      "module-type-icon module-type-icon--" + type);
-    icon.setAttribute("aria-hidden", "true");
-    icon.innerHTML = typeIcons[type] || typeIcons.standard;
-    return icon;
+      "flow-icon " + (className || ""));
+
+    element.setAttribute("aria-hidden", "true");
+    element.innerHTML =
+      '<svg viewBox="0 0 24 24">' +
+      (iconPaths[name] || iconPaths.file) +
+      "</svg>";
+    return element;
   }
 
-  function getBadge(module) {
-    var status = module.written
-      ? "written"
-      : module.isNew === true
-        ? "new"
-        : module.status;
-    var details = badgeDetails[status] || badgeDetails.pending;
-    var text = details.text;
+  // Every button in the flow is built here so the two sizes stay the
+  // only sizes: the normal action button and the compact one used in
+  // toolbars and inside cards.
+  function createFlowButton(label, action, options) {
+    var settings = options || {};
+    var button = createElement("button", "button");
 
-    if (status === "changed" && module.changedLineCount > 0) {
-      text = "+" + module.changedLineCount;
+    button.type = "button";
+    button.setAttribute("data-action", action);
+    if (settings.kind) {
+      button.classList.add("button--" + settings.kind);
     }
-    if (status === "new" && module.changedLineCount > 0) {
-      text = "新+" + module.changedLineCount;
+    if (settings.compact) {
+      button.classList.add("button--compact");
     }
-
-    return {
-      status: status,
-      text: text,
-      label: details.label
-    };
-  }
-
-  function getFirstPendingModuleName(state) {
-    var name = null;
-
-    state.modules.some(function (module) {
-      if (module.status === "pending") {
-        name = module.name;
-        return true;
-      }
-      return false;
-    });
-    return name;
-  }
-
-  function getConfirmedModuleCount(state) {
-    var count = 0;
-
-    state.modules.forEach(function (module) {
-      if (module.status === "changed" ||
-          module.status === "unchanged") {
-        count += 1;
-      }
-    });
-    return count;
-  }
-
-  function getGlowingModuleName(state) {
-    var target = global.MacroDeskState.getGuideTarget();
-
-    return target && target.id === "module"
-      ? target.moduleName
-      : null;
-  }
-
-  function renderModuleList(state) {
-    var glowingModuleName = getGlowingModuleName(state);
-
-    elements.moduleList.textContent = "";
-    elements.moduleCount.textContent = String(state.modules.length);
-    elements.moduleCount.setAttribute(
-      "aria-label",
-      state.modules.length + " モジュール");
-    elements.bookName.textContent = state.book
-      ? state.book.name
-      : "ブック未添付";
-    elements.moduleRegion.classList.toggle(
-      "has-book",
-      state.book !== null);
-    elements.moduleEmpty.hidden = state.modules.length > 0;
-    elements.moduleList.hidden = state.modules.length === 0;
-
-    state.modules.forEach(function (module) {
-      var item = createElement("li", "module-item");
-      var row = createElement("div", "module-row");
-      var button = createElement("button", "module-button");
-      var name = createElement("span", "module-name", module.name);
-      var lines = createElement(
-        "span",
-        "module-lines",
-        module.lineCount + " 行");
-      var badge = getBadge(module);
-      var badgeElement = createElement(
-        "span",
-        "module-badge module-badge--" + badge.status,
-        badge.text);
-      var statusControl;
-      var rowAction = null;
-      var selected = module.name === state.selectedModuleName;
-      var typeLabel = module.typeLabel ||
-        typeNames[module.type] ||
-        "VBA モジュール";
-
-      if (module.status === "excluded") {
-        item.classList.add("is-excluded");
-      }
-      if (selected) {
-        item.classList.add("is-selected");
-      }
-      if (module.name === glowingModuleName) {
-        item.classList.add("is-guided-target");
-      }
-
-      button.type = "button";
-      button.setAttribute("data-module-name", module.name);
-      button.setAttribute("aria-pressed", selected ? "true" : "false");
-      button.setAttribute(
-        "aria-label",
-        module.name + "、" +
-        typeLabel + "、" +
-        module.lineCount + " 行、" +
-        badge.label);
-      badgeElement.setAttribute("title", badge.label);
-      badgeElement.setAttribute("aria-hidden", "true");
-
-      button.appendChild(createModuleIcon(module.type));
-      button.appendChild(name);
-      button.appendChild(lines);
-      statusControl = createElement(
-        "span",
-        "module-status-static");
-      statusControl.appendChild(badgeElement);
-      if (module.status === "pending" ||
-          module.status === "excluded") {
-        rowAction = createElement(
-          "button",
-          "module-row-action");
-        rowAction.type = "button";
-        rowAction.setAttribute(
-          "data-module-toggle",
-          module.name);
-        rowAction.setAttribute(
-          "aria-label",
-          module.status === "excluded"
-            ? module.name + " の対象外を解除"
-            : module.name + " を対象外にする");
-        rowAction.title = module.status === "excluded"
-          ? "対象外を解除"
-          : "対象外にする";
-        rowAction.innerHTML = module.status === "excluded"
-          ? '<svg viewBox="0 0 20 20" aria-hidden="true">' +
-            '<path d="M6 6H3v-3"></path>' +
-            '<path d="M3.5 6a7 7 0 1 1-.2 7"></path></svg>'
-          : '<svg viewBox="0 0 20 20" aria-hidden="true">' +
-            '<circle cx="10" cy="10" r="6.5"></circle>' +
-            '<path d="m5.5 14.5 9-9"></path></svg>';
-        rowAction.classList.toggle(
-          "is-visible",
-          module.status === "excluded");
-      }
-
-      row.setAttribute("data-module-row-name", module.name);
-      row.appendChild(button);
-      if (rowAction) {
-        row.appendChild(rowAction);
-      }
-      row.appendChild(statusControl);
-      item.appendChild(row);
-      elements.moduleList.appendChild(item);
-    });
-
-    if (state.modules.length > 0) {
-      var legend = createElement(
-        "li",
-        "module-legend",
-        "未=未処理　+n=変更あり　同=変更なし　外=対象外　✓済=書き戻し済み");
-      elements.moduleList.appendChild(legend);
+    if (settings.className) {
+      button.className += " " + settings.className;
     }
-
-    if (state.currentStep === 3 && state.book) {
-      var addItem = createElement(
-        "li",
-        "module-add-item");
-      var addButton = createElement(
-        "button",
-        "module-add-button",
-        "＋ 新規モジュールとして取り込む");
-
-      addButton.type = "button";
-      addButton.setAttribute(
-        "data-new-module-intake",
-        "true");
-      addButton.setAttribute(
-        "aria-pressed",
-        state.newModuleIntake ? "true" : "false");
-      addItem.appendChild(addButton);
-      elements.moduleList.appendChild(addItem);
+    if (settings.icon) {
+      button.appendChild(createIcon(settings.icon, "flow-icon--small"));
     }
+    button.appendChild(createElement("span", "button-label", label));
+    if (settings.iconAfter) {
+      button.appendChild(
+        createIcon(settings.iconAfter, "flow-icon--small"));
+    }
+    if (settings.disabled) {
+      button.disabled = true;
+      button.setAttribute("aria-disabled", "true");
+    }
+    return button;
   }
 
-  function createScreenHeader(step, title, meta, secondaryMeta) {
-    var header = createElement("header", "screen-header");
-    var heading = createElement("div", "screen-heading");
-    var eyebrow = createElement(
-      "p",
-      "screen-eyebrow",
-      ["", "手順①", "手順②", "手順③", "手順④"][step]);
-    var titleElement = createElement("h2", "screen-title", title);
-    var metaGroup = createElement("div", "screen-meta-group");
-    var metaElement = createElement(
-      "span",
-      "screen-meta screen-book-chip",
-      meta || "");
-
-    titleElement.id = "step-title-" + step;
-    heading.appendChild(eyebrow);
-    heading.appendChild(titleElement);
-    header.appendChild(heading);
-    if (meta) {
-      metaGroup.appendChild(metaElement);
-    }
-    if (secondaryMeta) {
-      metaGroup.appendChild(createElement(
-        "span",
-        "screen-meta screen-status-meta",
-        secondaryMeta));
-    }
-    header.appendChild(metaGroup);
-    return header;
+  function createTaskIntro(message) {
+    return createElement("p", "task-intro", message);
   }
 
-  function createPlaceholder(step, title, body) {
-    var screen = createElement("section", "screen");
-    var screenBody = createElement("div", "screen-body");
-    var card = createElement("div", "placeholder-card");
-    var index = createElement(
-      "span",
-      "placeholder-index",
-      "0" + step);
-    var heading = createElement("h3", "", title);
-    var description = createElement("p", "", body);
+  function createTask(className) {
+    return createElement(
+      "section",
+      "task " + (className || ""));
+  }
 
-    screen.setAttribute("data-step", String(step));
-    screen.setAttribute("aria-labelledby", "step-title-" + step);
-    card.appendChild(index);
-    card.appendChild(heading);
-    card.appendChild(description);
-    screenBody.appendChild(card);
-    screen.appendChild(createScreenHeader(step, title));
-    screen.appendChild(screenBody);
-    return screen;
+  function createPanel(title, className) {
+    var panel = createElement("section", "panel " + (className || ""));
+    var header;
+
+    if (title) {
+      header = createElement("div", "panel-header");
+      header.appendChild(createElement("span", "", title));
+      panel.appendChild(header);
+    }
+    return panel;
+  }
+
+  // Progressive disclosure: the main work stays visible, the optional
+  // detail opens in place under a label that says what it opens.
+  function createDisclosure(key, label, content, options) {
+    var settings = options || {};
+    var open = disclosureOpen[key] === true;
+    var box = createElement(
+      "div",
+      "disclosure " + (settings.className || ""));
+    var trigger = createElement("button", "disclosure-trigger");
+    var body = createElement("div", "disclosure-body");
+    var inner = createElement("div", "disclosure-inner");
+
+    trigger.type = "button";
+    trigger.setAttribute("data-action", "toggle-disclosure");
+    trigger.setAttribute("data-disclosure", key);
+    trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    trigger.appendChild(
+      createIcon("chevron", "flow-icon--small disclosure-chevron"));
+    trigger.appendChild(createElement("span", "", label));
+    if (settings.note) {
+      trigger.appendChild(
+        createElement("span", "disclosure-note", settings.note));
+    }
+    box.setAttribute("data-open", open ? "true" : "false");
+    box.setAttribute("data-disclosure-box", key);
+    inner.appendChild(content);
+    body.appendChild(inner);
+    box.appendChild(trigger);
+    box.appendChild(body);
+    return box;
   }
 
   function createDropIcon() {
-    var icon = createElement("span", "drop-zone-icon");
+    var icon = createElement("span", "drop-icon");
     icon.setAttribute("aria-hidden", "true");
     icon.innerHTML =
       '<svg viewBox="0 0 24 24">' +
-      '<path d="M7 3.5h7l4 4V20.5H7Z"></path>' +
-      '<path d="M14 3.5v4h4"></path>' +
-      '<path d="M12.5 16V9.5"></path>' +
-      '<path d="m9.5 12.5 3-3 3 3"></path>' +
+      '<path d="M6 2h8l4 4v16H6z"></path>' +
+      '<path d="M14 2v5h5"></path>' +
+      '<path d="M12 18v-6"></path>' +
+      '<path d="m9 15 3-3 3 3"></path>' +
       "</svg>";
     return icon;
   }
 
   function createAttachErrorCard(error) {
     var card = createElement("section", "inline-error-card");
-    var heading = createElement(
-      "h3",
-      "",
-      getFileName(error.path) || "マクロが見つかりません");
-    var message = createElement(
-      "p",
-      "",
-      attachErrorMessages["E-ATTACH-03"]);
 
     card.setAttribute("role", "alert");
     card.appendChild(
       createElement("span", "inline-error-code", "E-ATTACH-03"));
-    card.appendChild(heading);
-    card.appendChild(message);
+    card.appendChild(createElement(
+      "h2",
+      "",
+      getFileName(error.path) || "マクロが見つかりません"));
+    card.appendChild(createElement(
+      "p",
+      "",
+      attachErrorMessages["E-ATTACH-03"]));
     return card;
   }
 
-  function createBookCard(state) {
-    var card = createElement("section", "book-card");
-    var details = createElement("div", "book-card-details");
-    var heading = createElement("h3", "", state.book.name);
-    var path = createElement("p", "book-card-path", state.book.path);
-    var stats = createElement("dl", "book-stats");
-    var nextButton = createActionButton(
-      "次へ（依頼を作る）",
-      "action-button--primary",
-      "step1-next");
+  function getPresetEntries(state) {
+    var presets = state.appInfo && state.appInfo.presets
+      ? state.appInfo.presets
+      : [];
 
-    details.appendChild(
-      createElement("span", "book-card-label", "対象ブック"));
-    details.appendChild(heading);
-    details.appendChild(path);
-    stats.appendChild(createElement("dt", "", "モジュール"));
-    stats.appendChild(
-      createElement("dd", "", String(state.modules.length)));
-    stats.appendChild(createElement("dt", "", "合計行数"));
-    stats.appendChild(
-      createElement("dd", "", String(state.book.totalLines)));
-
-    nextButton.disabled = state.busyAction !== null;
-    nextButton.classList.toggle(
-      "is-guided-target",
-      isGuideTarget("step1-next"));
-    card.appendChild(details);
-    card.appendChild(stats);
-    card.appendChild(nextButton);
-    return card;
+    return global.MacroStudioPreset.describeAll(presets);
   }
 
-  function createStepOne(state) {
-    var screen = createElement("section", "screen");
-    var body = createElement("div", "screen-body step-body-scroll");
-    var stack = createElement("div", "step-stack step-one-stack");
-    var dropZone = createElement("section", "book-drop-zone");
-    var dropText = createElement("div", "drop-zone-text");
-    var pickButton = createActionButton(
-      state.busyAction === "pickBook"
-        ? "ファイル選択を開いています"
-        : state.busyAction === "attachBook"
-          ? "ブックを読み込んでいます"
-          : "ファイルを選ぶ",
-      state.book
-        ? "action-button--secondary"
-        : "action-button--primary",
-      "pick-book");
+  // ---- screen 0: choose the workbook ----
 
-    screen.setAttribute("data-step", "1");
-    screen.setAttribute("aria-labelledby", "step-title-1");
-    dropZone.classList.toggle("is-compact", state.book !== null);
-    dropZone.classList.toggle("is-primary-target", state.book === null);
-    dropZone.classList.toggle(
-      "is-guided-target",
-      isGuideTarget("attach"));
-    dropText.appendChild(
-      createElement(
-        "h3",
-        "",
-        state.book
-          ? "別のブックに差し替える（ここにドロップ）"
-          : "Excel ブックをここにドロップ"));
-    if (!state.book) {
-      dropText.appendChild(createElement(
-        "p",
-        "",
-        "対応形式: .xlsm / .xlam / .xlsb / .xls"));
-    }
-    pickButton.disabled = state.busyAction !== null;
-    if (state.busyAction === "attachBook") {
-      pickButton.insertBefore(
-        createElement("span", "loading-spinner"),
-        pickButton.firstChild);
+  function createScreen0(state) {
+    var task = createTask("");
+    var zone;
+    var loaded;
+    var details;
+
+    task.appendChild(createTaskIntro(state.book
+      ? "このブックでよければ、右下の「次へ」へ進みます。"
+      : "改修したいブックを、ここへドラッグするか選んでください。"));
+
+    if (state.lastError && state.lastError.code === "E-ATTACH-03") {
+      task.appendChild(createAttachErrorCard(state.lastError));
     }
 
-    dropZone.appendChild(createDropIcon());
-    dropZone.appendChild(dropText);
-    dropZone.appendChild(pickButton);
-    stack.appendChild(dropZone);
-
-    if (state.lastError &&
-        state.lastError.code === "E-ATTACH-03") {
-      stack.appendChild(createAttachErrorCard(state.lastError));
-    }
     if (state.book) {
-      stack.appendChild(createBookCard(state));
+      loaded = createElement("div", "loaded-zone");
+      details = createElement("div", "loaded-zone-details");
+      details.appendChild(createElement("h2", "", state.book.name));
+      details.appendChild(createElement(
+        "p",
+        "loaded-zone-path",
+        state.book.path));
+      loaded.appendChild(createDropIcon());
+      loaded.appendChild(details);
+      loaded.appendChild(createFlowButton("選び直す", "pick-book", {
+        icon: "folder",
+        compact: true,
+        disabled: state.busyAction !== null
+      }));
+      task.appendChild(loaded);
+      return task;
     }
 
-    body.appendChild(stack);
-    screen.appendChild(createScreenHeader(
-      1,
-      state.book ? "添付したブックを確認" : "対象ブックを添付"));
-    screen.appendChild(body);
-    return screen;
-  }
-
-  function getPresetSignature(state) {
-    var presets = state.appInfo && state.appInfo.presets
-      ? state.appInfo.presets
-      : [];
-    return presets.map(function (preset) {
-      return preset.file;
-    }).join("|");
-  }
-
-  function createPresetSection(state) {
-    var presets = state.appInfo && state.appInfo.presets
-      ? state.appInfo.presets
-      : [];
-    var section = createElement("section", "preset-section");
-    var label = createElement("h3", "field-label", "ひな形から始める");
-    var helper = createElement(
+    zone = createElement("button", "drop-zone");
+    zone.type = "button";
+    zone.setAttribute("data-action", "pick-book");
+    zone.disabled = state.busyAction !== null;
+    zone.appendChild(createDropIcon());
+    zone.appendChild(createElement(
+      "h2",
+      "",
+      state.busyAction === "attachBook"
+        ? "読み込んでいます"
+        : "Excelブックをここにドロップ"));
+    zone.appendChild(createElement(
       "p",
-      "field-helper",
-      "選ぶと依頼文の末尾に本文が入ります。何度でも追加できます。" +
-        "ひな形は依頼文の下書きです。ファイルの形はテンプレートが決めます。");
-    var buttons = createElement("div", "preset-buttons");
+      "",
+      "またはクリックしてファイルを選ぶ"));
+    task.appendChild(zone);
+    return task;
+  }
 
-    section.classList.toggle(
-      "is-guided-target",
-      isGuideTarget("presets"));
-    presets.forEach(function (preset) {
-      var button = createActionButton(
-        "＋ " + preset.name,
-        "action-button--preset",
-        "load-preset");
-      button.setAttribute("data-preset-file", preset.file);
-      button.setAttribute("data-preset-name", preset.name);
-      button.disabled = state.busyAction !== null;
-      buttons.appendChild(button);
+  // ---- screen 1: what was read ----
+
+  function createStatCard(label, value) {
+    var card = createElement("div", "stat-card");
+
+    card.appendChild(createElement("div", "stat-label", label));
+    card.appendChild(createElement("div", "stat-value", value));
+    return card;
+  }
+
+  function createReadDetail(state) {
+    var wrap = createElement("div", "read-detail");
+    var main = createElement("div", "book-main");
+    var fileCard = createElement("div", "file-card");
+    var fileName = createElement("div", "file-name");
+    var strip = createElement("div", "module-strip");
+
+    fileName.appendChild(createElement("span", "file-kind", "XLS"));
+    fileName.appendChild(createElement("span", "", state.book.name));
+    fileCard.appendChild(fileName);
+    fileCard.appendChild(createElement(
+      "div",
+      "file-path",
+      state.book.path));
+    main.appendChild(fileCard);
+    main.appendChild(createStatCard(
+      "モジュール",
+      String(state.modules.length)));
+    main.appendChild(createStatCard(
+      "合計行数",
+      String(state.book.totalLines)));
+    main.appendChild(createStatCard(
+      "読み取り警告",
+      state.book.warning ? "あり" : "0"));
+    wrap.appendChild(main);
+
+    state.modules.forEach(function (module) {
+      var chip = createElement("span", "module-chip", module.name);
+
+      chip.title = module.name + "（" + module.lineCount + " 行）";
+      strip.appendChild(chip);
     });
-
-    section.appendChild(label);
-    section.appendChild(helper);
-    section.appendChild(buttons);
-    return section;
+    wrap.appendChild(strip);
+    return wrap;
   }
 
-  function createTemplateNotice() {
-    var details = createElement("details", "template-notice");
-    var summary = createElement("summary", "template-summary");
-    var icon = createElement("span", "template-icon");
-    var content = createElement("div", "template-content");
-    var pathRow = createElement("div", "template-path-row");
-    var path = createElement(
-      "code",
-      "template-path",
-      "templates\\request-template.txt");
-    var copy = createIconButton(
-      "テンプレートのパスをコピー",
-      "copy-text");
+  function createScreen1(state) {
+    var task = createTask("task--wide");
+    var headline = createElement("div", "headline-card");
 
-    icon.setAttribute("aria-hidden", "true");
-    icon.innerHTML =
-      '<svg viewBox="0 0 20 20">' +
-      '<path d="M5 2.5h6l4 4V17.5H5Z"></path>' +
-      '<path d="M11 2.5v4h4"></path></svg>';
-    summary.appendChild(icon);
-    summary.appendChild(createElement(
-      "span",
-      "",
-      "依頼文の定型部分はテンプレートから作られます（差し替え可）"));
-    content.appendChild(createElement(
-      "p",
-      "",
-      "クリップボードへコピーされる依頼文は、テンプレートから生成されます。" +
-        "文言を変えたいときは次のファイルを編集してください（UTF-8）。" +
-        "コードファイルの形式は固定で、依頼文とは分かれています。"));
-    copy.setAttribute(
-      "data-copy-text",
-      "templates\\request-template.txt");
-    pathRow.appendChild(path);
-    pathRow.appendChild(copy);
-    content.appendChild(pathRow);
-    content.appendChild(createElement(
-      "p",
-      "template-note",
-      "{{REQUEST_TEXT}} の差し込みは必須です。" +
-        "壊れている場合は作成時に E-GEN-02 でお知らせします。"));
-    details.appendChild(summary);
-    details.appendChild(content);
-    return details;
+    headline.appendChild(createIcon("check", "headline-icon"));
+    headline.appendChild(createElement(
+      "div",
+      "headline-text",
+      state.book.name + " から " + state.modules.length +
+        "モジュール・" + state.book.totalLines + "行を読み込みました"));
+    if (state.book.warning) {
+      headline.appendChild(createElement(
+        "p",
+        "headline-warning",
+        "一部に不整合がありました。読み取れた範囲で進められます。"));
+    }
+    task.appendChild(headline);
+    task.appendChild(createDisclosure(
+      "read-detail",
+      "読み取った内容を見る",
+      createReadDetail(state),
+      { note: "モジュール名と行数" }));
+    return task;
   }
 
-  function createRequestSuccess(state) {
-    var card = createElement("section", "request-success");
-    var heading = createElement(
-      "h3",
-      "",
-      "✓ " + getFileName(state.requestFilePath));
-    var text = createElement(
-      "p",
-      "",
-      "チャット AI に依頼文を貼り付け（Ctrl+V）、" +
-        "このコードファイルを添付して送信してください。");
-    var actions = createElement("div", "step-actions");
-    var copyPrompt = createActionButton(
-      state.busyAction === "writeClipboard"
-        ? "コピーしています"
-        : "依頼文をもう一度コピー",
-      "action-button--secondary",
-      "copy-request-prompt");
-    var createAgain = createActionButton(
-      "もう一度作成する",
-      "action-button--secondary",
-      "create-request");
-    var next = createActionButton(
-      "次へ（返答を取り込む）",
-      "action-button--primary",
-      "step2-next");
+  // ---- screen 2: what this run is for ----
 
-    copyPrompt.disabled = state.busyAction !== null ||
-      !state.requestPrompt;
-    createAgain.disabled = state.busyAction !== null;
-    next.disabled = state.busyAction !== null;
-    next.classList.toggle(
-      "is-guided-target",
-      isGuideTarget("step2-next"));
-    card.appendChild(
-      createElement("span", "success-label", "作成済み"));
-    card.appendChild(heading);
-    card.appendChild(text);
-    actions.appendChild(copyPrompt);
-    actions.appendChild(createAgain);
-    actions.appendChild(next);
+  var MODE_CHOICES = [
+    {
+      mode: "refactor",
+      icon: "template",
+      title: "マクロを改修する",
+      description:
+        "AIの返答を取り込んで、改修済みのブックをこのアプリで作ります。"
+    },
+    {
+      mode: "diagnose",
+      icon: "code",
+      title: "マクロについてAIに聞く",
+      description:
+        "AIチャットへ渡す依頼文とコードを作ります。ブックは変更しません。"
+    }
+  ];
+
+  function createModeCard(state, choice) {
+    var selected = state.mode === choice.mode;
+    var card = createElement("button", "choice-card");
+    var body = createElement("span", "choice-body");
+    var mark = createElement("span", "choice-state");
+
+    card.type = "button";
+    card.setAttribute("data-action", "select-mode");
+    card.setAttribute("data-mode", choice.mode);
+    card.classList.toggle("is-selected", selected);
+    card.setAttribute("aria-pressed", selected ? "true" : "false");
+    card.disabled = state.busyAction !== null;
+    card.appendChild(createIcon(choice.icon, "choice-icon"));
+    body.appendChild(createElement("span", "choice-title", choice.title));
+    body.appendChild(
+      createElement("span", "choice-description", choice.description));
+    card.appendChild(body);
+    if (selected) {
+      mark.appendChild(createIcon("check", "flow-icon--small"));
+    }
+    card.appendChild(mark);
+    return card;
+  }
+
+  function createScreenMode(state) {
+    var task = createTask("");
+    var list = createElement("div", "choice-list");
+
+    task.appendChild(createTaskIntro(
+      "このマクロをどうしたいかを、ひとつ選んでください。"));
+    MODE_CHOICES.forEach(function (choice) {
+      list.appendChild(createModeCard(state, choice));
+    });
+    task.appendChild(list);
+    return task;
+  }
+
+  // ---- screen 3: what kind of request ----
+
+  function createPurposeCard(state, entry) {
+    var selected = state.presetFile === entry.file;
+    var card = createElement("button", "choice-card");
+    var body = createElement("span", "choice-body");
+    var mark = createElement("span", "choice-state");
+    var summary = entry.instruction.body
+      .replace(/\r\n/g, "\n")
+      .split("\n")
+      .filter(function (line) {
+        return line.trim().length > 0;
+      })[0] || "";
+
+    card.type = "button";
+    card.setAttribute("data-action", "select-purpose");
+    card.setAttribute("data-preset-file", entry.file);
+    card.classList.toggle("is-selected", selected);
+    card.setAttribute("aria-pressed", selected ? "true" : "false");
+    card.disabled = state.busyAction !== null;
+    card.appendChild(createIcon("template", "choice-icon"));
+    body.appendChild(createElement("span", "choice-title", entry.name));
+    body.appendChild(createElement("span", "choice-description", summary));
+    card.appendChild(body);
+    if (selected) {
+      mark.appendChild(createIcon("check", "flow-icon--small"));
+    }
+    card.appendChild(mark);
+    return card;
+  }
+
+  function createScreen2(state) {
+    var task = createTask("");
+    var entries = getPresetEntries(state).filter(function (entry) {
+      return !entry.valid || entry.mode === state.mode;
+    });
+    var list = createElement("div", "choice-list");
+    var invalid = entries.filter(function (entry) {
+      return !entry.valid;
+    });
+    var usable = entries.filter(function (entry) {
+      return entry.valid;
+    });
+    var errorBox;
+    var errorList;
+
+    task.appendChild(createTaskIntro(
+      global.MacroStudioScreens.isDiagnose(state)
+        ? "聞きたいことに近いものを、ひとつ選んでください。"
+        : "したい改修に近いものを、ひとつ選んでください。"));
+
+    usable.forEach(function (entry) {
+      list.appendChild(createPurposeCard(state, entry));
+    });
+    if (usable.length === 0) {
+      list.appendChild(createElement(
+        "p",
+        "preset-empty",
+        "選べる依頼がありません。presets フォルダの Markdown を" +
+          "確認してください。"));
+    }
+    task.appendChild(list);
+
+    if (invalid.length > 0) {
+      errorBox = createElement("div", "preset-invalid");
+      errorBox.appendChild(createElement(
+        "p",
+        "preset-invalid-label",
+        "読み込めないひな形が " + invalid.length + " 件あります"));
+      errorList = createElement("ul", "preset-invalid-list");
+      invalid.forEach(function (entry) {
+        var item = createElement("li", "preset-invalid-item");
+
+        item.setAttribute("data-preset-invalid-file", entry.file);
+        item.appendChild(
+          createElement("code", "preset-invalid-file", entry.file));
+        item.appendChild(
+          createElement("span", "preset-invalid-message", entry.message));
+        errorList.appendChild(item);
+      });
+      errorBox.appendChild(errorList);
+      task.appendChild(errorBox);
+    }
+    return task;
+  }
+
+  // ---- screen 3: the request itself ----
+
+  function createRequestEditor(state) {
+    var wrap = createElement("div", "request-editor-wrap");
+    var textarea = createElement("textarea", "request-editor");
+
+    textarea.id = "request-text";
+    textarea.value = state.requestText;
+    textarea.spellcheck = false;
+    textarea.placeholder =
+      "例: 新しい端末でも同じ保存先を使えるようにしてください。";
+    textarea.disabled = state.busyAction !== null;
+    wrap.appendChild(textarea);
+    wrap.appendChild(createElement(
+      "p",
+      "editor-note",
+      "この文章と、返答のしかたの指示、コード全文ファイルをAIへ渡します。" +
+        "返答のしかたは " + (state.presetName || "選んだ改修") +
+        " のひな形が持っています。"));
+    return wrap;
+  }
+
+  function createScreen3(state) {
+    var task = createTask("task--wide");
+    var headline = createElement("div", "headline-card");
+    var preview = state.requestText
+      .replace(/\r\n/g, "\n")
+      .split("\n")
+      .filter(function (line) {
+        return line.trim().length > 0;
+      })
+      .slice(0, 2)
+      .join(" ");
+
+    task.appendChild(createTaskIntro(
+      "この内容でAIへ依頼します。書き換えたいときだけ開いてください。"));
+    headline.appendChild(createIcon("template", "headline-icon"));
+    headline.appendChild(createElement(
+      "div",
+      "headline-text",
+      state.presetName || "改修依頼"));
+    headline.appendChild(createElement(
+      "p",
+      "headline-preview",
+      preview.length > 92 ? preview.slice(0, 92) + "…" : preview));
+    task.appendChild(headline);
+    task.appendChild(createDisclosure(
+      "request-editor",
+      "依頼文を確認・編集",
+      createRequestEditor(state),
+      { note: state.requestText.length + "文字" }));
+    return task;
+  }
+
+  // ---- screen 4: hand the request to the chat ----
+
+  function createFolderContract(state, withResults) {
+    var box = createElement("div", "folder-contract");
+    var chips = createElement("div", "artifact-chips");
+    var names = ["request.md", "source-code.md"];
+
+    if (withResults) {
+      names = names.concat([
+        state.outputName,
+        "diff-report.html",
+        "result.md"
+      ]);
+    }
+    box.appendChild(createElement(
+      "div",
+      "folder-path",
+      state.runFolder || ""));
+    names.forEach(function (name) {
+      chips.appendChild(createElement("span", "artifact-chip", name));
+    });
+    box.appendChild(chips);
+    return box;
+  }
+
+  // Where the files go is reference material: shown on request, never
+  // in the way of the thing the user came to this screen to do.
+  function createFolderDisclosure(state, key, withResults) {
+    return createDisclosure(
+      key,
+      "作成されるファイルの場所を見る",
+      createFolderContract(state, withResults),
+      { note: "この改修専用のフォルダ" });
+  }
+
+  function createHandoffCard(state, options) {
+    var card = createElement("div", "handoff-card");
+    var number = createElement("div", "handoff-number");
+    var actions = createElement("div", "inline-actions");
+
+    card.classList.toggle("is-done", options.done);
+    if (options.done) {
+      number.appendChild(createIcon("check", "flow-icon--small"));
+    } else {
+      number.textContent = options.step;
+    }
+    card.appendChild(number);
+    card.appendChild(createElement("h2", "", options.title));
+    card.appendChild(createElement("p", "", options.description));
+    if (options.fileName) {
+      card.appendChild(
+        createElement("div", "file-pill", options.fileName));
+    }
+    actions.appendChild(createFlowButton(
+      options.label,
+      options.action,
+      {
+        kind: options.done ? "" : "primary",
+        icon: options.done ? "check" : options.icon,
+        className: options.done ? "is-done" : "",
+        disabled: state.busyAction !== null
+      }));
     card.appendChild(actions);
     return card;
   }
 
-  function createStepTwo(state) {
-    var screen = createElement("section", "screen");
-    var body = createElement("div", "screen-body step-body-scroll");
-    var workspace = createElement("div", "request-workspace");
-    var field = createElement("div", "request-field");
-    var label = createElement(
-      "label",
-      "field-label",
-      "改修してほしい内容");
-    var helper = createElement(
+  function createScreen4(state) {
+    var task = createTask("task--wide");
+    var handoff = createElement("div", "handoff");
+
+    task.appendChild(createTaskIntro(
+      state.promptCopied && state.codeFolderOpened
+        ? "依頼文を貼り付け、source-code.md を添付して、AIからの返答を待ちます。"
+        : "依頼文をコピーして、コード全文ファイルと一緒にAIチャットへ渡します。"));
+    handoff.appendChild(createHandoffCard(state, {
+      step: "1",
+      done: state.promptCopied === true,
+      title: "依頼文をチャットへ貼り付ける",
+      description:
+        "ボタンを押すと、AIへの依頼文がクリップボードへコピーされます。",
+      label: state.promptCopied ? "コピーしました" : "依頼文をコピー",
+      action: "copy-request-prompt",
+      icon: "copy"
+    }));
+    handoff.appendChild(createHandoffCard(state, {
+      step: "2",
+      done: state.codeFolderOpened === true,
+      title: "コード全文ファイルを添付する",
+      description:
+        "マクロのコード全文を保存したファイルです。AIチャットに添付してください。",
+      fileName: "source-code.md",
+      label: state.codeFolderOpened
+        ? "フォルダを開きました"
+        : "ファイルの場所を開く",
+      action: "open-run-folder",
+      icon: "folder"
+    }));
+    task.appendChild(handoff);
+    // The code alone often is not enough: the AI answers better when it
+    // can see the sheets the macro reads and writes.
+    task.appendChild(createElement(
       "p",
-      "field-helper",
-      "ひな形を選んだあとも、自由に書き足せます。");
-    var textarea = createElement("textarea", "request-textarea");
-    var createButton;
-    var presets = state.appInfo && state.appInfo.presets
-      ? state.appInfo.presets
-      : [];
-
-    screen.setAttribute("data-step", "2");
-    screen.setAttribute(
-      "data-request-created",
-      state.requestFilePath ? "1" : "0");
-    screen.setAttribute(
-      "data-preset-signature",
-      getPresetSignature(state));
-    screen.setAttribute("aria-labelledby", "step-title-2");
-    label.htmlFor = "request-text";
-    textarea.id = "request-text";
-    textarea.value = state.requestText;
-    textarea.placeholder =
-      "例: 新しい端末でも同じ保存先を使えるようにしてください。";
-    textarea.setAttribute("aria-describedby", "request-helper");
-    textarea.disabled = state.busyAction !== null;
-    helper.id = "request-helper";
-
-    field.appendChild(label);
-    field.appendChild(helper);
-    field.appendChild(textarea);
-    if (presets.length > 0) {
-      workspace.appendChild(createPresetSection(state));
-    }
-    textarea.classList.toggle(
-      "is-guided-target",
-      isGuideTarget("request-field"));
-    workspace.appendChild(field);
-    workspace.appendChild(createTemplateNotice());
-
-    if (state.requestFilePath) {
-      workspace.appendChild(createRequestSuccess(state));
-    } else {
-      var createActions = createElement(
-        "div",
-        "step-actions request-actions");
-      createButton = createActionButton(
-        state.busyAction === "prepareRequest"
-          ? "依頼を準備しています"
-          : "依頼を準備する",
-        "action-button--primary",
-        "create-request");
-      createButton.classList.toggle(
-        "is-guided-target",
-        isGuideTarget("create-request"));
-      createButton.disabled = state.busyAction !== null;
-      if (state.busyAction === "prepareRequest") {
-        createButton.insertBefore(
-          createElement("span", "loading-spinner"),
-          createButton.firstChild);
-      }
-      createActions.appendChild(createButton);
-      workspace.appendChild(createActions);
-    }
-
-    body.appendChild(workspace);
-    screen.appendChild(createScreenHeader(
-      2,
-      "改修依頼を作成",
-      state.book ? state.book.name : ""));
-    screen.appendChild(body);
-    return screen;
-  }
-
-  function updateStepTwo(screen, state) {
-    var expectedCreated = state.requestFilePath ? "1" : "0";
-    var textarea;
-    var presetSection;
-    var createButton;
-
-    if (screen.getAttribute("data-request-created") !==
-        expectedCreated ||
-        screen.getAttribute("data-preset-signature") !==
-        getPresetSignature(state)) {
-      return false;
-    }
-
-    textarea = screen.querySelector("#request-text");
-    if (textarea.value !== state.requestText) {
-      textarea.value = state.requestText;
-    }
-    textarea.disabled = state.busyAction !== null;
-    textarea.classList.toggle(
-      "is-guided-target",
-      isGuideTarget("request-field"));
-    presetSection = screen.querySelector(".preset-section");
-    if (presetSection) {
-      presetSection.classList.toggle(
-        "is-guided-target",
-        isGuideTarget("presets"));
-    }
-    createButton = screen.querySelector(
-      '[data-action="create-request"]');
-    if (createButton && !state.requestFilePath) {
-      createButton.classList.toggle(
-        "is-guided-target",
-        isGuideTarget("create-request"));
-    }
-    Array.prototype.forEach.call(
-      screen.querySelectorAll("[data-action]"),
-      function (button) {
-        button.disabled = state.busyAction !== null;
-      });
-    return true;
+      "handoff-note",
+      "マクロが読み書きするExcelシートやファイルがあれば、" +
+        "それも一緒にAIチャットへ添付すると、より正確な回答が得られます。"));
+    task.appendChild(createFolderDisclosure(state, "handoff-folder", false));
+    return task;
   }
 
   function normalizePastedText(value) {
@@ -1016,18 +899,125 @@
     return header + "\r\n" + code;
   }
 
+  function formatRunTimestamp(timestamp) {
+    var match = /^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})$/
+      .exec(String(timestamp || ""));
+
+    if (!match) {
+      return String(timestamp || "");
+    }
+    return match[1] + "-" + match[2] + "-" + match[3] + " " +
+      match[4] + ":" + match[5] + ":" + match[6];
+  }
+
+  function countModuleLines(module) {
+    var rows;
+    var counts = { added: 0, removed: 0 };
+
+    if (module.status !== "changed" ||
+        typeof module.pastedCode !== "string") {
+      return counts;
+    }
+    rows = global.MacroStudioDiff.compare(
+      module.code || "",
+      module.pastedCode);
+    rows.forEach(function (row) {
+      if (row.type === "added" || row.type === "changed") {
+        counts.added += 1;
+      }
+      if (row.type === "removed" || row.type === "changed") {
+        counts.removed += 1;
+      }
+    });
+    return counts;
+  }
+
+  // A short note a person can read months later, without the app: what
+  // was asked for, what the AI said it did, and what actually changed.
+  function createResultMarkdown(state, timestamp) {
+    var lines = [];
+    var changed = state.modules.filter(function (module) {
+      return module.status === "changed";
+    });
+    var untouched = state.modules.filter(function (module) {
+      return module.status !== "changed";
+    });
+    var summary = state.intakeResult && state.intakeResult.summary
+      ? String(state.intakeResult.summary)
+      : "";
+
+    lines.push("# " + state.book.name + " 改修メモ");
+    lines.push("");
+    lines.push("- 実行日時: " + formatRunTimestamp(timestamp));
+    lines.push("- 依頼の目的: " + (state.presetName || "（指定なし）"));
+    lines.push("- 依頼番号: " + (state.requestId || "（なし）"));
+    lines.push("- 作成した改修済みブック: " + state.outputName);
+    lines.push("- 元のブック: " + state.book.name + "（変更していません）");
+    lines.push("");
+    lines.push("## AIが書いた改修内容");
+    lines.push("");
+    if (summary) {
+      summary.replace(/\r\n/g, "\n").split("\n").forEach(function (line) {
+        lines.push(line);
+      });
+    } else {
+      lines.push("（返答に要約は入っていませんでした）");
+    }
+    lines.push("");
+    lines.push("## 変更したモジュール");
+    lines.push("");
+    if (changed.length === 0) {
+      lines.push("（ありません）");
+    } else {
+      lines.push("| モジュール | 種類 | 追加 | 削除 |");
+      lines.push("|---|---|---|---|");
+      changed.forEach(function (module) {
+        var counts = countModuleLines(module);
+
+        lines.push(
+          "| " + module.name +
+          (module.isNew === true ? "（新規）" : "") +
+          " | " + (module.typeLabel || module.type) +
+          " | +" + counts.added +
+          " | \u2212" + counts.removed + " |");
+      });
+    }
+    lines.push("");
+    lines.push("## 変更しなかったモジュール");
+    lines.push("");
+    if (untouched.length === 0) {
+      lines.push("（ありません）");
+    } else {
+      untouched.forEach(function (module) {
+        lines.push(
+          "- " + module.name +
+          "（" + (module.typeLabel || module.type) + "）");
+      });
+    }
+    lines.push("");
+    lines.push("## このフォルダのファイル");
+    lines.push("");
+    lines.push("- request.md … AIへ渡した依頼文");
+    lines.push("- source-code.md … 改修前のコード全文");
+    lines.push("- " + state.outputName + " … 改修済みブック");
+    lines.push("- diff-report.html … 変更内容（全モジュール）");
+    lines.push("- result.md … このメモ");
+    lines.push("");
+    return lines.join("\r\n");
+  }
+
   function createBuildModules(state) {
     var modules = [];
 
     state.modules.forEach(function (module) {
       var item;
 
-      if (module.status !== "changed") {
+      if (module.status !== "changed" || module.accepted !== true) {
         return;
       }
       if (typeof module.pastedCode !== "string") {
         throw new Error(
-          "Changed module has no accepted code: " + module.name);
+          "Accepted module has no code: " + module.name);
       }
       item = {
         name: module.name,
@@ -1045,117 +1035,6 @@
     return modules;
   }
 
-  function getBuildCounts(state) {
-    var counts = {
-      changed: 0,
-      pending: 0,
-      excluded: 0,
-      unchanged: 0
-    };
-
-    state.modules.forEach(function (module) {
-      if (counts[module.status] !== undefined) {
-        counts[module.status] += 1;
-      }
-    });
-    return counts;
-  }
-
-  function createPasteIcon() {
-    var icon = createElement("span", "paste-target-icon");
-
-    icon.setAttribute("aria-hidden", "true");
-    icon.innerHTML =
-      '<svg viewBox="0 0 24 24">' +
-      '<path d="M9 5.5h6"></path>' +
-      '<path d="M9.5 3.5h5a1 1 0 0 1 1 1v2h-7v-2a1 1 0 0 1 1-1Z"></path>' +
-      '<path d="M7 5.5H5.5v15h13v-15H17"></path>' +
-      '<path d="M9 12h6M9 16h4"></path>' +
-      "</svg>";
-    return icon;
-  }
-
-  function createPasteTarget(state) {
-    var pane = createElement("section", "code-pane paste-pane");
-    var header = createElement("header", "code-pane-header");
-    var target = createElement(
-      "div",
-      "paste-target is-primary-target");
-    var button = createActionButton(
-      state.busyAction === "readClipboard"
-        ? "クリップボードを読み取っています"
-        : "返答コードを貼り付ける",
-      "action-button--primary paste-target-button",
-      "paste-response");
-
-    button.classList.toggle(
-      "is-guided-target",
-      isGuideTarget("paste-response"));
-    header.appendChild(createElement("span", "", "貼り付けるコード"));
-    target.appendChild(createPasteIcon());
-    target.appendChild(createElement(
-      "p",
-      "paste-target-lead",
-      "チャット AI のコードブロックをコピーしてから貼り付けます。"));
-    button.disabled = state.busyAction !== null;
-    if (state.busyAction === "readClipboard") {
-      button.insertBefore(
-        createElement("span", "loading-spinner"),
-        button.firstChild);
-    }
-    target.appendChild(button);
-    target.appendChild(createElement(
-      "p",
-      "paste-target-shortcut",
-      "Ctrl+V でも貼り付けられます"));
-    pane.appendChild(header);
-    pane.appendChild(target);
-    return pane;
-  }
-
-  function createExcludedTarget(module) {
-    var pane = createElement(
-      "section",
-      "code-pane paste-pane paste-pane--excluded");
-    var header = createElement("header", "code-pane-header");
-    var target = createElement("div", "paste-target");
-    var button = createActionButton(
-      "対象外を解除",
-      "action-button--secondary",
-      "toggle-selected-excluded");
-
-    header.appendChild(createElement("span", "", "貼り付けるコード"));
-    target.appendChild(createElement(
-      "span",
-      "paste-target-state",
-      "対象外"));
-    target.appendChild(createElement(
-      "p",
-      "paste-target-lead",
-      "対象外にしたモジュールです。" +
-        "改修サマリーで変更なしとされたものを消し込むのに使います。"));
-    target.appendChild(button);
-    pane.appendChild(header);
-    pane.appendChild(target);
-    return pane;
-  }
-
-  function createWaitingWorkspace(state, module) {
-    var workspace = createElement(
-      "div",
-      "step-three-workspace step-three-workspace--waiting");
-
-    workspace.appendChild(
-      global.MacroDeskDiffView.createSourceView(
-        document,
-        module.code || ""));
-    workspace.appendChild(
-      module.status === "excluded"
-        ? createExcludedTarget(module)
-        : createPasteTarget(state));
-    return workspace;
-  }
-
   function createDiffWorkspace(state, module) {
     var workspace = createElement(
       "div",
@@ -1169,12 +1048,12 @@
         ? "変更なし"
         : "変更 " + module.changedLineCount + " 行");
     var actions = createElement("div", "diff-actions");
-    var rows = global.MacroDeskDiff.compare(
+    var rows = global.MacroStudioDiff.compare(
       module.code || "",
       module.pastedCode || "");
     var tableHost = createElement("div", "diff-table-host");
     var changeBlocks =
-      global.MacroDeskDiffView.assignChangeBlocks(rows);
+      global.MacroStudioDiffView.assignChangeBlocks(rows);
     var previous = createActionButton(
       "↑ 前の変更",
       "action-button--secondary action-button--compact",
@@ -1187,16 +1066,6 @@
       "span",
       "diff-change-counter",
       changeBlocks > 0 ? "1/" + changeBlocks : "0/0");
-    var cancel = createActionButton(
-      "貼り付けを取り消す",
-      "action-button--secondary action-button--compact",
-      "cancel-paste");
-    var repaste = createActionButton(
-      state.busyAction === "readClipboard"
-        ? "読み取っています"
-        : "貼り直す",
-      "action-button--secondary action-button--compact",
-      "repaste-response");
     var contextToggle;
     var wrapToggle;
     var editButton;
@@ -1210,7 +1079,7 @@
         "diff-result-note",
         "現在のコードと同一です"));
     } else if (
-        global.MacroDeskDiffView.hasWhitespaceOnlyChange(rows)) {
+        global.MacroStudioDiffView.hasWhitespaceOnlyChange(rows)) {
       resultGroup.appendChild(createElement(
         "span",
         "diff-result-note",
@@ -1242,7 +1111,7 @@
     wrapToggle.classList.toggle(
       "is-active",
       module.wrapDiff !== false);
-    wrapToggle.title = "長い行を折り返して左右を並べて表示します";
+    wrapToggle.title = "長い行を折り返して全文を表示します";
     actions.appendChild(contextToggle);
     actions.appendChild(wrapToggle);
     editButton = createActionButton(
@@ -1253,20 +1122,11 @@
     editButton.disabled = state.busyAction !== null;
     actions.appendChild(editButton);
 
-    cancel.disabled = state.busyAction !== null;
-    repaste.disabled = state.busyAction !== null;
-    if (state.busyAction === "readClipboard") {
-      repaste.insertBefore(
-        createElement("span", "loading-spinner"),
-        repaste.firstChild);
-    }
-    actions.appendChild(repaste);
-    actions.appendChild(cancel);
     toolbar.appendChild(resultGroup);
     toolbar.appendChild(actions);
     workspace.appendChild(toolbar);
     workspace.appendChild(tableHost);
-    global.MacroDeskDiffView.renderDiff(
+    global.MacroStudioDiffView.renderDiff(
       tableHost,
       rows,
       module.showChangesOnly === true,
@@ -1283,9 +1143,8 @@
         "p",
         "",
         "新規モジュール — 元のコードはありません。" +
-          "右側が追加される全文です。"));
-      tableHost.classList.add("has-new-module-placeholder");
-      tableHost.appendChild(placeholder);
+          "全行が追加行になります。"));
+      tableHost.insertBefore(placeholder, tableHost.firstChild);
     }
     return workspace;
   }
@@ -1305,7 +1164,9 @@
       "編集をやめる",
       "action-button--secondary action-button--compact",
       "cancel-paste-edit");
-    var panes = createElement("div", "edit-workspace-panes");
+    var panes = createElement(
+      "div",
+      "edit-workspace-panes edit-workspace-panes--single");
     var editPane = createElement("section", "code-pane edit-pane");
     var header = createElement("header", "code-pane-header");
     var textarea = createElement("textarea", "edit-textarea");
@@ -1320,9 +1181,6 @@
       "軽微な写し間違いを直して反映します"));
     apply.disabled = state.busyAction !== null;
     cancel.disabled = state.busyAction !== null;
-    apply.classList.toggle(
-      "is-guided-target",
-      isGuideTarget("apply-paste-edit"));
     actions.appendChild(apply);
     actions.appendChild(cancel);
     toolbar.appendChild(resultGroup);
@@ -1343,30 +1201,10 @@
     textarea.disabled = state.busyAction !== null;
     editPane.appendChild(header);
     editPane.appendChild(textarea);
-    panes.appendChild(
-      global.MacroDeskDiffView.createSourceView(
-        document,
-        module.code || ""));
     panes.appendChild(editPane);
     workspace.appendChild(toolbar);
     workspace.appendChild(panes);
     return workspace;
-  }
-
-  function createStepThreeEmpty() {
-    var empty = createElement("div", "step-three-empty");
-    var mark = createElement("span", "step-three-empty-mark", "03");
-
-    empty.appendChild(mark);
-    empty.appendChild(createElement(
-      "h3",
-      "",
-      "モジュールを選択"));
-    empty.appendChild(createElement(
-      "p",
-      "",
-      "改修サマリーに挙がったモジュールを、左の一覧から選んでください。"));
-    return empty;
   }
 
   function getNewModuleNameError(state, name) {
@@ -1395,147 +1233,503 @@
     return "";
   }
 
-  function createNewModuleIntake(state) {
-    var intake = createElement(
-      "div",
-      "new-module-intake");
-    var field = createElement(
-      "div",
-      "new-module-field");
-    var label = createElement(
-      "label",
-      "",
-      "モジュール名");
-    var input = createElement("input", "new-module-input");
-    var actions = createElement(
-      "div",
-      "new-module-actions");
-    var cancel = createActionButton(
-      "キャンセル",
-      "action-button--secondary",
-      "cancel-new-module");
-    var importButton = createActionButton(
-      state.busyAction === "readClipboard"
-        ? "クリップボードを読み取っています"
-        : "新規モジュールとして取り込む",
-      "action-button--primary",
-      "import-new-module");
+  // The tree counts lines the same way the diff report does: added and
+  // removed, in the same colours, so the two views agree.
+  function createModuleCounts(module) {
+    var counts = createElement("span", "module-counts");
+    var rows;
+    var added = 0;
+    var removed = 0;
 
-    intake.appendChild(createElement(
-      "p",
-      "region-kicker",
-      "新規（標準モジュール）"));
-    intake.appendChild(createElement(
-      "h3",
-      "",
-      "新しい標準モジュールを取り込む"));
-    intake.appendChild(createElement(
-      "p",
-      "new-module-lead",
-      "コードブロックをコピーし、追加するモジュール名だけを入力します。"));
-    label.htmlFor = "new-module-name";
-    input.id = "new-module-name";
-    input.type = "text";
-    input.maxLength = 31;
-    input.autocomplete = "off";
-    input.spellcheck = false;
-    input.value = newModuleNameDraft;
-    input.disabled = state.busyAction !== null;
-    input.setAttribute(
-      "aria-describedby",
-      "new-module-name-hint");
-    field.appendChild(label);
-    field.appendChild(input);
-    field.appendChild(createElement(
-      "p",
-      "new-module-hint",
-      "31文字以内のVBA識別子。種別は標準モジュールです。"));
-    field.lastChild.id = "new-module-name-hint";
-    cancel.disabled = state.busyAction !== null;
-    importButton.disabled = state.busyAction !== null;
-    importButton.classList.toggle(
-      "is-guided-target",
-      isGuideTarget("import-new-module"));
-    if (state.busyAction === "readClipboard") {
-      importButton.insertBefore(
-        createElement("span", "loading-spinner"),
-        importButton.firstChild);
+    if (module.status === "changed" &&
+        typeof module.pastedCode === "string") {
+      rows = global.MacroStudioDiff.compare(
+        module.code || "",
+        module.pastedCode);
+      rows.forEach(function (row) {
+        if (row.type === "added" || row.type === "changed") {
+          added += 1;
+        }
+        if (row.type === "removed" || row.type === "changed") {
+          removed += 1;
+        }
+      });
     }
-    actions.appendChild(cancel);
-    actions.appendChild(importButton);
-    intake.appendChild(field);
-    intake.appendChild(actions);
-    return intake;
+    counts.appendChild(createElement(
+      "span",
+      "module-count module-count--add",
+      "+" + added));
+    counts.appendChild(createElement(
+      "span",
+      "module-count module-count--del",
+      "\u2212" + removed));
+    return counts;
   }
 
-  function createStepThree(state) {
-    var selected = getSelectedModule(state);
-    var screen = createElement("section", "screen");
-    var body = createElement("div", "step-three-body");
-    var pendingCount = 0;
-    var processedCount;
+  function getModuleFlowState(state, module) {
+    if (module.status === "changed") {
+      return { dot: "changed" };
+    }
+    if (module.status === "unchanged") {
+      return { dot: "excluded" };
+    }
+    return { dot: "excluded" };
+  }
 
-    state.modules.forEach(function (module) {
-      if (module.status === "pending") {
-        pendingCount += 1;
-      }
+  // Inside the review disclosure: pick a module to look at. Nothing
+  // here changes what gets built.
+  //
+  // The tree is grouped the way the VBE project tree is, so a module is
+  // found where the user expects it rather than in one flat list.
+  var MODULE_GROUPS = [
+    { type: "standard", title: "標準モジュール" },
+    { type: "class", title: "クラスモジュール" },
+    { type: "form", title: "フォームモジュール" },
+    { type: "document", title: "シートモジュール" }
+  ];
+
+  function createModuleItem(state, module) {
+    var item = createElement("li", "");
+    var button = createElement("button", "module-item");
+    var flowState = getModuleFlowState(state, module);
+
+    button.type = "button";
+    button.setAttribute("data-action", "select-module");
+    button.setAttribute("data-module-name", module.name);
+    button.setAttribute("data-module-row-name", module.name);
+    button.classList.toggle(
+      "is-active",
+      module.name === state.selectedModuleName);
+    button.disabled = state.busyAction !== null;
+    button.appendChild(
+      createElement("span", "module-dot " + flowState.dot, ""));
+    button.appendChild(createElement("span", "module-name", module.name));
+    button.appendChild(createModuleCounts(module));
+    item.appendChild(button);
+    return item;
+  }
+
+  function createModulePane(state, title) {
+    var pane = createElement("aside", "panel module-pane");
+    var shown = state.modules.filter(function (module) {
+      return global.MacroStudioScreens.isImported(module);
     });
-    processedCount = state.modules.length - pendingCount;
 
-    screen.setAttribute("data-step", "3");
-    screen.setAttribute("aria-labelledby", "step-title-3");
-    screen.appendChild(createScreenHeader(
-      3,
-      state.newModuleIntake
-        ? "新規モジュール"
-        : selected
-          ? selected.name
-          : "モジュールを選択",
-      state.newModuleIntake
-        ? state.book.name
-        : state.book.name,
-      "処理済み " + processedCount + "/" + state.modules.length +
-        " ・ 未処理 " + pendingCount));
-    if (state.newModuleIntake) {
-      body.appendChild(createNewModuleIntake(state));
-    } else if (!selected) {
-      body.appendChild(createStepThreeEmpty());
-    } else if (selected.status === "changed" ||
-        selected.status === "unchanged") {
-      body.appendChild(state.pasteEditing
-        ? createEditWorkspace(state, selected)
-        : createDiffWorkspace(state, selected));
-    } else {
-      body.appendChild(createWaitingWorkspace(state, selected));
+    pane.appendChild(createElement("div", "module-pane-title", title));
+    MODULE_GROUPS.forEach(function (group) {
+      var members = shown.filter(function (module) {
+        return module.type === group.type;
+      });
+      var list;
+
+      if (members.length === 0) {
+        return;
+      }
+      pane.appendChild(createElement(
+        "div",
+        "module-group-title",
+        group.title));
+      list = createElement("ul", "module-list");
+      members.forEach(function (module) {
+        list.appendChild(createModuleItem(state, module));
+      });
+      pane.appendChild(list);
+    });
+    return pane;
+  }
+
+  // ---- screen 4: the questions a preset asks ----
+
+  // One question at a time. The beads across the top say how many
+  // there are and which one this is; long forms keep the ends and the
+  // neighbourhood of the current question, and fold the rest away.
+  var BEAD_LIMIT = 9;
+
+  function getBeadPositions(total, current) {
+    var positions = [];
+    var index;
+
+    if (total <= BEAD_LIMIT) {
+      for (index = 0; index < total; index += 1) {
+        positions.push(index);
+      }
+      return positions;
     }
-    screen.appendChild(body);
-    if (pendingCount === 0 &&
-        global.MacroDeskState.getChangedModuleCount() > 0 &&
-        state.modules.length > 0 &&
-        !state.newModuleIntake &&
-        !state.pasteEditing) {
-      var doneBar = createElement("div", "step-done-bar");
-      var doneMessage = createElement(
+    [0, 1].forEach(function (index) {
+      positions.push(index);
+    });
+    for (index = current - 1; index <= current + 1; index += 1) {
+      if (index > 1 && index < total - 2) {
+        positions.push(index);
+      }
+    }
+    [total - 2, total - 1].forEach(function (index) {
+      positions.push(index);
+    });
+    return positions.filter(function (value, at, all) {
+      return all.indexOf(value) === at;
+    }).sort(function (a, b) {
+      return a - b;
+    });
+  }
+
+  function isAnswered(state, index) {
+    return String(state.answers[String(index)] || "").trim().length > 0;
+  }
+
+  function createBeadTrack(state) {
+    var wrap = createElement("div", "bead-rail");
+    var track = createElement("div", "bead-track");
+    var total = state.questions.length;
+    var positions = getBeadPositions(total, state.questionIndex);
+    var previous = null;
+
+    positions.forEach(function (index) {
+      var bead;
+
+      if (previous !== null && index - previous > 1) {
+        track.appendChild(createElement("span", "bead-gap", ""));
+      }
+      bead = createElement("button", "bead", String(index + 1));
+      bead.type = "button";
+      bead.setAttribute("data-action", "go-question");
+      bead.setAttribute("data-index", String(index));
+      bead.setAttribute(
+        "aria-label",
+        (index + 1) + "問目" +
+          (isAnswered(state, index) ? "（回答済み）" : ""));
+      bead.setAttribute(
+        "aria-current",
+        index === state.questionIndex ? "step" : "false");
+      bead.classList.toggle("is-current", index === state.questionIndex);
+      bead.classList.toggle("is-answered", isAnswered(state, index));
+      bead.disabled = state.busyAction !== null;
+      track.appendChild(bead);
+      previous = index;
+    });
+    wrap.appendChild(track);
+    return wrap;
+  }
+
+  function createChoiceField(state, question, index) {
+    var wrap = createElement("div", "form-choices");
+
+    question.choices.forEach(function (choice) {
+      var button = createElement("button", "form-chip", choice);
+      var selected = state.answers[String(index)] === choice;
+
+      button.type = "button";
+      button.setAttribute("data-action", "answer-choice");
+      button.setAttribute("data-question", String(index));
+      button.setAttribute("data-value", choice);
+      button.setAttribute("aria-pressed", selected ? "true" : "false");
+      button.classList.toggle("is-selected", selected);
+      button.disabled = state.busyAction !== null;
+      wrap.appendChild(button);
+    });
+    return wrap;
+  }
+
+  // With one question per screen there is room to write properly.
+  function createTextField(state, index) {
+    var input = createElement("textarea", "form-textarea");
+
+    input.id = "answer-" + index;
+    input.value = state.answers[String(index)] || "";
+    input.spellcheck = false;
+    input.rows = 5;
+    input.setAttribute("data-question", String(index));
+    input.setAttribute("placeholder", "分かる範囲で書いてください");
+    input.disabled = state.busyAction !== null;
+    return input;
+  }
+
+  function createQuestionArrow(state, direction) {
+    var forward = direction > 0;
+    var button = createElement(
+      "button",
+      "question-arrow question-arrow--" + (forward ? "next" : "previous"));
+    var target = state.questionIndex + direction;
+
+    button.type = "button";
+    button.setAttribute("data-action", "go-question");
+    button.setAttribute("data-index", String(target));
+    button.setAttribute(
+      "aria-label",
+      forward ? "次の質問へ" : "前の質問へ");
+    button.appendChild(createIcon(
+      forward ? "arrowRight" : "arrowLeft",
+      "flow-icon--small"));
+    button.disabled = state.busyAction !== null ||
+      target < 0 ||
+      target >= state.questions.length;
+    return button;
+  }
+
+  function createScreenQuestions(state) {
+    var task = createTask("task--wide");
+    var question = state.questions[state.questionIndex];
+    var card = createElement("div", "question-card");
+    var body = createElement("div", "question-body");
+
+    if (!question) {
+      task.appendChild(createTaskIntro("質問がありません。"));
+      return task;
+    }
+
+    task.appendChild(createBeadTrack(state));
+    body.appendChild(createElement(
+      "p",
+      "question-count",
+      (state.questionIndex + 1) + " / " + state.questions.length));
+    body.appendChild(createElement("h2", "question-text", question.text));
+    body.appendChild(question.choices.length > 0
+      ? createChoiceField(state, question, state.questionIndex)
+      : createTextField(state, state.questionIndex));
+    card.appendChild(createQuestionArrow(state, -1));
+    card.appendChild(body);
+    card.appendChild(createQuestionArrow(state, 1));
+    task.appendChild(card);
+    task.appendChild(createElement(
+      "p",
+      "question-note",
+      "分かるところだけで大丈夫です。答えた内容が依頼文に入ります。"));
+    return task;
+  }
+
+  // The answers become a block the user can read and edit on the next
+  // screen, so nothing reaches the chat unseen.
+  function composeRequestWithAnswers(state) {
+    var lines = [];
+
+    state.questions.forEach(function (question, index) {
+      var answer = String(state.answers[String(index)] || "").trim();
+
+      if (answer.length === 0) {
+        return;
+      }
+      lines.push("- " + question.text);
+      answer.replace(/\r\n/g, "\n").split("\n").forEach(function (line) {
+        lines.push("  " + line);
+      });
+    });
+    if (lines.length === 0) {
+      return state.requestBase;
+    }
+    return state.requestBase + "\r\n\r\n" +
+      "【質問への回答】\r\n" + lines.join("\r\n");
+  }
+
+  function answerQuestion(index, value) {
+    var state = global.MacroStudioState.getState();
+    var key = String(index);
+    var next = state.answers[key] === value ? "" : value;
+
+    if (state.busyAction) {
+      return false;
+    }
+    return global.MacroStudioState.setAnswer(Number(index), next);
+  }
+
+  // Moving between questions is its own control, kept away from the
+  // fixed back / next pair that moves between screens.
+  function goToQuestion(index) {
+    if (global.MacroStudioState.getState().busyAction) {
+      return false;
+    }
+    return global.MacroStudioState.setQuestionIndex(Number(index));
+  }
+
+  // ---- screen 5: take the whole answer in at once ----
+
+  function createSummaryText(summary) {
+    var box = createElement("div", "intake-summary");
+
+    String(summary)
+      .replace(/\r\n/g, "\n")
+      .split("\n")
+      .forEach(function (line) {
+        box.appendChild(createElement("p", "intake-summary-line", line));
+      });
+    return box;
+  }
+
+  // What came in, said once. The AI's own account of the change sits
+  // behind a disclosure so it never pushes the button off the screen.
+  function createIntakeResult(state) {
+    var result = state.intakeResult || {};
+    var imported = global.MacroStudioScreens.countImported(state);
+    var headline = createElement("div", "headline-card");
+    var wrap = createElement("div", "intake-result");
+
+    headline.appendChild(createIcon("check", "headline-icon"));
+    headline.appendChild(createElement(
+      "div",
+      "headline-text",
+      imported + "個のモジュールを取り込みました"));
+    headline.appendChild(createElement(
+      "p",
+      "headline-preview",
+      (result.added > 0
+        ? "既存 " + result.existing + "個・新規 " + result.added + "個"
+        : "既存 " + result.existing + "個") +
+        "。内容は次の画面で確認できます。"));
+    if (result.kindWarning) {
+      headline.appendChild(createElement(
         "p",
-        "step-done-message",
-        "未処理はありません。全モジュールを確定しました。");
-      var next = createActionButton(
-        "次へ（ビルドの確認）",
-        "action-button--primary",
-        "step3-next");
-
-      doneMessage.insertBefore(
-        createElement("span", "step-done-check", "✓"),
-        doneMessage.firstChild);
-      next.disabled = state.busyAction !== null;
-      next.classList.toggle(
-        "is-guided-target",
-        isGuideTarget("step3-next"));
-      doneBar.appendChild(doneMessage);
-      doneBar.appendChild(next);
-      screen.appendChild(doneBar);
+        "headline-warning",
+        result.kindWarning));
     }
-    return screen;
+    wrap.appendChild(headline);
+    if (result.summary) {
+      wrap.appendChild(createDisclosure(
+        "intake-summary",
+        "AIが書いた改修内容を見る",
+        createSummaryText(result.summary),
+        { note: "AIの説明" }));
+    }
+    return wrap;
+  }
+
+
+  function createScreen5(state) {
+    var task = createTask("task--wide");
+    var imported = global.MacroStudioScreens.countImported(state);
+    var target = createElement("div", "paste-target");
+    var guide = createElement("div", "intake-guide");
+    var steps = [
+      ["1", "AIの返答の", "コードブロック", "をコピーする"],
+      ["2", "下のボタンで", "まとめて取り込む", ""],
+      ["3", "次の画面で", "内容を確認", "する"]
+    ];
+
+    task.appendChild(createTaskIntro(imported > 0
+      ? "取り込みました。右下の「次へ」で内容を確認します。"
+      : "AIの返答にあるコードブロックをコピーして、ボタンを押してください。"));
+
+    if (imported > 0) {
+      task.appendChild(createIntakeResult(state));
+      return task;
+    }
+
+    steps.forEach(function (item) {
+      var step = createElement("div", "intake-step");
+      var text = createElement("span", "intake-step-text");
+
+      step.appendChild(
+        createElement("span", "intake-step-number", item[0]));
+      text.appendChild(createElement("span", "", item[1]));
+      text.appendChild(createElement("strong", "", item[2]));
+      if (item[3]) {
+        text.appendChild(createElement("span", "", item[3]));
+      }
+      step.appendChild(text);
+      guide.appendChild(step);
+    });
+    task.appendChild(guide);
+
+    target.appendChild(createIcon(
+      imported > 0 ? "check" : "code",
+      "drop-icon"));
+    target.appendChild(createElement(
+      "h2",
+      "",
+      imported > 0
+        ? imported + "個のモジュールを取り込みました"
+        : "AIの返答をここへ取り込みます"));
+    target.appendChild(createElement(
+      "p",
+      "",
+      imported > 0
+        ? "取り込み直すときは、もう一度コピーしてからボタンを押します。"
+        : "コードブロック全体をコピーしてから、ボタンを押してください。"));
+    target.appendChild(createFlowButton(
+      state.busyAction === "readClipboard"
+        ? "読み取っています"
+        : imported > 0
+          ? "取り込み直す"
+          : "クリップボードからAIの返答を取り込む",
+      "import-response",
+      {
+        kind: imported > 0 ? "" : "primary",
+        icon: "copy",
+        disabled: state.busyAction !== null
+      }));
+    task.appendChild(target);
+    return task;
+  }
+
+  // ---- screen 6: confirm what came in ----
+
+  function createChangeDetail(state) {
+    var layout = createElement("div", "code-layout");
+    var column = createElement("div", "diff-review-column");
+    var selected = getSelectedModule(state);
+
+    layout.appendChild(createModulePane(state, "取り込んだモジュール"));
+    if (!selected ||
+        !global.MacroStudioScreens.isImported(selected)) {
+      column.appendChild(createElement(
+        "p",
+        "review-empty",
+        "左の一覧からモジュールを選ぶと、変更内容が出ます。"));
+    } else if (state.pasteEditing) {
+      column.appendChild(createEditWorkspace(state, selected));
+    } else {
+      column.appendChild(createDiffWorkspace(state, selected));
+    }
+    layout.appendChild(column);
+    return layout;
+  }
+
+  // The review screen shows what came in. Deciding to keep it is the
+  // act of pressing next, so there is no separate accept button.
+  function createScreen6(state) {
+    var api = global.MacroStudioScreens;
+    var changed = api.countChanged(state);
+    var unchanged = api.countUnchangedImports(state);
+    var open = disclosureOpen["change-detail"] === true;
+    var task = createTask(
+      "task--wide" + (open ? " task--fill" : ""));
+    var headline = createElement("div", "headline-card");
+    var kindWarning = state.intakeResult &&
+      state.intakeResult.kindWarning
+      ? state.intakeResult.kindWarning
+      : "";
+
+    task.appendChild(createTaskIntro(
+      "取り込んだ内容です。右下の「次へ」でブックの作成へ進みます。"));
+
+    headline.appendChild(createIcon("code", "headline-icon"));
+    headline.appendChild(createElement(
+      "div",
+      "headline-text",
+      changed + "個のモジュールへ変更を取り込みました" +
+        (unchanged > 0 ? "（" + unchanged + "個は変更なし）" : "")));
+    headline.appendChild(createElement(
+      "p",
+      "headline-preview",
+      kindWarning
+        ? "確かめてほしい点があります。中身を見てください。"
+        : "問題は見つかりません。中身を見るときは下を開いてください。"));
+    // A warning never hides inside the disclosure.
+    if (kindWarning) {
+      headline.appendChild(createElement(
+        "p",
+        "headline-warning",
+        kindWarning));
+    }
+    task.appendChild(headline);
+
+    task.appendChild(createDisclosure(
+      "change-detail",
+      "変更内容を見る",
+      createChangeDetail(state),
+      {
+        className: "disclosure--fill",
+        note: changed + "モジュール"
+      }));
+    return task;
   }
 
   function createBuildStatusIcon(tone) {
@@ -1559,234 +1753,6 @@
         "</svg>";
     }
     return icon;
-  }
-
-  function createBuildCountGrid(state) {
-    var counts = getBuildCounts(state);
-    var section = createElement("section", "build-count-section");
-    var grid = createElement("dl", "build-count-grid");
-    var items = [
-      {
-        label: "書き戻し",
-        value: counts.changed,
-        tone: "changed"
-      },
-      {
-        label: "未処理",
-        value: counts.pending,
-        tone: "pending"
-      },
-      {
-        label: "対象外",
-        value: counts.excluded,
-        tone: "excluded"
-      },
-      {
-        label: "変更なし",
-        value: counts.unchanged,
-        tone: "unchanged"
-      }
-    ];
-
-    items.forEach(function (item) {
-      var card = createElement(
-        "div",
-        "build-count build-count--" + item.tone);
-      var value = createElement(
-        "dd",
-        "build-count-value",
-        String(item.value));
-
-      card.appendChild(
-        createElement("dt", "build-count-label", item.label));
-      card.appendChild(value);
-      grid.appendChild(card);
-    });
-    section.appendChild(grid);
-    if (counts.pending > 0) {
-      var details = createElement(
-        "details",
-        "build-pending-details");
-      var summary = createElement(
-        "summary",
-        "",
-        "未処理の内訳を表示");
-      var chips = createElement(
-        "div",
-        "build-pending-chips");
-
-      state.modules.forEach(function (module) {
-        if (module.status === "pending") {
-          chips.appendChild(createElement(
-            "span",
-            "build-pending-chip",
-            module.name));
-        }
-      });
-      details.appendChild(summary);
-      details.appendChild(chips);
-      section.appendChild(details);
-    }
-    return section;
-  }
-
-  function createBuildTargetTable(state) {
-    var section = createElement("section", "build-panel");
-    var heading = createElement(
-      "h3",
-      "build-panel-title",
-      "書き戻すモジュール");
-    var tableWrap = createElement("div", "build-table-wrap");
-    var table = createElement("table", "build-table");
-    var thead = createElement("thead");
-    var headRow = createElement("tr");
-    var tbody = createElement("tbody");
-
-    heading.id = "build-target-title";
-    section.setAttribute("aria-labelledby", heading.id);
-    [
-      "モジュール",
-      "種別",
-      "変更行数"
-    ].forEach(function (label) {
-      var cell = createElement("th", "", label);
-      cell.scope = "col";
-      headRow.appendChild(cell);
-    });
-
-    state.modules.forEach(function (module) {
-      var row;
-      var name;
-      var type;
-      var count;
-
-      if (module.status !== "changed") {
-        return;
-      }
-      row = createElement("tr");
-      name = createElement("th", "build-module-name", module.name);
-      type = createElement(
-        "td",
-        "build-module-type",
-        module.typeLabel || typeNames[module.type] || "");
-      count = createElement(
-        "td",
-        "build-module-lines",
-        module.changedLineCount + " 行");
-      name.scope = "row";
-      if (module.isNew === true) {
-        name.appendChild(createElement(
-          "span",
-          "build-new-badge",
-          "新規"));
-      }
-      row.appendChild(name);
-      row.appendChild(type);
-      row.appendChild(count);
-      tbody.appendChild(row);
-    });
-
-    thead.appendChild(headRow);
-    table.appendChild(thead);
-    table.appendChild(tbody);
-    tableWrap.appendChild(table);
-    section.appendChild(heading);
-    section.appendChild(tableWrap);
-    return section;
-  }
-
-  function createBuildOutputPanel(state) {
-    var section = createElement("section", "build-panel build-output-panel");
-    var heading = createElement(
-      "h3",
-      "build-panel-title",
-      "出力ファイル");
-    var fileName = createBuildOutputName(
-      state.book,
-      state.buildTimestamp,
-      state.appInfo && state.appInfo.buildFileLabel);
-    var name = createElement("code", "build-output-name", fileName);
-    var nameRow = createElement("div", "build-copy-row");
-    var copy = createIconButton(
-      "出力ファイル名をコピー",
-      "copy-text");
-
-    heading.id = "build-output-title";
-    section.setAttribute("aria-labelledby", heading.id);
-    name.title = fileName;
-    copy.setAttribute("data-copy-text", fileName);
-    copy.setAttribute("data-copy-label", "出力ファイル名");
-    nameRow.appendChild(name);
-    nameRow.appendChild(copy);
-    section.appendChild(heading);
-    section.appendChild(nameRow);
-    section.appendChild(createElement(
-      "p",
-      "build-output-note",
-      "元のブックは変更せず、同じフォルダに別名で作成します。"));
-    return section;
-  }
-
-  function createBuildConfirmation(state) {
-    var workspace = createElement(
-      "div",
-      "build-workspace build-workspace--confirmation");
-    var actions = createElement("div", "step-actions");
-    var back = createActionButton(
-      "取り込みへ戻る",
-      "action-button--secondary",
-      "build-back");
-    var build = createActionButton(
-      "ビルド",
-      "action-button--primary build-primary-action",
-      "build-book");
-
-    build.disabled = !state.buildTimestamp ||
-      state.busyAction !== null;
-    back.disabled = state.busyAction !== null;
-    build.classList.toggle(
-      "is-guided-target",
-      isGuideTarget("build-book"));
-    workspace.setAttribute("data-build-view", "confirmation");
-    workspace.appendChild(createBuildCountGrid(state));
-    workspace.appendChild(createBuildTargetTable(state));
-    workspace.appendChild(createBuildOutputPanel(state));
-    actions.appendChild(back);
-    actions.appendChild(build);
-    workspace.appendChild(actions);
-    return workspace;
-  }
-
-  function createBuildProgress(state) {
-    var workspace = createElement(
-      "div",
-      "build-workspace build-workspace--status");
-    var card = createElement("section", "build-status-card");
-    var spinner = createElement("span", "build-progress-spinner");
-    var outputName = createBuildOutputName(
-      state.book,
-      state.buildTimestamp,
-      state.appInfo && state.appInfo.buildFileLabel);
-
-    spinner.setAttribute("aria-hidden", "true");
-    card.setAttribute("role", "status");
-    card.setAttribute("aria-live", "polite");
-    card.appendChild(spinner);
-    card.appendChild(createElement(
-      "h3",
-      "",
-      "改修版ブックをビルドしています"));
-    card.appendChild(createElement(
-      "p",
-      "",
-      "書き戻し後にブックを読み直して検証しています。"));
-    card.appendChild(createElement(
-      "code",
-      "build-progress-name",
-      outputName));
-    workspace.setAttribute("data-build-view", "progress");
-    workspace.appendChild(card);
-    return workspace;
   }
 
   function createBuildResultTable(results) {
@@ -1847,197 +1813,405 @@
     return section;
   }
 
-  function createBuildSuccess(state) {
-    var result = state.buildResult;
-    var workspace = createElement(
-      "div",
-      "build-workspace build-workspace--result");
-    var card = createElement(
-      "section",
-      "build-result-card build-result-card--success");
-    var headingGroup = createElement("div", "build-result-heading");
-    var output = createElement(
-      "code",
-      "build-result-path",
-      result.outputPath);
-    var outputRow = createElement("div", "build-copy-row");
-    var copy = createIconButton(
-      "出力パスをコピー",
-      "copy-text");
-    var actions = createElement("div", "step-actions");
-    var continueButton = createActionButton(
-      "続けて改修する",
-      "action-button--tertiary",
-      "build-continue");
-    var reveal = createActionButton(
-      state.busyAction === "revealPath"
-        ? "出力フォルダを開いています"
-        : "出力フォルダを開く",
-      "action-button--primary",
-      "reveal-build-output");
+  function createSummaryGrid(items) {
+    var grid = createElement("div", "summary-grid");
 
-    output.title = result.outputPath;
-    copy.setAttribute("data-copy-text", result.outputPath);
-    copy.setAttribute("data-copy-label", "出力パス");
-    continueButton.title = "同じブックの取り込みへ戻ります";
-    reveal.disabled = state.busyAction !== null;
-    continueButton.disabled = state.busyAction !== null;
-    reveal.classList.toggle(
-      "is-guided-target",
-      isGuideTarget("reveal-build-output"));
-    if (state.busyAction === "revealPath") {
-      reveal.insertBefore(
-        createElement("span", "loading-spinner"),
-        reveal.firstChild);
-    }
+    items.forEach(function (item) {
+      var card = createElement("div", "summary-card");
 
-    headingGroup.appendChild(createBuildStatusIcon("success"));
-    headingGroup.appendChild(createElement(
-      "div",
-      "",
-      ""));
-    headingGroup.lastChild.appendChild(createElement(
-      "span",
-      "success-label",
-      "ビルド完了"));
-    headingGroup.lastChild.appendChild(createElement(
-      "h3",
-      "",
-      "改修版ブックを作成しました"));
-    card.appendChild(headingGroup);
-    outputRow.appendChild(output);
-    outputRow.appendChild(copy);
-    card.appendChild(outputRow);
-    card.appendChild(createElement(
-      "p",
-      "build-result-guidance",
-      "Excel で開いてマクロの動作を確認してください。"));
-    actions.appendChild(continueButton);
-    if (result.diffError || !result.diffPath) {
-      actions.appendChild(createElement(
-        "span",
-        "diff-report-unavailable",
-        "差分レポートは作成できませんでした"));
-    }
-    actions.appendChild(reveal);
-    card.appendChild(actions);
-    workspace.setAttribute("data-build-view", "success");
-    workspace.appendChild(card);
-    workspace.appendChild(createBuildResultTable(result.results));
-    return workspace;
+      card.appendChild(createElement("div", "stat-label", item[0]));
+      card.appendChild(createElement("div", "stat-value", item[1]));
+      grid.appendChild(card);
+    });
+    return grid;
   }
 
-  function createBuildFailure(state) {
-    var result = state.buildResult;
-    var workspace = createElement(
-      "div",
-      "build-workspace build-workspace--result");
-    var card = createElement(
-      "section",
-      "build-result-card build-result-card--error");
-    var headingGroup = createElement("div", "build-result-heading");
-    var headingText = createElement("div");
-    var actions = createElement("div", "step-actions");
-    var back = createActionButton(
-      "取り込みへ戻る",
-      "action-button--secondary",
-      "build-back");
-    var retry = createActionButton(
-      "もう一度ビルド",
-      "action-button--primary",
-      "retry-build");
+  function createScreen7(state) {
+    var task = createTask("task--wide");
+    var api = global.MacroStudioScreens;
+    var panel = createElement("div", "panel output-panel");
+    var label = createElement("label", "field-label", "出力ファイル名");
+    var input = createElement("input", "text-input");
+    var newCount = 0;
 
-    headingText.appendChild(createElement(
-      "span",
-      "inline-error-code",
-      result.code || "E-BUILD-01"));
-    headingText.appendChild(createElement(
-      "h3",
-      "",
-      "改修版ブックを作成できませんでした"));
-    retry.classList.toggle(
-      "is-guided-target",
-      isGuideTarget("retry-build"));
-    headingGroup.appendChild(createBuildStatusIcon("error"));
-    headingGroup.appendChild(headingText);
-    card.appendChild(headingGroup);
-    card.appendChild(createElement(
+    state.modules.forEach(function (module) {
+      if (module.isNew === true && module.accepted === true) {
+        newCount += 1;
+      }
+    });
+
+    task.appendChild(createTaskIntro(
+      "作成するファイル名を確認します。右下の「次へ」で作成を始めます。"));
+    task.appendChild(createSummaryGrid([
+      ["書き戻し", String(api.countAccepted(state))],
+      ["変更なし", String(api.countUnchangedImports(state))],
+      ["新規追加", String(newCount)],
+      ["元ブック", "保持"]
+    ]));
+
+    label.htmlFor = "output-name";
+    input.id = "output-name";
+    input.type = "text";
+    input.value = state.outputName;
+    input.spellcheck = false;
+    input.disabled = state.busyAction !== null;
+    if (!api.isOutputNameValid(state)) {
+      input.setAttribute("aria-invalid", "true");
+    }
+    panel.appendChild(label);
+    panel.appendChild(input);
+    panel.appendChild(createElement(
       "p",
-      "build-result-guidance",
-      result.message));
-    card.appendChild(createElement(
-      "p",
-      "build-output-discarded",
-      "失敗した出力ファイルは残していません。元のブックは無傷です。"));
-    actions.appendChild(back);
-    actions.appendChild(retry);
-    card.appendChild(actions);
-    workspace.setAttribute("data-build-view", "error");
-    workspace.appendChild(card);
-    workspace.appendChild(createBuildResultTable(result.results));
-    return workspace;
+      "field-help",
+      "拡張子は " + (state.book ? state.book.ext : "") + " のままにします。"));
+    task.appendChild(panel);
+    task.appendChild(createFolderDisclosure(state, "output-folder", true));
+    return task;
   }
 
-  function createStepFour(state) {
+  // ---- screen 10: building ----
+
+  function createScreenBuilding() {
+    var task = createTask("");
+    var progress = createElement("section", "build-progress");
+    var spinner = createElement("span", "spinner");
+    var bar = createElement("div", "build-bar");
+
+    spinner.setAttribute("aria-hidden", "true");
+    bar.setAttribute("aria-hidden", "true");
+    bar.appendChild(createElement("span", ""));
+    progress.appendChild(spinner);
+    progress.appendChild(createElement(
+      "h2",
+      "",
+      "改修済みブックをビルドしています"));
+    progress.appendChild(createElement(
+      "p",
+      "",
+      "書き戻し後にブックを読み直して、モジュール名とコードを検証しています。"));
+    progress.appendChild(bar);
+    task.appendChild(progress);
+    return task;
+  }
+
+  // ---- screen 11: done ----
+
+  function createResultRow(label, fileName) {
+    var row = createElement("div", "result-row");
+
+    row.appendChild(createIcon("check", "flow-icon--small"));
+    row.appendChild(createElement("span", "", label));
+    row.appendChild(createElement("code", "", fileName));
+    return row;
+  }
+
+  function createScreenDone(state) {
+    var task = createTask("task--wide");
+    var result = state.buildResult;
+    var panel = createElement("div", "panel success-panel");
+    var actions = createElement("div", "completion-actions");
+    var list = createElement("div", "result-list");
+    var rows = [
+      ["AIへ渡した依頼文", "request.md"],
+      ["元マクロのコード全文", "source-code.md"]
+    ];
+
+    // A build that failed is the one ending that looks different: it
+    // has no folder to show and something to try again.
+    if (result && result.status === "error") {
+      task.appendChild(createTaskIntro(
+        "出力は作成していません。元のブックは変更されていません。"));
+      panel = createElement("div", "panel failure-panel");
+      panel.appendChild(createElement(
+        "p",
+        "failure-message",
+        result.message));
+      panel.appendChild(createBuildResultTable(result.results));
+      task.appendChild(panel);
+      actions = createElement("div", "task-actions");
+      actions.appendChild(createFlowButton(
+        "もう一度ビルドする",
+        "retry-build",
+        { kind: "primary" }));
+      task.appendChild(actions);
+      return task;
+    }
+
+    rows.push([
+      "改修済みブック",
+      result && result.outputPath
+        ? getFileName(result.outputPath)
+        : state.outputName
+    ]);
+    if (result && result.diffPath) {
+      rows.push([
+        "変更内容の確認レポート",
+        getFileName(result.diffPath)
+      ]);
+    }
+    if (result && result.resultPath) {
+      rows.push(["改修の概要メモ", getFileName(result.resultPath)]);
+    }
+
+    panel.appendChild(createIcon("check", "success-icon"));
+    panel.appendChild(createElement(
+      "h2",
+      "",
+      "改修済みブックを作成しました"));
+    panel.appendChild(createElement(
+      "p",
+      "",
+      "作成したファイルは、すべてこのフォルダにまとまっています。"));
+    panel.appendChild(createElement(
+      "div",
+      "folder-path",
+      state.runFolder || ""));
+    actions.appendChild(createFlowButton(
+      "出力フォルダをエクスプローラーで開く",
+      "open-run-folder",
+      {
+        kind: "primary",
+        icon: "folder",
+        disabled: state.busyAction !== null
+      }));
+    panel.appendChild(actions);
+
+    rows.forEach(function (row) {
+      list.appendChild(createResultRow(row[0], row[1]));
+    });
+    panel.appendChild(list);
+    if (result && result.diffError) {
+      panel.appendChild(createElement(
+        "p",
+        "result-note",
+        diffReportErrorMessage));
+    }
+    task.appendChild(panel);
+    return task;
+  }
+
+  // ---- shell rendering ----
+
+  var screenBuilders = [
+    createScreen0,
+    createScreen1,
+    createScreenMode,
+    createScreen2,
+    createScreenQuestions,
+    createScreen3,
+    createScreen4,
+    createScreen5,
+    createScreen6,
+    createScreen7,
+    createScreenBuilding,
+    createScreenDone
+  ];
+
+  function renderProgress(state) {
+    var described = global.MacroStudioScreens.describe(
+      state,
+      state.screen);
+    var current = described.major;
+    var majors = global.MacroStudioScreens.getMajors(state);
+
+    // The bar always reserves the same number of columns, so it never
+    // changes shape: what the run turns out to be only fills them in.
+    var slots = global.MacroStudioScreens.majors.length;
+    var grew = majors.length >
+      elements.progressList.querySelectorAll(".progress-step").length;
+    var index;
+
+    elements.progressList.textContent = "";
+    elements.progressList.style.gridTemplateColumns =
+      "repeat(" + slots + ", minmax(0, 1fr))";
+    majors.forEach(function (label, index) {
+      var number = index + 1;
+      var item = createElement("li", "");
+      var step = createElement("div", "progress-step");
+      var mark = createElement("span", "progress-number", "");
+
+      step.classList.toggle("is-done", number < current);
+      step.classList.toggle("is-active", number === current);
+      // Steps that were not there a moment ago slide in, so the bar
+      // reads as filling out rather than as jumping.
+      if (grew && index > 0) {
+        step.classList.add("is-new");
+        step.style.animationDelay = ((index - 1) * 60) + "ms";
+      }
+      if (number < current) {
+        mark.appendChild(createIcon("check", "flow-icon--small"));
+      } else {
+        mark.textContent = String(number);
+      }
+      step.appendChild(mark);
+      step.appendChild(createElement("span", "progress-label", label));
+      item.appendChild(step);
+      elements.progressList.appendChild(item);
+    });
+    for (index = majors.length; index < slots; index += 1) {
+      elements.progressList.appendChild(
+        createElement("li", "progress-slot"));
+    }
+    elements.progressFill.style.width =
+      ((state.screen + 1) / global.MacroStudioScreens.count * 100) + "%";
+  }
+
+  // The footer is not rebuilt on every render. Rebuilding swapped the
+  // buttons out from under the cursor, which killed their transitions
+  // and read as a flicker on every click.
+  function updateFlowButton(button, label, disabled) {
+    var text = button.querySelector(".button-label");
+
+    if (text && text.textContent !== label) {
+      text.textContent = label;
+    }
+    if (button.disabled !== disabled) {
+      button.disabled = disabled;
+    }
+  }
+
+  function renderFooter(state) {
+    var api = global.MacroStudioScreens;
+    var done = api.isTerminal(state, state.screen);
+    var forwardAction = done ? "finish" : "go-next";
+    var forwardLabel = done ? "完了" : "次へ";
+    var forwardReady = done
+      ? api.canFinish(state, state.screen)
+      : global.MacroStudioState.canGoNext();
+    var back = elements.footerActions.querySelector(
+      '[data-action="go-back"]');
+    var forward = elements.footerActions.querySelector(
+      '[data-action="go-next"],[data-action="finish"]');
+
+    if (!back) {
+      back = createFlowButton("戻る", "go-back", { icon: "arrowLeft" });
+      elements.footerActions.appendChild(back);
+    }
+    // Only the shape of the forward button changes between screens, so
+    // it is replaced only when it actually becomes a different button.
+    if (!forward ||
+        forward.getAttribute("data-action") !== forwardAction) {
+      if (forward) {
+        elements.footerActions.removeChild(forward);
+      }
+      forward = done
+        ? createFlowButton("完了", "finish", {
+          kind: "primary",
+          icon: "check"
+        })
+        : createFlowButton("次へ", "go-next", {
+          kind: "primary",
+          iconAfter: "arrowRight"
+        });
+      elements.footerActions.appendChild(forward);
+    }
+    updateFlowButton(back, "戻る", !global.MacroStudioState.canGoBack());
+    updateFlowButton(forward, forwardLabel, !forwardReady);
+    elements.footerActions.setAttribute(
+      "data-screen",
+      String(state.screen));
+  }
+
+  // True when the only thing that moved is which card is selected, so
+  // the screen can be painted rather than rebuilt.
+  function paintSelection(state) {
+    var screen = elements.main.querySelector(".screen");
+    var cards;
+
+    if (!screen ||
+        screen.getAttribute("data-screen") !== String(state.screen)) {
+      return false;
+    }
+    cards = screen.querySelectorAll(
+      '[data-action="select-mode"],[data-action="select-purpose"]');
+    if (cards.length === 0) {
+      return false;
+    }
+    Array.prototype.forEach.call(cards, function (card) {
+      // Compare against whichever key this card carries: a null on
+      // both sides would otherwise mark every card selected.
+      var mode = card.getAttribute("data-mode");
+      var file = card.getAttribute("data-preset-file");
+      var selected = mode !== null
+        ? mode === state.mode
+        : file !== null && file === state.presetFile;
+      var mark = card.querySelector(".choice-state");
+
+      card.classList.toggle("is-selected", selected);
+      card.setAttribute("aria-pressed", selected ? "true" : "false");
+      card.disabled = state.busyAction !== null;
+      if (!mark) {
+        return;
+      }
+      if (selected && mark.children.length === 0) {
+        mark.appendChild(createIcon("check", "flow-icon--small"));
+      } else if (!selected && mark.children.length > 0) {
+        mark.textContent = "";
+      }
+    });
+    return true;
+  }
+
+  function renderMain(state, direction) {
+    var described = global.MacroStudioScreens.describe(state, state.screen);
     var screen = createElement("section", "screen");
-    var body = createElement("div", "screen-body step-body-scroll");
-    var counts = getBuildCounts(state);
-    var workspace;
+    var header = createElement("header", "screen-header");
+    var workspace = createElement("div", "workspace");
 
-    screen.setAttribute("data-step", "4");
-    screen.setAttribute("aria-labelledby", "step-title-4");
-    if (state.busyAction === "buildBook") {
-      workspace = createBuildProgress(state);
-    } else if (state.buildResult &&
-        state.buildResult.status === "success") {
-      workspace = createBuildSuccess(state);
-    } else if (state.buildResult &&
-        state.buildResult.status === "error") {
-      workspace = createBuildFailure(state);
+    screen.setAttribute("data-screen", String(state.screen));
+    if (direction) {
+      screen.classList.add("screen-enter-" + direction);
+    }
+    header.appendChild(createElement(
+      "span",
+      "step-tag",
+      "手順 " + described.major + " · " + described.sub));
+    header.appendChild(
+      createElement("h1", "screen-title", described.title));
+    header.appendChild(
+      createElement("span", "screen-meta", described.meta));
+    screen.appendChild(header);
+
+    if (state.screen === global.MacroStudioScreens.intakeScreen ||
+        state.screen === global.MacroStudioScreens.reviewScreen) {
+      workspace.classList.add("workspace--code");
     } else {
-      workspace = createBuildConfirmation(state);
+      workspace.classList.add("workspace--centered");
     }
-
-    body.appendChild(workspace);
-    screen.appendChild(createScreenHeader(
-      4,
-      "改修版ブックをビルド",
-      state.book ? state.book.name : "",
-      "書き戻し " + counts.changed + " 個"));
-    screen.appendChild(body);
-    return screen;
-  }
-
-  function renderMain(state) {
-    var existing = elements.main.firstElementChild;
-    var screen;
-
-    if (existing &&
-        existing.getAttribute("data-step") ===
-          String(state.currentStep) &&
-        state.currentStep === 2 &&
-        updateStepTwo(existing, state)) {
-      return;
-    }
+    workspace.appendChild(screenBuilders[state.screen](state));
+    screen.appendChild(workspace);
 
     elements.main.textContent = "";
-    if (state.currentStep === 1) {
-      screen = createStepOne(state);
-    } else if (state.currentStep === 2) {
-      screen = createStepTwo(state);
-    } else if (state.currentStep === 3) {
-      screen = createStepThree(state);
-    } else {
-      screen = createStepFour(state);
-    }
-
     elements.main.appendChild(screen);
+    elements.actionContext.textContent = described.context;
   }
 
   function render(state) {
+    var direction = null;
+
+    if (lastRenderedScreen !== null &&
+        lastRenderedScreen !== state.screen) {
+      direction = state.screen > lastRenderedScreen ? "forward" : "back";
+    }
+    // The preset folder is re-read every time the list is shown.
+    if (state.screen === global.MacroStudioScreens.purposeScreen &&
+        lastRenderedScreen !== global.MacroStudioScreens.purposeScreen &&
+        global.hostBridge) {
+      lastRenderedScreen = global.MacroStudioScreens.purposeScreen;
+      loadAppInfo();
+    }
+    lastRenderedScreen = state.screen;
     renderProgress(state);
-    renderModuleList(state);
-    renderMain(state);
+    if (!paintSelection(state)) {
+      renderMain(state, direction);
+    }
+    renderFooter(state);
+    if (state.screen !== global.MacroStudioScreens.buildScreen) {
+      buildStarted = false;
+    } else if (!buildStarted) {
+      buildStarted = true;
+      buildBook();
+    }
   }
 
   function getAttachWarningMessage(data) {
@@ -2094,7 +2268,7 @@
       path: path || ""
     };
 
-    global.MacroDeskState.setLastError(viewError);
+    global.MacroStudioState.setLastError(viewError);
     if (viewError.code !== "E-ATTACH-03") {
       showToast(viewError.message, "error");
     } else {
@@ -2102,26 +2276,6 @@
     }
     recordClientError(error, path);
     return null;
-  }
-
-  function prepareBuildConfirmation() {
-    var timestamp = createOutputTimestamp(new Date());
-
-    global.MacroDeskState.setBuildConfirmation(timestamp);
-    clearToast();
-    return timestamp;
-  }
-
-  function goToBuildConfirmation() {
-    if (!global.MacroDeskState.canNavigate(4)) {
-      return false;
-    }
-    prepareBuildConfirmation();
-    if (global.MacroDeskState.navigate(4)) {
-      elements.main.focus();
-      return true;
-    }
-    return false;
   }
 
   function recordInfo(message) {
@@ -2146,39 +2300,45 @@
       "ビルド処理を完了できませんでした。もう一度お試しください。";
     var result = {
       status: "error",
+      success: false,
       code: code,
       message: message,
       outputPath: data.outputPath || "",
       results: data.results || []
     };
 
-    global.MacroDeskState.setBuildResult(result);
-    global.MacroDeskState.setLastError({
+    global.MacroStudioState.setBuildResult(result);
+    global.MacroStudioState.setLastError({
       code: code,
       message: message,
       path: ""
     });
-    global.MacroDeskState.setBusyAction(null);
+    global.MacroStudioState.setBusyAction(null);
     clearToast();
     announce("ビルドに失敗しました。" + message);
     recordInfo("build failed: " + code);
+    global.MacroStudioState.goTo(
+      global.MacroStudioScreens.doneScreen,
+      false);
     return null;
   }
 
   function buildBook() {
-    var state = global.MacroDeskState.getState();
+    var state = global.MacroStudioState.getState();
     var modules;
-    var outputName;
     var diffHtml = null;
     var diffGenerationError = null;
+    var timestamp = state.buildTimestamp ||
+      createOutputTimestamp(new Date());
 
-    if (state.currentStep !== 4 || state.busyAction) {
+    if (state.screen !== global.MacroStudioScreens.buildScreen ||
+        state.busyAction) {
       return Promise.resolve(null);
     }
     try {
       modules = createBuildModules(state);
       if (modules.length === 0) {
-        throw new Error("No changed modules are ready to build.");
+        throw new Error("No accepted modules are ready to build.");
       }
     } catch (error) {
       return Promise.resolve(failBuild({
@@ -2188,48 +2348,49 @@
     }
 
     try {
-      diffHtml = global.MacroDeskDiffReport.buildReport({
+      diffHtml = global.MacroStudioDiffReport.buildReport({
         bookName: state.book.name,
-        buildTimestamp: state.buildTimestamp,
+        buildTimestamp: timestamp,
         modules: state.modules
       });
     } catch (error) {
       diffGenerationError = error;
     }
 
-    outputName = createBuildOutputName(
-      state.book,
-      state.buildTimestamp,
-      state.appInfo && state.appInfo.buildFileLabel);
-    global.MacroDeskState.setLastError(null);
-    global.MacroDeskState.setBusyAction("buildBook");
+    global.MacroStudioState.setBusyAction("buildBook");
+    global.MacroStudioState.setBuildConfirmation(timestamp);
+    global.MacroStudioState.setLastError(null);
     clearToast();
     announce("ビルドを開始しました。");
     recordInfo(
-      "build start: " + outputName +
+      "build start: " + state.outputName +
       " (" + modules.length + " modules)");
     if (diffGenerationError) {
       recordClientError(diffGenerationError, "");
     }
 
     return global.hostBridge.request("buildBook", {
-      outputTimestamp: state.buildTimestamp,
+      outputTimestamp: timestamp,
+      outputName: state.outputName,
       modules: modules,
-      diffHtml: diffHtml
+      diffHtml: diffHtml,
+      resultMarkdown: createResultMarkdown(state, timestamp)
     }).then(function (result) {
       var viewResult = {
         status: "success",
+        success: true,
         outputPath: result.outputPath,
         results: result.results || [],
         diffPath: result.diffPath || "",
-        diffError: result.diffError || ""
+        diffError: result.diffError || "",
+        resultPath: result.resultPath || "",
+        resultError: result.resultError || ""
       };
 
-      global.MacroDeskState.setLastError(null);
-      global.MacroDeskState.setBuildResult(viewResult);
-      global.MacroDeskState.markModulesWritten(
-        viewResult.results);
-      global.MacroDeskState.setBusyAction(null);
+      global.MacroStudioState.setLastError(null);
+      global.MacroStudioState.setBuildResult(viewResult);
+      global.MacroStudioState.markModulesWritten(viewResult.results);
+      global.MacroStudioState.setBusyAction(null);
       clearToast();
       if (viewResult.diffError) {
         showToast(diffReportErrorMessage, "error");
@@ -2237,60 +2398,57 @@
           "改修版ブックを作成しました。" +
           "差分 HTML ファイルは作成できませんでした。");
       } else {
-        announce(
-          "改修版ブックと差分 HTML ファイルを作成しました。");
+        announce("改修版ブックと差分 HTML ファイルを作成しました。");
       }
       recordInfo(
         "build success: " + result.outputPath +
         " (" + viewResult.results.length + " results)");
+      global.MacroStudioState.goTo(
+        global.MacroStudioScreens.doneScreen,
+        false);
       return result;
     }, function (error) {
       return failBuild(error);
     });
   }
 
-  function revealBuildOutput() {
-    var state = global.MacroDeskState.getState();
-    var result = state.buildResult;
+  // Everything this run produced lives in one folder, so one action
+  // opens it from both the hand-off screen and the final screen.
+  function openRunFolder() {
+    var state = global.MacroStudioState.getState();
 
-    if (state.busyAction ||
-        !result ||
-        result.status !== "success" ||
-        !result.outputPath) {
+    if (state.busyAction || !state.runFolder) {
       return Promise.resolve(null);
     }
-
-    global.MacroDeskState.setBusyAction("revealPath");
+    global.MacroStudioState.setBusyAction("revealPath");
     return global.hostBridge.request("revealPath", {
-      path: result.outputPath
+      path: state.runFolder
     }).then(function () {
-      global.MacroDeskState.setLastError(null);
-      global.MacroDeskState.setBusyAction(null);
-      announce("出力ファイルをエクスプローラーで選択しました。");
-      return result.outputPath;
+      global.MacroStudioState.setLastError(null);
+      global.MacroStudioState.setHandoffProgress(null, true);
+      global.MacroStudioState.setBusyAction(null);
+      announce("出力フォルダをエクスプローラーで開きました。");
+      return state.runFolder;
     }, function (error) {
-      handleHostError(error, result.outputPath);
-      global.MacroDeskState.setBusyAction(null);
+      handleHostError(error, state.runFolder);
+      global.MacroStudioState.setBusyAction(null);
       return null;
     });
   }
 
-  function returnToBuildEdit() {
-    global.MacroDeskState.setLastError(null);
-    clearToast();
-    if (global.MacroDeskState.navigate(3)) {
-      elements.main.focus();
-      return true;
-    }
-    return false;
-  }
-
   function retryBuild() {
-    var timestamp = prepareBuildConfirmation();
+    var state = global.MacroStudioState.getState();
 
-    elements.main.focus();
-    announce("出力名を更新しました。内容を確認してビルドしてください。");
-    return timestamp;
+    if (state.busyAction) {
+      return false;
+    }
+    global.MacroStudioState.setLastError(null);
+    global.MacroStudioState.setBuildResult(null);
+    clearToast();
+    global.MacroStudioState.goTo(
+      global.MacroStudioScreens.buildScreen,
+      false);
+    return true;
   }
 
   function showDiscardModal(path) {
@@ -2299,13 +2457,13 @@
   }
 
   function performAttachPath(path) {
-    var state = global.MacroDeskState.getState();
+    var state = global.MacroStudioState.getState();
 
     if (!path || state.busyAction) {
       return Promise.resolve(null);
     }
 
-    global.MacroDeskState.setBusyAction("attachBook");
+    global.MacroStudioState.setBusyAction("attachBook");
     return global.hostBridge.request(
       "attachBook",
       { path: path }
@@ -2313,8 +2471,9 @@
       var warningMessage;
 
       newModuleNameDraft = "";
-      global.MacroDeskState.setBook(data.book, data.modules);
-      global.MacroDeskState.setBusyAction(null);
+      data.book.warning = data.warning === true;
+      global.MacroStudioState.setBook(data.book, data.modules);
+      global.MacroStudioState.setBusyAction(null);
       clearToast();
       warningMessage = getAttachWarningMessage(data);
       if (warningMessage) {
@@ -2329,13 +2488,13 @@
       return data;
     }, function (error) {
       handleHostError(error, path);
-      global.MacroDeskState.setBusyAction(null);
+      global.MacroStudioState.setBusyAction(null);
       return null;
     });
   }
 
   function attachPath(path) {
-    var state = global.MacroDeskState.getState();
+    var state = global.MacroStudioState.getState();
 
     if (!path || state.busyAction) {
       return Promise.resolve(null);
@@ -2346,7 +2505,7 @@
       });
       return Promise.resolve(null);
     }
-    if (global.MacroDeskState.hasImportedModules()) {
+    if (global.MacroStudioState.hasImportedModules()) {
       showDiscardModal(path);
       return Promise.resolve(null);
     }
@@ -2354,16 +2513,16 @@
   }
 
   function pickBook() {
-    var state = global.MacroDeskState.getState();
+    var state = global.MacroStudioState.getState();
 
     if (state.busyAction) {
       return Promise.resolve(null);
     }
 
-    global.MacroDeskState.setBusyAction("pickBook");
+    global.MacroStudioState.setBusyAction("pickBook");
     return global.hostBridge.request("pickBook").then(
       function (result) {
-        global.MacroDeskState.setBusyAction(null);
+        global.MacroStudioState.setBusyAction(null);
         if (!result) {
           return null;
         }
@@ -2371,122 +2530,118 @@
       },
       function (error) {
         handleHostError(error, "");
-        global.MacroDeskState.setBusyAction(null);
+        global.MacroStudioState.setBusyAction(null);
         return null;
       });
   }
 
-  function showPresetFeedback(file) {
-    var buttons = document.querySelectorAll("[data-preset-file]");
-    var target = null;
-
-    Array.prototype.some.call(buttons, function (button) {
-      if (button.getAttribute("data-preset-file") === file) {
-        target = button;
-        return true;
-      }
-      return false;
-    });
-    if (!target) {
-      return;
-    }
-    if (presetFeedbackTimer !== null) {
-      global.clearTimeout(presetFeedbackTimer);
-    }
-    target.textContent = "✓ 追加しました";
-    target.classList.add("is-added");
-    presetFeedbackTimer = global.setTimeout(function () {
-      var currentButtons = document.querySelectorAll(
-        "[data-preset-file]");
-
-      Array.prototype.some.call(currentButtons, function (button) {
-        if (button.getAttribute("data-preset-file") === file) {
-          button.textContent =
-            "＋ " + button.getAttribute("data-preset-name");
-          button.classList.remove("is-added");
-          return true;
-        }
-        return false;
-      });
-      presetFeedbackTimer = null;
-    }, 2000);
+  function fillRequestId(text, requestId) {
+    return String(text === undefined || text === null ? "" : text)
+      .split("{{REQUEST_ID}}")
+      .join(requestId || "");
   }
 
-  function loadPreset(file) {
-    var state = global.MacroDeskState.getState();
+  // Choosing the purpose loads one preset file and mints the request
+  // id that ties this request to the answer it will get back.
+  function selectMode(mode) {
+    if (global.MacroStudioState.getState().busyAction) {
+      return false;
+    }
+    global.MacroStudioState.setMode(mode);
+    global.MacroStudioState.setLastError(null);
+    clearToast();
+    return true;
+  }
+
+  function selectPurpose(file) {
+    var state = global.MacroStudioState.getState();
 
     if (!file || state.busyAction) {
       return Promise.resolve(null);
     }
 
-    global.MacroDeskState.setBusyAction("readPreset");
+    global.MacroStudioState.setBusyAction("readPreset");
     return global.hostBridge.request(
       "readPreset",
       { file: file }
     ).then(function (result) {
-      var current = global.MacroDeskState.getState();
-      var nextText = global.MacroDeskPrompt.appendPreset(
-        current.requestText,
-        result.content);
-      var textarea;
+      var parsed = global.MacroStudioPreset.parse(result.content);
+      var requestId;
 
-      global.MacroDeskState.setLastError(null);
-      global.MacroDeskState.setRequestText(nextText);
-      global.MacroDeskState.setBusyAction(null);
-      clearToast();
-      textarea = document.getElementById("request-text");
-      if (textarea) {
-        textarea.focus();
-        textarea.setSelectionRange(
-          textarea.value.length,
-          textarea.value.length);
+      // The file is read again on every press, so a file that broke
+      // since the list was built must not be applied.
+      if (!parsed.valid) {
+        global.MacroStudioState.setBusyAction(null);
+        handleHostError({
+          code: "E-PRESET-01",
+          message: file + ": " + parsed.message,
+          data: {
+            userMessage: file + " を読み取れませんでした。" +
+              parsed.message
+          }
+        }, file);
+        loadAppInfo();
+        return null;
       }
-      showPresetFeedback(file);
+
+      requestId = global.MacroStudioResponse.createRequestId();
+      global.MacroStudioState.setLastError(null);
+      global.MacroStudioState.setPurpose(
+        file,
+        parsed.name,
+        requestId,
+        parsed.questions);
+      global.MacroStudioState.setRequestBase(
+        fillRequestId(parsed.instruction.body, requestId));
+      global.MacroStudioState.setRequestText(
+        fillRequestId(parsed.instruction.body, requestId));
+      global.MacroStudioState.setOutputRules({
+        presetFile: file,
+        presetName: parsed.name,
+        title: parsed.output.title,
+        body: fillRequestId(parsed.output.body, requestId)
+      });
+      global.MacroStudioState.setBusyAction(null);
+      clearToast();
+      announce(parsed.name + " を選びました。");
       return result;
     }, function (error) {
       handleHostError(error, "");
-      global.MacroDeskState.setBusyAction(null);
+      global.MacroStudioState.setBusyAction(null);
       return null;
     });
   }
 
-  function createRequestFile() {
-    var state = global.MacroDeskState.getState();
-    var textarea;
+  // Leaving the request screen creates this run's folder and writes
+  // both files into it, so every later output lands in the same place.
+  function prepareRequest() {
+    var state = global.MacroStudioState.getState();
+    var timestamp = createOutputTimestamp(new Date());
 
-    if (state.busyAction) {
-      return Promise.resolve(null);
-    }
-    if (state.requestText.trim().length === 0) {
-      showToast(
-        "依頼が空です。改修してほしい内容を入力してください。",
-        "error");
-      textarea = document.getElementById("request-text");
-      if (textarea) {
-        textarea.setAttribute("aria-invalid", "true");
-        textarea.focus();
-      }
+    if (state.busyAction || state.requestText.trim().length === 0) {
       return Promise.resolve(null);
     }
 
-    global.MacroDeskState.setBusyAction("prepareRequest");
+    global.MacroStudioState.setBusyAction("prepareRequest");
     return global.hostBridge.request(
       "readRequestTemplate"
     ).then(function (templateResult) {
       var codeContent;
+      var prompt;
 
       try {
-        // Validate the template before any file is written. The
-        // real code-file name is only known after the write, so a
-        // stand-in name is used for validation.
-        global.MacroDeskPrompt.buildRequestPrompt({
-          template: templateResult.content,
-          requestText: state.requestText,
-          book: state.book,
-          modules: state.modules,
-          codeFileName: "code.txt"
-        });
-        codeContent = global.MacroDeskPrompt.buildCodeFile({
+        prompt = fillRequestId(
+          global.MacroStudioPrompt.buildRequestPrompt({
+            template: templateResult.content,
+            requestText: state.requestText,
+            outputRules: state.outputRules,
+            requestId: state.requestId,
+            book: state.book,
+            modules: state.modules,
+            codeFileName: "source-code.md"
+          }),
+          state.requestId);
+        codeContent = global.MacroStudioPrompt.buildCodeFile({
           book: state.book,
           modules: state.modules,
           generatedAt: createCodeFileTimestamp(new Date())
@@ -2496,77 +2651,196 @@
           code: "E-GEN-02",
           message: error.message
         }, "");
-        global.MacroDeskState.setBusyAction(null);
+        global.MacroStudioState.setBusyAction(null);
         return null;
       }
 
-      return global.hostBridge.request(
-        "writeCodeFile",
-        { content: codeContent }
-      ).then(function (result) {
-        var prompt = global.MacroDeskPrompt.buildRequestPrompt({
-          template: templateResult.content,
-          requestText: state.requestText,
-          book: state.book,
-          modules: state.modules,
-          codeFileName: getFileName(result.path)
-        });
-
-        global.MacroDeskState.setRequestFilePath(result.path);
-        global.MacroDeskState.setRequestPrompt(prompt);
-        recordInfo("code file created: " + result.path);
-        return global.hostBridge.request(
-          "writeClipboard",
-          { text: prompt }
-        ).then(function () {
-          global.MacroDeskState.setLastError(null);
-          global.MacroDeskState.setBusyAction(null);
-          showToast(
-            "コードファイルを作成し、依頼文をコピーしました。",
-            "success");
-          announce(
-            "コードファイルを作成し、依頼文をクリップボードへ" +
-            "コピーしました。");
-          return result;
-        }, function (error) {
-          handleHostError(error, "");
-          global.MacroDeskState.setBusyAction(null);
-          return null;
-        });
+      return global.hostBridge.request("writeRequestFiles", {
+        outputTimestamp: timestamp,
+        request: prompt,
+        code: codeContent
+      }).then(function (result) {
+        global.MacroStudioState.setRunFolder(result.folderPath);
+        global.MacroStudioState.setRequestFilePath(result.codePath);
+        global.MacroStudioState.setRequestPrompt(prompt);
+        global.MacroStudioState.setHandoffProgress(false, false);
+        global.MacroStudioState.setLastError(null);
+        global.MacroStudioState.setBusyAction(null);
+        clearToast();
+        recordInfo("request folder created: " + result.folderPath);
+        announce("依頼文とコード全文ファイルを作成しました。");
+        return result;
       }, function (error) {
         handleHostError(error, "");
-        global.MacroDeskState.setBusyAction(null);
+        global.MacroStudioState.setBusyAction(null);
         return null;
       });
     }, function (error) {
       handleHostError(error, "");
-      global.MacroDeskState.setBusyAction(null);
+      global.MacroStudioState.setBusyAction(null);
       return null;
     });
   }
 
   function copyRequestPrompt() {
-    var state = global.MacroDeskState.getState();
+    var state = global.MacroStudioState.getState();
 
     if (state.busyAction || !state.requestPrompt) {
       return Promise.resolve(null);
     }
 
-    global.MacroDeskState.setBusyAction("writeClipboard");
+    global.MacroStudioState.setBusyAction("writeClipboard");
     return global.hostBridge.request(
       "writeClipboard",
       { text: state.requestPrompt }
     ).then(function () {
-      global.MacroDeskState.setLastError(null);
-      global.MacroDeskState.setBusyAction(null);
-      showToast("依頼文をコピーしました。", "success");
+      global.MacroStudioState.setLastError(null);
+      global.MacroStudioState.setHandoffProgress(true, null);
+      global.MacroStudioState.setBusyAction(null);
+      showToast("依頼文をクリップボードへコピーしました。", "success");
       announce("依頼文をクリップボードへコピーしました。");
       return true;
     }, function (error) {
       handleHostError(error, "");
-      global.MacroDeskState.setBusyAction(null);
+      global.MacroStudioState.setBusyAction(null);
       return null;
     });
+  }
+
+  // Accepting and discarding both ask first: this is where a change
+  // enters the build, or leaves it.
+  function showIntakeError(message) {
+    var error = {
+      code: "E-INTAKE-01",
+      message: message
+    };
+    var button;
+
+    global.MacroStudioState.setLastError(error);
+    showToast(message, "error");
+    button = document.querySelector('[data-action="import-response"]');
+    if (button) {
+      button.focus();
+    }
+    error.stack = (new Error("Response package refused.")).stack;
+    recordClientError(error, "");
+    return false;
+  }
+
+  // One answer, one press: the package is parsed, checked against the
+  // request id, and every module in it is applied together.
+  function applyResponsePackage(text) {
+    var state = global.MacroStudioState.getState();
+    var parsed = global.MacroStudioResponse.parse(text, state.requestId);
+    var described;
+    var items = [];
+    var nameError = "";
+    var kindWarning;
+
+    if (!parsed.ok) {
+      return showIntakeError(parsed.message);
+    }
+    described = global.MacroStudioResponse.describe(
+      parsed,
+      state.modules);
+    described.modules.forEach(function (item) {
+      var normalized = normalizePastedText(item.code);
+      var existing = global.MacroStudioState.findModule(item.name);
+      var rows;
+
+      if (normalized.length === 0) {
+        nameError = global.MacroStudioResponse.messages.emptyModule;
+        return;
+      }
+      if (!existing) {
+        // Adding a module is limited to standard modules: that is the
+        // only kind this app can write into a workbook.
+        if (item.kind !== "standard") {
+          nameError =
+            "新しく増やせるのは標準モジュールだけです。" +
+            "AIへ、追加する補助モジュールは標準モジュールにするよう" +
+            "伝えて、もう一度お試しください。";
+          return;
+        }
+        nameError = nameError ||
+          getNewModuleNameError(state, item.name);
+        if (nameError) {
+          return;
+        }
+      }
+      rows = global.MacroStudioDiff.compare(
+        existing ? existing.code || "" : "",
+        normalized);
+      items.push({
+        name: existing ? existing.name : item.name,
+        code: normalized,
+        changedLineCount:
+          global.MacroStudioDiff.countChangedLines(rows),
+        lineCount: global.MacroStudioDiff.toLines(normalized).length
+      });
+    });
+
+    if (nameError) {
+      return showIntakeError(nameError);
+    }
+    if (items.length === 0) {
+      return showIntakeError(
+        global.MacroStudioResponse.messages.noSentinel);
+    }
+
+    kindWarning = global.MacroStudioResponse.describeKindWarning(
+      described.kindWarnings);
+    global.MacroStudioState.importPackage(items);
+    global.MacroStudioState.setIntakeResult({
+      total: items.length,
+      existing: described.existing,
+      added: described.added,
+      summary: described.summary || "",
+      kindWarning: kindWarning
+    });
+    global.MacroStudioState.setLastError(null);
+    clearToast();
+    if (kindWarning) {
+      showToast(kindWarning, "warning");
+      announce(kindWarning);
+      recordInfo("kind corrected: " + described.kindWarnings.map(
+        function (warning) {
+          return warning.name + " " + warning.answered +
+            "->" + warning.actual;
+        }).join(", "));
+      return true;
+    }
+    showToast(
+      items.length + "個のモジュールを取り込みました。",
+      "success");
+    announce(items.length + "個のモジュールを取り込みました。");
+    recordInfo("package imported: " + items.length + " modules");
+    return true;
+  }
+
+  function importResponsePackage() {
+    var state = global.MacroStudioState.getState();
+
+    if (state.busyAction) {
+      return Promise.resolve(null);
+    }
+    if (!state.requestId) {
+      showIntakeError(
+        "先に依頼文を作ってください。依頼の画面へ戻ると作成できます。");
+      return Promise.resolve(null);
+    }
+
+    global.MacroStudioState.setBusyAction("readClipboard");
+    return global.hostBridge.request("readClipboard").then(
+      function (result) {
+        global.MacroStudioState.setBusyAction(null);
+        return applyResponsePackage(result.text || "");
+      },
+      function (error) {
+        handleHostError(error, "");
+        global.MacroStudioState.setBusyAction(null);
+        return null;
+      });
   }
 
   function showPasteError(focusAction) {
@@ -2576,7 +2850,7 @@
     };
     var button;
 
-    global.MacroDeskState.setLastError(error);
+    global.MacroStudioState.setLastError(error);
     showToast(error.message, "error");
     button = document.querySelector(
       '[data-action="' +
@@ -2590,7 +2864,7 @@
   }
 
   function recordPaste(module, normalizedText) {
-    var lineCount = global.MacroDeskDiff.toLines(normalizedText).length;
+    var lineCount = global.MacroStudioDiff.toLines(normalizedText).length;
 
     global.hostBridge.request("writeLog", {
       level: "INFO",
@@ -2605,9 +2879,9 @@
   }
 
   function acceptPastedText(value, moduleName, focusAction) {
-    var state = global.MacroDeskState.getState();
+    var state = global.MacroStudioState.getState();
     var name = moduleName || state.selectedModuleName;
-    var module = global.MacroDeskState.findModule(name);
+    var module = global.MacroStudioState.findModule(name);
     var normalizedText;
     var rows;
     var changedLineCount;
@@ -2623,13 +2897,13 @@
       return false;
     }
 
-    rows = global.MacroDeskDiff.compare(
+    rows = global.MacroStudioDiff.compare(
       module.code || "",
       normalizedText);
     changedLineCount =
-      global.MacroDeskDiff.countChangedLines(rows);
-    global.MacroDeskState.setLastError(null);
-    accepted = global.MacroDeskState.acceptModuleCode(
+      global.MacroStudioDiff.countChangedLines(rows);
+    global.MacroStudioState.setLastError(null);
+    accepted = global.MacroStudioState.acceptModuleCode(
       name,
       normalizedText,
       changedLineCount);
@@ -2643,126 +2917,6 @@
     return true;
   }
 
-  function pasteFromClipboard(moduleName) {
-    var state = global.MacroDeskState.getState();
-    var name = moduleName || state.selectedModuleName;
-    var module = global.MacroDeskState.findModule(name);
-
-    if (state.busyAction ||
-        !module ||
-        module.status === "excluded") {
-      return Promise.resolve(false);
-    }
-
-    global.MacroDeskState.setBusyAction("readClipboard");
-    return global.hostBridge.request("readClipboard").then(
-      function (result) {
-        global.MacroDeskState.setBusyAction(null);
-        return acceptPastedText(
-          result ? result.text : "",
-          name);
-      },
-      function (error) {
-        handleHostError(error, "");
-        global.MacroDeskState.setBusyAction(null);
-        return false;
-      });
-  }
-
-  function importNewModuleFromClipboard() {
-    var state = global.MacroDeskState.getState();
-    var name = newModuleNameDraft;
-    var nameError = getNewModuleNameError(state, name);
-    var input;
-
-    if (state.busyAction || !state.newModuleIntake) {
-      return Promise.resolve(false);
-    }
-    if (nameError) {
-      showToast(nameError, "error");
-      input = document.getElementById("new-module-name");
-      if (input) {
-        input.setAttribute("aria-invalid", "true");
-        input.focus();
-      }
-      return Promise.resolve(false);
-    }
-
-    global.MacroDeskState.setBusyAction("readClipboard");
-    return global.hostBridge.request("readClipboard").then(
-      function (result) {
-        var normalizedText;
-        var rows;
-        var changedLineCount;
-        var lineCount;
-        var module;
-
-        global.MacroDeskState.setBusyAction(null);
-        normalizedText = normalizePastedText(
-          result ? result.text : "");
-        if (normalizedText.length === 0) {
-          showPasteError("import-new-module");
-          return false;
-        }
-
-        rows = global.MacroDeskDiff.compare(
-          "",
-          normalizedText);
-        changedLineCount =
-          global.MacroDeskDiff.countChangedLines(rows);
-        lineCount =
-          global.MacroDeskDiff.toLines(
-            normalizedText).length;
-        module = global.MacroDeskState.addNewModule(
-          name,
-          normalizedText,
-          changedLineCount,
-          lineCount);
-        if (!module) {
-          return false;
-        }
-
-        newModuleNameDraft = "";
-        global.MacroDeskState.setLastError(null);
-        clearToast();
-        announce(
-          name +
-          " を新規標準モジュールとして取り込みました。");
-        recordPaste(module, normalizedText);
-        return true;
-      },
-      function (error) {
-        handleHostError(error, "");
-        global.MacroDeskState.setBusyAction(null);
-        return false;
-      });
-  }
-
-  function cancelSelectedPaste() {
-    var state = global.MacroDeskState.getState();
-    var name = state.selectedModuleName;
-    var module = global.MacroDeskState.findModule(name);
-    var wasNew = module && module.isNew === true;
-
-    if (!name ||
-        !global.MacroDeskState.cancelModulePaste(name)) {
-      return false;
-    }
-    global.MacroDeskState.setLastError(null);
-    clearToast();
-    announce(name + " の貼り付けを取り消しました。");
-    global.setTimeout(function () {
-      var button = document.querySelector(
-        wasNew
-          ? '[data-new-module-intake="true"]'
-          : '[data-action="paste-response"]');
-      if (button) {
-        button.focus();
-      }
-    }, 0);
-    return true;
-  }
-
   function normalizeToLf(value) {
     return String(
       value === undefined || value === null ? "" : value)
@@ -2771,13 +2925,13 @@
   }
 
   function isEditDraftDirty() {
-    var state = global.MacroDeskState.getState();
+    var state = global.MacroStudioState.getState();
     var module;
 
     if (!state.pasteEditing) {
       return false;
     }
-    module = global.MacroDeskState.findModule(
+    module = global.MacroStudioState.findModule(
       state.selectedModuleName);
     if (!module) {
       return false;
@@ -2797,8 +2951,8 @@
   }
 
   function beginEditPaste() {
-    var state = global.MacroDeskState.getState();
-    var module = global.MacroDeskState.findModule(
+    var state = global.MacroStudioState.getState();
+    var module = global.MacroStudioState.findModule(
       state.selectedModuleName);
 
     if (state.busyAction ||
@@ -2809,7 +2963,7 @@
     }
 
     pasteEditDraft = module.pastedCode || "";
-    if (!global.MacroDeskState.beginPasteEdit()) {
+    if (!global.MacroStudioState.beginPasteEdit()) {
       return false;
     }
     clearToast();
@@ -2825,7 +2979,7 @@
   }
 
   function applyPasteEdit() {
-    var state = global.MacroDeskState.getState();
+    var state = global.MacroStudioState.getState();
 
     if (!state.pasteEditing || state.busyAction) {
       return false;
@@ -2848,14 +3002,14 @@
   }
 
   function requestCancelPasteEdit() {
-    var state = global.MacroDeskState.getState();
+    var state = global.MacroStudioState.getState();
 
     if (!state.pasteEditing) {
       return false;
     }
     return guardEditDraft(function () {
       pasteEditDraft = "";
-      global.MacroDeskState.cancelPasteEdit();
+      global.MacroStudioState.cancelPasteEdit();
       announce("手動修正をやめました。");
       global.setTimeout(function () {
         var button = document.querySelector(
@@ -2867,49 +3021,28 @@
     });
   }
 
-  function toggleModuleExcluded(moduleName) {
-    var module = global.MacroDeskState.findModule(moduleName);
-    var wasExcluded;
-
-    if (!module) {
-      return false;
-    }
-    wasExcluded = module.status === "excluded";
-    if (!global.MacroDeskState.toggleModuleExcluded(moduleName)) {
-      return false;
-    }
-    global.MacroDeskState.setLastError(null);
-    clearToast();
-    announce(
-      moduleName +
-      (wasExcluded
-        ? " の対象外を解除しました。"
-        : " を対象外にしました。"));
-    return true;
-  }
-
   function toggleSelectedDiffContext() {
-    var state = global.MacroDeskState.getState();
-    var module = global.MacroDeskState.findModule(
+    var state = global.MacroStudioState.getState();
+    var module = global.MacroStudioState.findModule(
       state.selectedModuleName);
 
     if (!module) {
       return false;
     }
-    return global.MacroDeskState.setModuleShowChangesOnly(
+    return global.MacroStudioState.setModuleShowChangesOnly(
       module.name,
       !module.showChangesOnly);
   }
 
   function toggleSelectedDiffWrap() {
-    var state = global.MacroDeskState.getState();
-    var module = global.MacroDeskState.findModule(
+    var state = global.MacroStudioState.getState();
+    var module = global.MacroStudioState.findModule(
       state.selectedModuleName);
 
     if (!module) {
       return false;
     }
-    return global.MacroDeskState.setModuleWrapDiff(
+    return global.MacroStudioState.setModuleWrapDiff(
       module.name,
       module.wrapDiff === false);
   }
@@ -2922,7 +3055,7 @@
     if (!host) {
       return false;
     }
-    return global.MacroDeskDiffView.jumpToChange(
+    return global.MacroStudioDiffView.jumpToChange(
       host,
       direction,
       counter);
@@ -2931,7 +3064,11 @@
   function loadAppInfo() {
     return global.hostBridge.request("getAppInfo").then(
       function (appInfo) {
-        global.MacroDeskState.setAppInfo(appInfo);
+        // A rediscovery that comes back without a preset list is not
+        // an empty presets folder: keep what the app already has.
+        if (appInfo && Array.isArray(appInfo.presets)) {
+          global.MacroStudioState.setAppInfo(appInfo);
+        }
         return appInfo;
       },
       function (error) {
@@ -2940,82 +3077,146 @@
       });
   }
 
-  function onProgressClick(event) {
-    var button = event.currentTarget;
-    var targetStep = Number(button.getAttribute("data-step"));
-
-    if (!global.MacroDeskState.canNavigate(targetStep)) {
-      return;
+  function goToScreen(index) {
+    if (global.MacroStudioState.goTo(index, false)) {
+      elements.main.focus();
+      return true;
     }
+    return false;
+  }
+
+  // [次へ] is the only forward control. Screens that have to do work
+  // before the next one appears do it here.
+  function goNext() {
+    var state = global.MacroStudioState.getState();
+
+    if (!global.MacroStudioState.canGoNext()) {
+      return false;
+    }
+    if (state.screen === global.MacroStudioScreens.questionScreen) {
+      global.MacroStudioState.setRequestText(
+        composeRequestWithAnswers(state));
+    }
+    // Leaving the request screen is where the run folder and its two
+    // files are written.
+    if (state.screen === global.MacroStudioScreens.handoffScreen - 1) {
+      prepareRequest().then(function (result) {
+        if (result) {
+          global.MacroStudioState.goNext();
+          elements.main.focus();
+        }
+        return result;
+      });
+      return true;
+    }
+    if (global.MacroStudioState.goNext()) {
+      elements.main.focus();
+      return true;
+    }
+    return false;
+  }
+
+  function goBack() {
     guardEditDraft(function () {
-      if (targetStep === 4) {
-        goToBuildConfirmation();
-      } else if (global.MacroDeskState.navigate(targetStep)) {
+      if (global.MacroStudioState.goBack()) {
         elements.main.focus();
       }
     });
+    return true;
   }
 
-  function onModuleClick(event) {
-    var toggle = event.target.closest("[data-module-toggle]");
-    var button = event.target.closest("[data-module-name]");
-    var newModuleButton = event.target.closest(
-      "[data-new-module-intake]");
-
-    if (toggle) {
-      toggleModuleExcluded(
-        toggle.getAttribute("data-module-toggle"));
-      return;
-    }
-    if (newModuleButton) {
-      guardEditDraft(function () {
-        newModuleNameDraft = "";
-        global.MacroDeskState.setLastError(null);
-        clearToast();
-        global.MacroDeskState.beginNewModuleIntake();
-        global.setTimeout(function () {
-          var input = document.getElementById(
-            "new-module-name");
-          if (input) {
-            input.focus();
-          }
-        }, 0);
-      });
-      return;
-    }
-    if (!button) {
-      return;
-    }
-    var moduleName = button.getAttribute("data-module-name");
-    var currentState = global.MacroDeskState.getState();
-
-    if (currentState.pasteEditing &&
-        currentState.selectedModuleName === moduleName) {
-      return;
-    }
+  function selectModuleFromPane(moduleName) {
     guardEditDraft(function () {
-      global.MacroDeskState.setLastError(null);
+      global.MacroStudioState.setLastError(null);
       clearToast();
-      global.MacroDeskState.selectModule(moduleName);
+      global.MacroStudioState.selectModule(moduleName);
     });
+    return true;
   }
 
-  function onModuleContextMenu(event) {
-    var row = event.target.closest("[data-module-row-name]");
-    var module;
+  function restartFlow() {
+    var state = global.MacroStudioState.getState();
 
-    if (!row) {
+    if (state.busyAction) {
+      return false;
+    }
+    if (global.MacroStudioState.hasImportedModules()) {
+      pendingRestart = true;
+      elements.discardModal.showModal();
+      return false;
+    }
+    global.MacroStudioState.reset();
+    clearToast();
+    announce("最初の画面へ戻りました。");
+    loadAppInfo();
+    return true;
+  }
+
+  // The work is done: the files are on disk, so the app goes back to
+  // the first screen ready for the next workbook.
+  function finishFlow() {
+    var state = global.MacroStudioState.getState();
+
+    if (state.busyAction) {
+      return false;
+    }
+    global.MacroStudioState.reset();
+    clearToast();
+    announce("完了しました。最初の画面へ戻りました。");
+    loadAppInfo();
+    return true;
+  }
+
+  function onTopbarClick(event) {
+    var button = event.target.closest("[data-action]");
+
+    if (!button || button.disabled) {
       return;
     }
-    module = global.MacroDeskState.findModule(
-      row.getAttribute("data-module-row-name"));
-    if (!module ||
-        (module.status !== "pending" &&
-         module.status !== "excluded")) {
+    if (button.getAttribute("data-action") === "restart") {
+      restartFlow();
+    }
+  }
+
+  function onFooterClick(event) {
+    var button = event.target.closest("[data-action]");
+    var action;
+
+    if (!button || button.disabled) {
       return;
     }
-    event.preventDefault();
-    toggleModuleExcluded(module.name);
+    action = button.getAttribute("data-action");
+    if (action === "go-next") {
+      goNext();
+    } else if (action === "go-back") {
+      goBack();
+    } else if (action === "finish") {
+      finishFlow();
+    }
+  }
+
+  function toggleDisclosure(key) {
+    var box = document.querySelector(
+      '[data-disclosure-box="' + key + '"]');
+    var trigger;
+    var open;
+
+    if (!box) {
+      return false;
+    }
+    open = box.getAttribute("data-open") !== "true";
+    disclosureOpen[key] = open;
+    box.setAttribute("data-open", open ? "true" : "false");
+    trigger = box.querySelector(".disclosure-trigger");
+    if (trigger) {
+      trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    // The review detail needs the whole height, so its screen is
+    // rebuilt with the taller layout.
+    if (key === "change-detail") {
+      render(global.MacroStudioState.getState());
+    }
+    return open;
   }
 
   function onMainClick(event) {
@@ -3029,39 +3230,36 @@
     action = button.getAttribute("data-action");
     if (action === "pick-book") {
       pickBook();
-    } else if (action === "step1-next") {
-      global.MacroDeskState.navigate(2);
-      elements.main.focus();
-    } else if (action === "load-preset") {
-      loadPreset(button.getAttribute("data-preset-file"));
-    } else if (action === "create-request") {
-      createRequestFile();
+    } else if (action === "replace-book") {
+      guardEditDraft(function () {
+        goToScreen(0);
+      });
+    } else if (action === "toggle-disclosure") {
+      toggleDisclosure(button.getAttribute("data-disclosure"));
+    } else if (action === "select-mode") {
+      selectMode(button.getAttribute("data-mode"));
+    } else if (action === "go-question") {
+      goToQuestion(button.getAttribute("data-index"));
+    } else if (action === "answer-choice") {
+      answerQuestion(
+        button.getAttribute("data-question"),
+        button.getAttribute("data-value"));
+    } else if (action === "select-purpose") {
+      selectPurpose(button.getAttribute("data-preset-file"));
     } else if (action === "copy-request-prompt") {
       copyRequestPrompt();
-    } else if (action === "step2-next") {
-      global.MacroDeskState.navigate(3);
-      elements.main.focus();
-    } else if (action === "step3-next") {
-      goToBuildConfirmation();
-    } else if (action === "paste-response" ||
-        action === "repaste-response") {
-      pasteFromClipboard();
-    } else if (action === "cancel-paste") {
-      cancelSelectedPaste();
+    } else if (action === "open-run-folder") {
+      openRunFolder();
+    } else if (action === "import-response") {
+      importResponsePackage();
+    } else if (action === "select-module") {
+      selectModuleFromPane(button.getAttribute("data-module-name"));
     } else if (action === "edit-paste") {
       beginEditPaste();
     } else if (action === "apply-paste-edit") {
       applyPasteEdit();
     } else if (action === "cancel-paste-edit") {
       requestCancelPasteEdit();
-    } else if (action === "import-new-module") {
-      importNewModuleFromClipboard();
-    } else if (action === "cancel-new-module") {
-      newModuleNameDraft = "";
-      global.MacroDeskState.cancelNewModuleIntake();
-    } else if (action === "toggle-selected-excluded") {
-      toggleModuleExcluded(
-        global.MacroDeskState.getState().selectedModuleName);
     } else if (action === "toggle-diff-context") {
       toggleSelectedDiffContext();
     } else if (action === "toggle-diff-wrap") {
@@ -3070,85 +3268,76 @@
       jumpSelectedDiff(-1);
     } else if (action === "next-change") {
       jumpSelectedDiff(1);
-    } else if (action === "copy-text") {
-      copyText(
-        button.getAttribute("data-copy-text"),
-        button.getAttribute("data-copy-label"));
-    } else if (action === "build-book") {
-      buildBook();
-    } else if (action === "reveal-build-output") {
-      revealBuildOutput();
-    } else if (action === "build-back" ||
-        action === "build-continue") {
-      returnToBuildEdit();
     } else if (action === "retry-build") {
       retryBuild();
     }
   }
 
   function onMainInput(event) {
-    if (event.target.id === "new-module-name") {
-      newModuleNameDraft = event.target.value;
-      event.target.removeAttribute("aria-invalid");
+    if (event.target.hasAttribute &&
+        event.target.hasAttribute("data-question")) {
+      global.MacroStudioState.setAnswer(
+        Number(event.target.getAttribute("data-question")),
+        event.target.value);
       return;
     }
     if (event.target.id === "paste-edit-textarea") {
       pasteEditDraft = event.target.value;
       return;
     }
+    if (event.target.id === "output-name") {
+      global.MacroStudioState.setOutputName(event.target.value);
+      return;
+    }
     if (event.target.id !== "request-text") {
       return;
     }
-
     event.target.removeAttribute("aria-invalid");
-    global.MacroDeskState.setRequestText(event.target.value);
+    global.MacroStudioState.setRequestText(event.target.value);
   }
 
+  // Ctrl+V on the intake screen does the same as the button.
   function onDocumentPaste(event) {
-    var state = global.MacroDeskState.getState();
-    var selected;
+    var state = global.MacroStudioState.getState();
     var text = "";
 
-    if (state.currentStep !== 3 || state.busyAction) {
+    if (state.screen !== global.MacroStudioScreens.intakeScreen ||
+        state.busyAction) {
       return;
     }
-    // Pastes aimed at editable controls (the manual-fix textarea,
-    // the new-module name field) must reach them untouched.
     if (state.pasteEditing ||
         (event.target &&
          typeof event.target.closest === "function" &&
          event.target.closest("textarea, input"))) {
       return;
     }
-    selected = global.MacroDeskState.findModule(
-      state.selectedModuleName);
-    if (!selected || selected.status === "excluded") {
-      return;
+    if (event.clipboardData &&
+        typeof event.clipboardData.getData === "function") {
+      text = event.clipboardData.getData("text") || "";
     }
-
     event.preventDefault();
-    if (event.clipboardData) {
-      text = event.clipboardData.getData("text");
-    }
-    acceptPastedText(text, selected.name);
+    applyResponsePackage(text);
   }
 
   function onDocumentKeyDown(event) {
-    var state;
+    var state = global.MacroStudioState.getState();
 
-    if (!event.altKey ||
-        (event.key !== "ArrowUp" &&
-         event.key !== "ArrowDown")) {
+    if (state.screen !== global.MacroStudioScreens.reviewScreen ||
+        state.pasteEditing ||
+        state.busyAction ||
+        !event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey) {
       return;
     }
-    state = global.MacroDeskState.getState();
-    if (state.currentStep !== 3 ||
-        state.busyAction !== null ||
-        !elements.main.querySelector(".diff-table-host")) {
-      return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      jumpSelectedDiff(1);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      jumpSelectedDiff(-1);
     }
-    event.preventDefault();
-    jumpSelectedDiff(event.key === "ArrowUp" ? -1 : 1);
   }
 
   function hasFileDrag(event) {
@@ -3225,19 +3414,18 @@
 
   function hasDemoQuery() {
     var query = global.location.search || "";
+
     return /(?:^\?|&)demo=1(?:&|$)/.test(query);
   }
 
   function initialize() {
     elements = {
-      progressButtons: Array.prototype.slice.call(
-        document.querySelectorAll(".progress-step")),
-      moduleRegion: document.querySelector(".module-region"),
-      moduleCount: document.getElementById("module-count"),
-      bookName: document.getElementById("book-name"),
-      moduleList: document.getElementById("module-list"),
-      moduleEmpty: document.getElementById("module-empty"),
+      progressList: document.getElementById("progress-list"),
+      progressFill: document.getElementById("progress-fill"),
+      topbar: document.querySelector(".topbar"),
       main: document.getElementById("main-content"),
+      actionContext: document.getElementById("action-context"),
+      footerActions: document.getElementById("footer-actions"),
       statusAnnouncer: document.getElementById("status-announcer"),
       toastRegion: document.getElementById("toast-region"),
       discardModal: document.getElementById("discard-modal"),
@@ -3253,15 +3441,10 @@
         "edit-discard-confirm")
     };
 
-    elements.progressButtons.forEach(function (button) {
-      button.addEventListener("click", onProgressClick);
-    });
-    elements.moduleList.addEventListener("click", onModuleClick);
-    elements.moduleList.addEventListener(
-      "contextmenu",
-      onModuleContextMenu);
+    elements.topbar.addEventListener("click", onTopbarClick);
     elements.main.addEventListener("click", onMainClick);
     elements.main.addEventListener("input", onMainInput);
+    elements.footerActions.addEventListener("click", onFooterClick);
     document.addEventListener("paste", onDocumentPaste);
     document.addEventListener("dragenter", onWindowDragOver);
     document.addEventListener("dragover", onWindowDragOver);
@@ -3271,19 +3454,30 @@
     document.addEventListener("keydown", onDocumentKeyDown);
     elements.discardModalCancel.addEventListener("click", function () {
       pendingAttachPath = null;
+      pendingRestart = false;
       elements.discardModal.close();
-      announce("ブックの差し替えをキャンセルしました。");
+      announce("取り込み済みの内容はそのままです。");
     });
     elements.discardModalConfirm.addEventListener("click", function () {
       var path = pendingAttachPath;
+      var restart = pendingRestart;
 
       pendingAttachPath = null;
+      pendingRestart = false;
       elements.discardModal.close();
+      if (restart) {
+        global.MacroStudioState.reset();
+        clearToast();
+        announce("最初の画面へ戻りました。");
+        loadAppInfo();
+        return;
+      }
       performAttachPath(path);
     });
     elements.discardModal.addEventListener("cancel", function () {
       pendingAttachPath = null;
-      announce("ブックの差し替えをキャンセルしました。");
+      pendingRestart = false;
+      announce("取り込み済みの内容はそのままです。");
     });
     elements.editDiscardCancel.addEventListener("click", function () {
       pendingEditDiscardAction = null;
@@ -3303,7 +3497,7 @@
       pendingEditDiscardAction = null;
       elements.editDiscardModal.close();
       pasteEditDraft = "";
-      global.MacroDeskState.cancelPasteEdit();
+      global.MacroStudioState.cancelPasteEdit();
       announce("未反映の修正を破棄しました。");
       if (action) {
         action();
@@ -3313,15 +3507,13 @@
       pendingEditDiscardAction = null;
       announce("手動修正に戻りました。");
     });
-
-    global.MacroDeskState.subscribe(render);
+    global.MacroStudioState.subscribe(render);
     if (hasDemoQuery()) {
-      global.MacroDeskState.loadDemoState();
+      global.MacroStudioState.loadDemoState();
     } else {
-      render(global.MacroDeskState.getState());
+      render(global.MacroStudioState.getState());
     }
 
-    global.MacroDeskLecture.initialize();
     global.hostBridge.on("bookDropped", function (data) {
       setDropActive(false);
       attachPath(data.path);
@@ -3329,16 +3521,23 @@
     loadAppInfo();
   }
 
-  global.MacroDeskApp = {
+  global.MacroStudioApp = {
     initialize: initialize,
     render: render,
     showToast: showToast,
     handleHostError: handleHostError,
     attachPath: attachPath,
     pickBook: pickBook,
-    loadPreset: loadPreset,
-    createRequestFile: createRequestFile,
+    selectPurpose: selectPurpose,
+    applyResponsePackage: applyResponsePackage,
+    importResponsePackage: importResponsePackage,
+    toggleDisclosure: toggleDisclosure,
+    prepareRequest: prepareRequest,
     copyRequestPrompt: copyRequestPrompt,
+    openRunFolder: openRunFolder,
+    goNext: goNext,
+    goBack: goBack,
+    goToScreen: goToScreen,
     createCodeFileTimestamp: createCodeFileTimestamp,
     normalizePastedText: normalizePastedText,
     onWindowDragOver: onWindowDragOver,
@@ -3351,20 +3550,24 @@
     getNewModuleNameError: getNewModuleNameError,
     joinFinalCode: joinFinalCode,
     createBuildModules: createBuildModules,
-    prepareBuildConfirmation: prepareBuildConfirmation,
+    createResultMarkdown: createResultMarkdown,
     buildBook: buildBook,
-    revealBuildOutput: revealBuildOutput,
+    retryBuild: retryBuild,
+    finishFlow: finishFlow,
     acceptPastedText: acceptPastedText,
-    pasteFromClipboard: pasteFromClipboard,
-    importNewModuleFromClipboard: importNewModuleFromClipboard,
-    cancelSelectedPaste: cancelSelectedPaste,
     beginEditPaste: beginEditPaste,
     applyPasteEdit: applyPasteEdit,
     requestCancelPasteEdit: requestCancelPasteEdit,
     isEditDraftDirty: isEditDraftDirty,
-    toggleModuleExcluded: toggleModuleExcluded,
+    applyResponsePackage: applyResponsePackage,
+    importResponsePackage: importResponsePackage,
+    toggleDisclosure: toggleDisclosure,
+    selectMode: selectMode,
+    answerQuestion: answerQuestion,
+    goToQuestion: goToQuestion,
+    composeRequestWithAnswers: composeRequestWithAnswers,
     loadAppInfo: loadAppInfo,
-    loadDemoState: global.MacroDeskState.loadDemoState
+    loadDemoState: global.MacroStudioState.loadDemoState
   };
 
   document.addEventListener("DOMContentLoaded", initialize);

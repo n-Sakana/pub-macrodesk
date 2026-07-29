@@ -289,7 +289,7 @@ if (-not $fullDifatFixturePath.StartsWith(
     throw 'Synthetic DIFAT fixture path is outside testdata.'
 }
 
-$difatSeed = [MacroDesk.Ole2File]::Parse((New-DifatFixture))
+$difatSeed = [MacroStudio.Ole2File]::Parse((New-DifatFixture))
 $difatSeedPayload = $difatSeed.FindChild(
     $difatSeed.RootEntry,
     'Payload',
@@ -300,11 +300,11 @@ $largePayload[$largePayload.Length - 1] = 0xA5
 $difatChanges = New-Object `
     'System.Collections.Generic.Dictionary[int,byte[]]'
 $difatChanges.Add($difatSeedPayload.Id, $largePayload)
-$difatFixture = [MacroDesk.Ole2Writer]::Rebuild(
+$difatFixture = [MacroStudio.Ole2Writer]::Rebuild(
     $difatSeed,
     $difatChanges)
 [IO.File]::WriteAllBytes($fullDifatFixturePath, $difatFixture)
-$difatFile = [MacroDesk.Ole2File]::Parse(
+$difatFile = [MacroStudio.Ole2File]::Parse(
     [IO.File]::ReadAllBytes($fullDifatFixturePath))
 Assert-True ($difatFile.MajorVersion -eq 3) 'DIFAT fixture version mismatch.'
 Assert-True ($difatFile.SectorSize -eq 512) 'DIFAT fixture sector size mismatch.'
@@ -319,7 +319,7 @@ Assert-True ($difatPayload[0] -eq 0x2A) 'DIFAT payload first byte mismatch.'
 Assert-True ($difatPayload[$difatPayload.Length - 1] -eq 0xA5) `
     'DIFAT payload last byte mismatch.'
 
-$version4File = [MacroDesk.Ole2File]::Parse((New-Version4Fixture))
+$version4File = [MacroStudio.Ole2File]::Parse((New-Version4Fixture))
 Assert-True ($version4File.MajorVersion -eq 4) 'Version 4 fixture mismatch.'
 Assert-True ($version4File.SectorSize -eq 4096) `
     'Version 4 sector size mismatch.'
@@ -333,7 +333,7 @@ Assert-True ($version4Payload.Length -eq 4096) `
 Assert-True ($version4Payload[0] -eq 255) `
     'Version 4 payload first byte mismatch.'
 Assert-InvalidData {
-    [MacroDesk.Ole2Writer]::Rebuild($version4File)
+    [MacroStudio.Ole2Writer]::Rebuild($version4File)
 } 'Version 4 reconstruction was accepted.'
 
 if (-not (Test-Path -LiteralPath $BookPath -PathType Leaf)) {
@@ -341,7 +341,7 @@ if (-not (Test-Path -LiteralPath $BookPath -PathType Leaf)) {
 }
 
 $realBytes = Read-VbaProjectBytes (Resolve-Path -LiteralPath $BookPath)
-$realFile = [MacroDesk.Ole2File]::Parse($realBytes)
+$realFile = [MacroStudio.Ole2File]::Parse($realBytes)
 $projectEntry = $realFile.FindChild($realFile.RootEntry, 'PROJECT', 2)
 $vbaStorage = $realFile.FindChild($realFile.RootEntry, 'VBA', 1)
 Assert-True ($null -ne $projectEntry) 'PROJECT stream was not found.'
@@ -369,8 +369,8 @@ foreach ($moduleName in $moduleNames) {
         "Module stream was empty: $moduleName"
 }
 
-$rebuiltBytes = [MacroDesk.Ole2Writer]::Rebuild($realFile)
-$rebuiltFile = [MacroDesk.Ole2File]::Parse($rebuiltBytes)
+$rebuiltBytes = [MacroStudio.Ole2Writer]::Rebuild($realFile)
+$rebuiltFile = [MacroStudio.Ole2File]::Parse($rebuiltBytes)
 Assert-True ($rebuiltFile.MajorVersion -eq 3) `
     'Rebuilt real fixture version mismatch.'
 Assert-True ($rebuiltFile.Entries.Count -eq $realFile.Entries.Count) `
@@ -411,8 +411,8 @@ $miniBoundary[$miniBoundary.Length - 1] = 0x32
 $miniChanges = New-Object `
     'System.Collections.Generic.Dictionary[int,byte[]]'
 $miniChanges.Add($projectEntry.Id, $miniBoundary)
-$miniBoundaryFile = [MacroDesk.Ole2File]::Parse(
-    [MacroDesk.Ole2Writer]::Rebuild($realFile, $miniChanges))
+$miniBoundaryFile = [MacroStudio.Ole2File]::Parse(
+    [MacroStudio.Ole2Writer]::Rebuild($realFile, $miniChanges))
 $miniBoundaryEntry = $miniBoundaryFile.Entries[$projectEntry.Id]
 Assert-Bytes `
     ($miniBoundaryFile.ReadStream($miniBoundaryEntry)) `
@@ -425,8 +425,8 @@ $regularBoundary[$regularBoundary.Length - 1] = 0x42
 $regularChanges = New-Object `
     'System.Collections.Generic.Dictionary[int,byte[]]'
 $regularChanges.Add($projectEntry.Id, $regularBoundary)
-$regularBoundaryFile = [MacroDesk.Ole2File]::Parse(
-    [MacroDesk.Ole2Writer]::Rebuild($realFile, $regularChanges))
+$regularBoundaryFile = [MacroStudio.Ole2File]::Parse(
+    [MacroStudio.Ole2Writer]::Rebuild($realFile, $regularChanges))
 $regularBoundaryEntry = $regularBoundaryFile.Entries[$projectEntry.Id]
 Assert-Bytes `
     ($regularBoundaryFile.ReadStream($regularBoundaryEntry)) `

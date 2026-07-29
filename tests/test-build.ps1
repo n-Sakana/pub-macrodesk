@@ -43,7 +43,7 @@ function Get-EngineSource {
 
 function Get-Module {
     param(
-        [MacroDesk.VbaProjectData]$Project,
+        [MacroStudio.VbaProjectData]$Project,
         [string]$Name
     )
 
@@ -56,8 +56,8 @@ function Get-Module {
 
 function New-ExpandedCode {
     param(
-        [MacroDesk.VbaProjectData]$Project,
-        [MacroDesk.VbaModule]$Module,
+        [MacroStudio.VbaProjectData]$Project,
+        [MacroStudio.VbaModule]$Module,
         [double]$Ratio,
         [string]$Label
     )
@@ -86,8 +86,8 @@ function New-ExpandedCode {
 
 function New-BoundaryCode {
     param(
-        [MacroDesk.VbaProjectData]$Project,
-        [MacroDesk.VbaModule]$Module
+        [MacroStudio.VbaProjectData]$Project,
+        [MacroStudio.VbaModule]$Module
     )
 
     $builder = New-Object Text.StringBuilder
@@ -116,7 +116,7 @@ function New-BoundaryCode {
         }
 
         $code = $builder.ToString()
-        $stream = [MacroDesk.VbaProjectWriter]::CreateModuleStream(
+        $stream = [MacroStudio.VbaProjectWriter]::CreateModuleStream(
             $Project,
             $Module,
             $code)
@@ -129,7 +129,7 @@ function New-BoundaryCode {
 }
 
 function New-MinimalCode {
-    param([MacroDesk.VbaModule]$Module)
+    param([MacroStudio.VbaModule]$Module)
 
     $header = $Module.AttributeHeader
     if ($header.Length -gt 0 -and
@@ -219,14 +219,14 @@ function Invoke-BuildCase {
         [IO.File]::Delete($OutputPath)
     }
 
-    $sourceProject = [MacroDesk.BookIO]::ReadProject($SourcePath)
+    $sourceProject = [MacroStudio.BookIO]::ReadProject($SourcePath)
     $changeDictionary = New-Object `
         'System.Collections.Generic.Dictionary[string,string]'
     foreach ($name in $Changes.Keys) {
         $changeDictionary.Add($name, [string]$Changes[$name])
     }
 
-    $result = [MacroDesk.BookIO]::BuildCopy(
+    $result = [MacroStudio.BookIO]::BuildCopy(
         $SourcePath,
         $OutputPath,
         $changeDictionary)
@@ -253,7 +253,7 @@ function Invoke-BuildCase {
             "$Label result mismatch for $($item.Name)."
     }
 
-    $outputProject = [MacroDesk.BookIO]::ReadProject($OutputPath)
+    $outputProject = [MacroStudio.BookIO]::ReadProject($OutputPath)
     foreach ($sourceModule in $sourceProject.Modules) {
         $outputModule = Get-Module $outputProject $sourceModule.Name
         $expectedCode =
@@ -286,7 +286,7 @@ Add-Type -TypeDefinition (Get-EngineSource) `
     -Language CSharp
 
 $resolvedBookPath = (Resolve-Path -LiteralPath $BookPath).Path
-$sourceProject = [MacroDesk.BookIO]::ReadProject($resolvedBookPath)
+$sourceProject = [MacroStudio.BookIO]::ReadProject($resolvedBookPath)
 $testdataRoot = (Resolve-Path (
     Join-Path $PSScriptRoot '..\testdata')).Path
 $outputRoot = Join-Path $testdataRoot 't2_6_outputs'
@@ -349,15 +349,15 @@ $additionCode = (
 $additionChanges = New-Object `
     'System.Collections.Generic.Dictionary[string,string]'
 $additionList = New-Object `
-    'System.Collections.Generic.List[MacroDesk.VbaModuleAddition]'
+    'System.Collections.Generic.List[MacroStudio.VbaModuleAddition]'
 $additionList.Add(
-    (New-Object MacroDesk.VbaModuleAddition(
+    (New-Object MacroStudio.VbaModuleAddition(
         'CommonHelpers',
         $additionCode)))
 $additionPath = Join-Path `
     $fullOutputRoot `
     'new_standard_module.xlsm'
-$additionResult = [MacroDesk.BookIO]::BuildCopy(
+$additionResult = [MacroStudio.BookIO]::BuildCopy(
     $resolvedBookPath,
     $additionPath,
     $additionChanges,
@@ -370,7 +370,7 @@ Assert-True (
     $additionResult.Results[0].Name -ceq 'CommonHelpers' -and
     $additionResult.Results[0].Result -eq 'written') `
     'New module build result mismatch.'
-$additionProject = [MacroDesk.BookIO]::ReadProject($additionPath)
+$additionProject = [MacroStudio.BookIO]::ReadProject($additionPath)
 $additionModule = Get-Module $additionProject 'CommonHelpers'
 Assert-True ($additionModule.Kind.ToString() -eq 'Standard') `
     'Built new module kind mismatch.'
@@ -389,7 +389,7 @@ Assert-OtherZipEntries $resolvedBookPath $additionPath
 # A PROJECT stream that lists a module dir does not know is a metadata
 # inconsistency, not a reason to refuse adding a module: dir itself is
 # intact, and the writer checks the PROJECTMODULES count it depends on.
-$ghostSourceProject = [MacroDesk.BookIO]::ReadProject($resolvedBookPath)
+$ghostSourceProject = [MacroStudio.BookIO]::ReadProject($resolvedBookPath)
 $ghostText = $ghostSourceProject.ProjectText
 $ghostInsert = "Module=GhostModule`r`n"
 $ghostRegex = New-Object Text.RegularExpressions.Regex('(?m)^Module=')
@@ -401,7 +401,7 @@ $ghostBytes = $ghostSourceProject.Encoding.GetBytes($ghostText)
 $ghostChanges = New-Object `
     'System.Collections.Generic.Dictionary[int,byte[]]'
 $ghostChanges.Add($ghostSourceProject.ProjectEntry.Id, $ghostBytes)
-$ghostVbaBytes = [MacroDesk.Ole2Writer]::Rebuild(
+$ghostVbaBytes = [MacroStudio.Ole2Writer]::Rebuild(
     $ghostSourceProject.Ole2,
     $ghostChanges)
 $ghostPath = Join-Path $fullOutputRoot 'project_dir_mismatch.xlsm'
@@ -424,7 +424,7 @@ try {
     $ghostZip.Dispose()
 }
 
-$ghostProject = [MacroDesk.BookIO]::ReadProject($ghostPath)
+$ghostProject = [MacroStudio.BookIO]::ReadProject($ghostPath)
 Assert-True $ghostProject.HasReadWarnings `
     'A PROJECT/dir mismatch did not produce a read warning.'
 Assert-True ($ghostProject.Modules.Count -eq 6) `
@@ -435,13 +435,13 @@ Assert-True ($ghostProject.ProjectModulesOffset -ge 0) `
 $ghostAddChanges = New-Object `
     'System.Collections.Generic.Dictionary[string,string]'
 $ghostAddList = New-Object `
-    'System.Collections.Generic.List[MacroDesk.VbaModuleAddition]'
+    'System.Collections.Generic.List[MacroStudio.VbaModuleAddition]'
 $ghostAddList.Add(
-    (New-Object MacroDesk.VbaModuleAddition(
+    (New-Object MacroStudio.VbaModuleAddition(
         'MismatchHelpers',
         $additionCode)))
 $ghostOutput = Join-Path $fullOutputRoot 'project_dir_mismatch_built.xlsm'
-$ghostResult = [MacroDesk.BookIO]::BuildCopy(
+$ghostResult = [MacroStudio.BookIO]::BuildCopy(
     $ghostPath,
     $ghostOutput,
     $ghostAddChanges,
@@ -449,7 +449,7 @@ $ghostResult = [MacroDesk.BookIO]::BuildCopy(
 Assert-True $ghostResult.Success `
     ("Adding a module to a mismatched project failed: " +
         $ghostResult.Message)
-$ghostBuilt = [MacroDesk.BookIO]::ReadProject($ghostOutput)
+$ghostBuilt = [MacroStudio.BookIO]::ReadProject($ghostOutput)
 Assert-True ($ghostBuilt.Modules.Count -eq 7) `
     'The added module is missing after a mismatched-project build.'
 Assert-True (
@@ -523,7 +523,7 @@ $reduction = Invoke-BuildCase `
 [void]$cases.Add($reduction)
 
 $boundaryCode = New-BoundaryCode $sourceProject $appController
-$boundaryStream = [MacroDesk.VbaProjectWriter]::CreateModuleStream(
+$boundaryStream = [MacroStudio.VbaProjectWriter]::CreateModuleStream(
     $sourceProject,
     $appController,
     $boundaryCode)
@@ -578,7 +578,7 @@ $renamedChanges.Add(
     'AppController',
     ([regex]::Replace($appController.FullCode, '(\r\n|\r|\n)+$', '') +
         "`r`n' renamed extension build`r`n"))
-$renamedResult = [MacroDesk.BookIO]::BuildCopy(
+$renamedResult = [MacroStudio.BookIO]::BuildCopy(
     $renamedInput,
     $renamedOutput,
     $renamedChanges)
@@ -609,7 +609,7 @@ try {
 }
 $unsupportedChanges = New-Object `
     'System.Collections.Generic.Dictionary[string,string]'
-$unsupportedResult = [MacroDesk.BookIO]::BuildCopy(
+$unsupportedResult = [MacroStudio.BookIO]::BuildCopy(
     $unsupportedInput,
     $unsupportedOutput,
     $unsupportedChanges)
@@ -631,7 +631,7 @@ $failureChanges.Add('AppController', $invalidCode)
 $failureOutput = Join-Path `
     $fullOutputRoot `
     'all_or_nothing_failure.xlsm'
-$failureResult = [MacroDesk.BookIO]::BuildCopy(
+$failureResult = [MacroStudio.BookIO]::BuildCopy(
     $resolvedBookPath,
     $failureOutput,
     $failureChanges)

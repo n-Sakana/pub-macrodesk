@@ -6,7 +6,7 @@ using System.Threading;
 using System.Windows;
 using Microsoft.Web.WebView2.Core;
 
-namespace MacroDesk
+namespace MacroStudio
 {
     public static class App
     {
@@ -22,7 +22,7 @@ namespace MacroDesk
             {
                 string assemblyName = new AssemblyName(args.Name).Name;
 
-                // macrodesk.ps1 loads the WebView2 assemblies from their bytes,
+                // macrostudio.ps1 loads the WebView2 assemblies from their bytes,
                 // which leaves them outside the default binding context. Hand
                 // back the copy that is already loaded rather than loading a
                 // second one, otherwise the same type would exist twice.
@@ -85,7 +85,7 @@ namespace MacroDesk
             WriteStartupError(fileName, error);
 
             string messagePath = Path.Combine(BaseDir, "assets", "messages", fileName);
-            string message = "MacroDesk could not start.";
+            string message = "MacroStudio could not start.";
             if (File.Exists(messagePath))
             {
                 message = File.ReadAllText(messagePath, Encoding.UTF8).Trim();
@@ -98,7 +98,7 @@ namespace MacroDesk
 
             MessageBox.Show(
                 message,
-                "MacroDesk",
+                "MacroStudio",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }

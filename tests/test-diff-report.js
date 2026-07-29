@@ -30,7 +30,7 @@ var context = vm.createContext(sandbox);
     context);
 });
 
-var report = sandbox.window.MacroDeskDiffReport;
+var report = sandbox.window.MacroStudioDiffReport;
 var before =
   "Option Explicit\r\n" +
   "Public Sub Run()\r\n" +
@@ -100,30 +100,93 @@ assert(
 assert(
   html.indexOf("2026-07-28 12:34:56") >= 0,
   "Diff report timestamp format mismatch.");
+// The report is a record of the whole workbook: an untouched module is
+// there to be read, marked as unchanged.
 assert(
-  (html.match(/class="module-report"/g) || []).length === 2,
-  "Diff report did not include exactly the changed modules.");
+  (html.match(/class="module-report"/g) || []).length === 3,
+  "Diff report must cover every module of the workbook.");
 assert(
-  html.indexOf("UnchangedModule") < 0 &&
-    html.indexOf("UNRELATED_MARKER") < 0,
-  "Diff report included an unchanged module.");
+  html.indexOf("UnchangedModule") >= 0 &&
+    html.indexOf("UNRELATED_MARKER") >= 0,
+  "Diff report must include the modules nobody changed.");
+assert(
+  html.indexOf('<p class="module-kicker">変更なし</p>') >= 0 &&
+    html.indexOf('<p class="module-kicker">変更モジュール</p>') >= 0 &&
+    html.indexOf('<p class="module-kicker">新規モジュール</p>') >= 0,
+  "Every module must say which of the three states it is in.");
+assert(
+  html.indexOf("変更モジュール: 2 / 3") >= 0,
+  "The summary must count the changed modules against the whole book.");
+
+// ---- inline (unified) rows, the same shape as the screen diff ----
+
+assert(
+  html.indexOf('class="diff-row diff-row--changed"') < 0,
+  "The report must not keep the two-column changed row.");
 assert(
   (html.match(
-    /<tr class="diff-row diff-row--changed">/g) || []).length === 1,
-  "Existing-module report does not use the screen diff result.");
+    /<tr class="diff-row diff-row--removed">/g) || []).length === 1,
+  "A changed line must produce exactly one removed row.");
 assert(
   (html.match(
-    /<tr class="diff-row diff-row--added">/g) || []).length === 2,
-  "New-module report must compare against an empty source.");
+    /<tr class="diff-row diff-row--added">/g) || []).length === 3,
+  "A changed line plus a two-line new module must add three rows.");
+assert(
+  html.indexOf('<td class="diff-marker" aria-hidden="true">-</td>') >= 0 &&
+    html.indexOf('<td class="diff-marker" aria-hidden="true">+</td>') >= 0,
+  "The report rows must carry the - and + markers.");
+assert(
+  html.indexOf('class="line-number line-number--old"') >= 0 &&
+    html.indexOf('class="line-number line-number--new"') >= 0 &&
+    html.indexOf("code-cell--left") < 0 &&
+    html.indexOf("code-cell--right") < 0,
+  "The report must use two gutters and one code column.");
+
+// ---- the module tree on the left ----
+
+assert(
+  html.indexOf('class="module-tree"') >= 0 &&
+    html.indexOf('class="tree-group-name">標準モジュール') >= 0,
+  "The report is missing the module tree.");
+assert(
+  (html.match(/class="tree-link" href="#module-/g) || []).length === 3,
+  "The tree must link to every module in the workbook.");
+assert(
+  html.indexOf('id="module-0"') >= 0 &&
+    html.indexOf('id="module-1"') >= 0 &&
+    html.indexOf('id="module-2"') >= 0,
+  "Every module section needs the anchor its tree entry points at.");
+assert(
+  html.indexOf('<a class="tree-link" href="#module-2">' +
+    '<span class="tree-name">CommonHelpers</span>') >= 0,
+  "The tree entry must show the module name.");
+// Three modules, counted in the tree and in their own header, plus the
+// summary line at the top.
+assert(
+  (html.match(/class="count count--add">\+/g) || []).length === 7 &&
+    (html.match(/class="count count--del">−/g) || []).length === 7,
+  "Every module and the summary need an added and a removed count.");
+assert(
+  html.indexOf('class="count count--add">+3</span>') >= 0 &&
+    html.indexOf('class="count count--del">−1</span>') >= 0,
+  "The summary must total the per-module counts.");
+assert(
+  html.indexOf('class="count count--add">+2</span>') >= 0 &&
+    html.indexOf('class="count count--del">−0</span>') >= 0,
+  "A new module must count as two additions and no deletions.");
+
 assert(
   html.indexOf("<link") < 0 &&
     html.indexOf("<script") < 0 &&
     html.indexOf("http://") < 0 &&
     html.indexOf("https://") < 0 &&
     html.indexOf("url(") < 0 &&
-    html.indexOf(" src=") < 0 &&
-    html.indexOf(" href=") < 0,
+    html.indexOf(" src=") < 0,
   "Diff report has an external dependency.");
+assert(
+  (html.match(/ href="/g) || []).length ===
+    (html.match(/ href="#/g) || []).length,
+  "The report may only link to its own anchors.");
 assert(
   html.indexOf("#F4F6F8") >= 0 &&
     html.indexOf("#1F2A37") >= 0 &&

@@ -148,7 +148,7 @@
 
   function assert(condition, message) {
     if (!condition) {
-      throw new Error("MacroDesk diff self-test failed: " + message);
+      throw new Error("MacroStudio diff self-test failed: " + message);
     }
   }
 
@@ -184,7 +184,7 @@
     return true;
   }
 
-  global.MacroDeskDiff = {
+  global.MacroStudioDiff = {
     lookahead: LOOKAHEAD,
     toLines: toLines,
     getGreedyDiff: getGreedyDiff,

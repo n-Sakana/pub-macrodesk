@@ -100,7 +100,7 @@ Add-Type -TypeDefinition $source `
 
 try {
     try {
-        $rawResult = [MacroDesk.Tests.P9WebViewSmoke]::Run(
+        $rawResult = [MacroStudio.Tests.P9WebViewSmoke]::Run(
             $productRoot,
             $cacheDir,
             $bookPath)
@@ -109,8 +109,17 @@ try {
     }
 
     $result = $rawResult | ConvertFrom-Json
-    Assert-True ($result.count -eq $result.stateCount) `
-        'Preset state and rendered button counts differ.'
+    Assert-True ($result.count -eq $result.validCount) `
+        'Only presets that parse may become buttons.'
+    Assert-True (
+        $result.invalidFiles.Count -eq $result.invalidCount) `
+        'Every unusable preset file must be listed with its reason.'
+    for ($i = 0; $i -lt $result.count; $i++) {
+        Assert-True (
+            $result.labels[$i] -ceq $result.names[$i]) `
+            ('Preset name does not come from the H1: ' +
+                $result.labels[$i])
+    }
     Assert-True (-not $result.horizontal) `
         'Preset screen has horizontal document scroll.'
     $rawResult

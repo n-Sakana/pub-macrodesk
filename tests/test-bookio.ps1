@@ -28,7 +28,7 @@ function Assert-ErrorCode {
     $actualCode = ''
     try {
         & $Action
-    } catch [MacroDesk.MacroDeskException] {
+    } catch [MacroStudio.MacroStudioException] {
         $actualCode = $_.Exception.ErrorCode
     }
 
@@ -92,13 +92,13 @@ Add-Type -TypeDefinition (Get-EngineSource) `
     -Language CSharp
 
 $resolvedBookPath = (Resolve-Path -LiteralPath $BookPath).Path
-$content = [MacroDesk.BookIO]::ReadVbaProjectBytes($resolvedBookPath)
+$content = [MacroStudio.BookIO]::ReadVbaProjectBytes($resolvedBookPath)
 Assert-True $content.IsZip 'Workbook was not marked as ZIP.'
 Assert-True ($content.Extension -eq '.xlsm') 'Workbook extension mismatch.'
 Assert-True ($content.VbaProjectBytes.Length -eq 17920) `
     'vbaProject.bin length mismatch.'
 
-$project = [MacroDesk.BookIO]::ReadProject($resolvedBookPath)
+$project = [MacroStudio.BookIO]::ReadProject($resolvedBookPath)
 Assert-True ($project.Modules.Count -eq 6) 'Project module count mismatch.'
 Assert-True ($project.FilePath -eq $resolvedBookPath) `
     'Project file path mismatch.'
@@ -148,19 +148,19 @@ try {
         $nestedPath `
         'custom/location/vbaProject.bin' `
         $content.VbaProjectBytes
-    $nested = [MacroDesk.BookIO]::ReadVbaProjectBytes($nestedPath)
+    $nested = [MacroStudio.BookIO]::ReadVbaProjectBytes($nestedPath)
     Assert-True (
         $nested.VbaProjectBytes.Length -eq
         $content.VbaProjectBytes.Length) `
         'Name-only ZIP lookup returned the wrong data.'
-    $nestedProject = [MacroDesk.BookIO]::ReadProject($nestedPath)
+    $nestedProject = [MacroStudio.BookIO]::ReadProject($nestedPath)
     Assert-True ($nestedProject.Modules.Count -eq 6) `
         '.xlam project extraction failed.'
 
     [byte[]]$dummy = 0x41
     New-ZipWithEntry $emptyPath 'custom/location/dummy.txt' $dummy
     Assert-ErrorCode {
-        [MacroDesk.BookIO]::ReadVbaProjectBytes($emptyPath)
+        [MacroStudio.BookIO]::ReadVbaProjectBytes($emptyPath)
     } 'E-ATTACH-03'
 
     # Unreadable VBA data is a warning, not a blocked attach.
@@ -168,7 +168,7 @@ try {
         $invalidXlsbPath `
         'custom/location/vbaProject.bin' `
         $dummy
-    $invalidXlsb = [MacroDesk.BookIO]::ReadProject($invalidXlsbPath)
+    $invalidXlsb = [MacroStudio.BookIO]::ReadProject($invalidXlsbPath)
     Assert-True $invalidXlsb.HasReadWarnings `
         'Invalid xlsb VBA data did not produce a read warning.'
     Assert-True ($invalidXlsb.Modules.Count -eq 0) `
@@ -179,7 +179,7 @@ try {
         $caseNamePath `
         'xl/VBAPROJECT.BIN' `
         $content.VbaProjectBytes
-    $caseProject = [MacroDesk.BookIO]::ReadProject($caseNamePath)
+    $caseProject = [MacroStudio.BookIO]::ReadProject($caseNamePath)
     Assert-True ($caseProject.Modules.Count -eq $project.Modules.Count) `
         'A case-variant vbaProject.bin name lost modules.'
     Assert-True ($caseProject.VbaEntryName.Length -gt 0) `
@@ -190,7 +190,7 @@ try {
         $unknownExtPath `
         'xl/vbaProject.bin' `
         $content.VbaProjectBytes
-    $unknownExtProject = [MacroDesk.BookIO]::ReadProject($unknownExtPath)
+    $unknownExtProject = [MacroStudio.BookIO]::ReadProject($unknownExtPath)
     Assert-True (
         $unknownExtProject.Modules.Count -eq $project.Modules.Count) `
         'An unfamiliar extension blocked a readable workbook.'
@@ -207,7 +207,7 @@ try {
         }
     }
     [IO.File]::WriteAllBytes($brokenDirectoryPath, $brokenBytes)
-    $brokenProject = [MacroDesk.BookIO]::ReadProject($brokenDirectoryPath)
+    $brokenProject = [MacroStudio.BookIO]::ReadProject($brokenDirectoryPath)
     Assert-True $brokenProject.HasReadWarnings `
         'A broken ZIP directory did not produce a read warning.'
     Assert-True (
@@ -237,7 +237,7 @@ try {
         48,
         4)
     New-ZipWithEntry $blindDirectoryPath 'xl/vbaProject.bin' $blindBytes
-    $blindProject = [MacroDesk.BookIO]::ReadProject($blindDirectoryPath)
+    $blindProject = [MacroStudio.BookIO]::ReadProject($blindDirectoryPath)
     Assert-True $blindProject.HasReadWarnings `
         'An unreadable OLE2 directory did not produce a warning.'
     Assert-True ($blindProject.Modules.Count -eq $project.Modules.Count) `
@@ -254,14 +254,14 @@ try {
 
     # An OLE2 file is its own VBA container.
     [IO.File]::WriteAllBytes($olePath, $content.VbaProjectBytes)
-    $oleProject = [MacroDesk.BookIO]::ReadProject($olePath)
+    $oleProject = [MacroStudio.BookIO]::ReadProject($olePath)
     Assert-True (-not $oleProject.IsZip) `
         'An OLE2 workbook was treated as a ZIP.'
     Assert-True ($oleProject.Modules.Count -eq $project.Modules.Count) `
         'An OLE2 container lost readable modules.'
 
     Assert-ErrorCode {
-        [MacroDesk.BookIO]::ReadVbaProjectBytes($missingPath)
+        [MacroStudio.BookIO]::ReadVbaProjectBytes($missingPath)
     } 'E-ATTACH-02'
 } finally {
     foreach ($path in @(

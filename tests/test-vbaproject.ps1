@@ -127,7 +127,7 @@ Add-Type -TypeDefinition (Get-EngineSource) `
     -ReferencedAssemblies $references `
     -Language CSharp
 
-$project = [MacroDesk.BookIO]::ReadProject(
+$project = [MacroStudio.BookIO]::ReadProject(
     (Resolve-Path -LiteralPath $BookPath))
 Assert-True ($project.CodePage -eq 932) 'Code page mismatch.'
 Assert-True ($project.Modules.Count -eq 6) 'Module count mismatch.'
@@ -169,7 +169,7 @@ for ($index = 0; $index -lt $expected.Count; $index++) {
 }
 
 $codePage = 0
-$dirModules = [MacroDesk.VbaProjectReader]::ReadDirModules(
+$dirModules = [MacroStudio.VbaProjectReader]::ReadDirModules(
     $project.DirDecompressed,
     [ref]$codePage)
 Assert-True ($codePage -eq 932) 'dir code page mismatch.'
@@ -200,7 +200,7 @@ Set-UInt16 $duplicateModulesDir ($falseModulesOffset + 8) 0x0013
 Set-UInt32 $duplicateModulesDir ($falseModulesOffset + 10) 2
 Set-UInt16 $duplicateModulesDir ($falseModulesOffset + 14) 0
 $duplicateModulesCodePage = 0
-$duplicateModules = [MacroDesk.VbaProjectReader]::ReadDirModules(
+$duplicateModules = [MacroStudio.VbaProjectReader]::ReadDirModules(
     $duplicateModulesDir,
     [ref]$duplicateModulesCodePage)
 Assert-True ($duplicateModulesCodePage -eq 932) `
@@ -221,7 +221,7 @@ Set-UInt32 $duplicateCodePageDir ($falseCodePageOffset + 2) 2
 Set-UInt16 $duplicateCodePageDir ($falseCodePageOffset + 6) 0xFFFF
 $duplicateCodePage = 0
 $duplicateCodePageModules =
-    [MacroDesk.VbaProjectReader]::ReadDirModules(
+    [MacroStudio.VbaProjectReader]::ReadDirModules(
         $duplicateCodePageDir,
         [ref]$duplicateCodePage)
 Assert-True ($duplicateCodePage -eq 932) `
@@ -235,7 +235,7 @@ Set-UInt32 $ambiguousCodePageDir ($falseCodePageOffset + 2) 2
 Set-UInt16 $ambiguousCodePageDir ($falseCodePageOffset + 6) 932
 $ambiguousCodePage = 0
 Assert-InvalidData {
-    [MacroDesk.VbaProjectReader]::ReadDirModules(
+    [MacroStudio.VbaProjectReader]::ReadDirModules(
         $ambiguousCodePageDir,
         [ref]$ambiguousCodePage)
 } 'Ambiguous valid PROJECTCODEPAGE candidates were accepted.'
@@ -271,7 +271,7 @@ Assert-True ($unicodeOffsets.Count -eq 2) `
     $newUnicode.Length)
 
 $mutatedCodePage = 0
-$mutatedModules = [MacroDesk.VbaProjectReader]::ReadDirModules(
+$mutatedModules = [MacroStudio.VbaProjectReader]::ReadDirModules(
     $mutatedDir,
     [ref]$mutatedCodePage)
 $renamed = $mutatedModules |
@@ -290,7 +290,7 @@ $headerInput = (
     "End Sub`r`n")
 $attributeHeader = ''
 $visibleCode = ''
-[MacroDesk.VbaProjectReader]::SplitAttributeHeader(
+[MacroStudio.VbaProjectReader]::SplitAttributeHeader(
     $headerInput,
     [ref]$attributeHeader,
     [ref]$visibleCode)
@@ -316,7 +316,7 @@ $writeChanges.Add($writeModule.Name, $newFullCode)
 
 $originalStreamName = $writeModule.StreamName
 $writeModule.StreamName = 'PhysicalMod01'
-$streamChanges = [MacroDesk.VbaProjectWriter]::CreateStreamChanges(
+$streamChanges = [MacroStudio.VbaProjectWriter]::CreateStreamChanges(
     $project,
     $writeChanges)
 $writeModule.StreamName = $originalStreamName
@@ -331,23 +331,23 @@ for ($index = 0; $index -lt $writeModule.SourceOffset; $index++) {
         $newStream[$index] -eq $writeModule.StreamData[$index]) `
         "PerformanceCache prefix mismatch at $index."
 }
-$newSourceBytes = [MacroDesk.VbaCompression]::Decompress(
+$newSourceBytes = [MacroStudio.VbaCompression]::Decompress(
     $newStream,
     [int]$writeModule.SourceOffset)
 $expectedSourceBytes = $project.Encoding.GetBytes($newFullCode)
 Assert-Bytes $newSourceBytes $expectedSourceBytes `
     'Rebuilt module source'
-$expectedCompressed = [MacroDesk.VbaCompression]::Compress(
+$expectedCompressed = [MacroStudio.VbaCompression]::Compress(
     $expectedSourceBytes)
 Assert-True (
     $newStream.Length -eq
         $writeModule.SourceOffset + $expectedCompressed.Length) `
     'Rebuilt module stream contains padding.'
 
-$rebuiltProjectBytes = [MacroDesk.VbaProjectWriter]::RebuildProject(
+$rebuiltProjectBytes = [MacroStudio.VbaProjectWriter]::RebuildProject(
     $project,
     $writeChanges)
-$rebuiltProject = [MacroDesk.VbaProjectReader]::Read(
+$rebuiltProject = [MacroStudio.VbaProjectReader]::Read(
     $rebuiltProjectBytes)
 $rebuiltModule = $rebuiltProject.Modules |
     Where-Object { $_.Name -eq $writeModule.Name } |
@@ -361,22 +361,22 @@ Assert-True ($rebuiltModule.FullCode -ceq $newFullCode) `
 
 $additionCode = (
     "Option Explicit`r`n`r`n" +
-    "Public Sub AddedByMacroDesk()`r`n" +
+    "Public Sub AddedByMacroStudio()`r`n" +
     "    Debug.Print `"added`"`r`n" +
     "End Sub`r`n")
 $emptyChanges = New-Object `
     'System.Collections.Generic.Dictionary[string,string]'
 $additions = New-Object `
-    'System.Collections.Generic.List[MacroDesk.VbaModuleAddition]'
+    'System.Collections.Generic.List[MacroStudio.VbaModuleAddition]'
 $additions.Add(
-    (New-Object MacroDesk.VbaModuleAddition(
+    (New-Object MacroStudio.VbaModuleAddition(
         'CommonHelpers',
         $additionCode)))
-$addedBytes = [MacroDesk.VbaProjectWriter]::RebuildProject(
+$addedBytes = [MacroStudio.VbaProjectWriter]::RebuildProject(
     $project,
     $emptyChanges,
     $additions)
-$addedProject = [MacroDesk.VbaProjectReader]::Read($addedBytes)
+$addedProject = [MacroStudio.VbaProjectReader]::Read($addedBytes)
 $addedModule = $addedProject.Modules |
     Where-Object { $_.Name -eq 'CommonHelpers' } |
     Select-Object -First 1
@@ -413,17 +413,17 @@ Assert-True ($null -ne $addedStream) `
     'OLE2 new module stream was not created.'
 
 Assert-InvalidData {
-    [MacroDesk.VbaProjectWriter]::ValidateNewModuleName('1BadName')
+    [MacroStudio.VbaProjectWriter]::ValidateNewModuleName('1BadName')
 } 'Invalid VBA identifier was accepted.'
 
 $duplicateAdditions = New-Object `
-    'System.Collections.Generic.List[MacroDesk.VbaModuleAddition]'
+    'System.Collections.Generic.List[MacroStudio.VbaModuleAddition]'
 $duplicateAdditions.Add(
-    (New-Object MacroDesk.VbaModuleAddition(
+    (New-Object MacroStudio.VbaModuleAddition(
         'AppController',
         $additionCode)))
 Assert-InvalidData {
-    [MacroDesk.VbaProjectWriter]::RebuildProject(
+    [MacroStudio.VbaProjectWriter]::RebuildProject(
         $project,
         $emptyChanges,
         $duplicateAdditions)
@@ -433,7 +433,7 @@ $unknownChanges = New-Object `
     'System.Collections.Generic.Dictionary[string,string]'
 $unknownChanges.Add('NotAModule', "Option Explicit`r`n")
 Assert-InvalidData {
-    [MacroDesk.VbaProjectWriter]::CreateStreamChanges(
+    [MacroStudio.VbaProjectWriter]::CreateStreamChanges(
         $project,
         $unknownChanges)
 } 'Unknown module change was accepted.'

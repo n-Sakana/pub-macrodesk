@@ -16,13 +16,16 @@ var context = vm.createContext({
 });
 windowObject.window = windowObject;
 
-vm.runInContext(
-  fs.readFileSync(
-    path.join(__dirname, "..", "assets", "js", "state.js"),
-    "utf8"),
-  context);
+["screens.js", "state.js"].forEach(function (name) {
+  vm.runInContext(
+    fs.readFileSync(
+      path.join(__dirname, "..", "assets", "js", name),
+      "utf8"),
+    context,
+    { filename: name });
+});
 
-var state = windowObject.MacroDeskState;
+var state = windowObject.MacroStudioState;
 
 state.setBook(
   {
@@ -42,7 +45,7 @@ state.setBook(
     }
   ]);
 
-assert(state.navigate(3), "Could not enter Step 3.");
+assert(state.goTo(6, false), "Could not open the intake screen.");
 assert(
   state.acceptModuleCode(
     "Module1",
@@ -68,7 +71,7 @@ assert(
 assert(
   state.getState().lastError === null,
   "New confirmation did not clear the prior error.");
-assert(state.navigate(4), "Could not enter Step 4.");
+assert(state.goTo(9, false), "Could not open the output screen.");
 
 state.setBuildResult({
   status: "success",
@@ -90,7 +93,7 @@ assert(
   state.findModule("Module2").written === false,
   "Unreported module was marked written.");
 
-assert(state.navigate(3), "Could not return to Step 3.");
+assert(state.goTo(6, false), "Could not return to the intake screen.");
 assert(
   state.findModule("Module1").pastedCode.indexOf("Debug.Print") >= 0,
   "Step 4 round trip lost pasted code.");

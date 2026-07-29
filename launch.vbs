@@ -17,7 +17,7 @@ Set shell = CreateObject("WScript.Shell")
 Set fileSystem = CreateObject("Scripting.FileSystemObject")
 
 baseDir = fileSystem.GetParentFolderName(WScript.ScriptFullName)
-scriptPath = fileSystem.BuildPath(baseDir, "macrodesk.ps1")
+scriptPath = fileSystem.BuildPath(baseDir, "macrostudio.ps1")
 command = "powershell.exe -NoProfile -ExecutionPolicy Bypass -STA -WindowStyle Hidden -File " _
     & Chr(34) & scriptPath & Chr(34)
 
@@ -27,16 +27,16 @@ shell.CurrentDirectory = baseDir
 ' failure can still be reported instead of disappearing without a trace.
 exitCode = shell.Run(command, 0, True)
 
-' macrodesk.ps1 returns 3 only when it fails before the window opens. Any other
-' code, including a forced shutdown of a running MacroDesk, is left alone.
+' macrostudio.ps1 returns 3 only when it fails before the window opens. Any other
+' code, including a forced shutdown of a running MacroStudio, is left alone.
 If exitCode = 3 Then
     logDir = fileSystem.BuildPath( _
-        shell.ExpandEnvironmentStrings("%LOCALAPPDATA%"), "MacroDesk\logs")
+        shell.ExpandEnvironmentStrings("%LOCALAPPDATA%"), "MacroStudio\logs")
     MsgBox _
-        "MacroDesk could not start." & vbCrLf & vbCrLf & _
+        "MacroStudio could not start." & vbCrLf & vbCrLf & _
         "The reason was written to the newest log file in:" & vbCrLf & _
         logDir & vbCrLf & vbCrLf & _
         "If this folder came from a zip download, follow " & _
         """Mark of the Web"" in README.md.", _
-        vbExclamation, "MacroDesk"
+        vbExclamation, "MacroStudio"
 End If

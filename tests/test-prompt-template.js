@@ -24,7 +24,7 @@ vm.runInContext(
   context,
   { filename: "prompt-template.js" });
 
-var promptApi = windowObject.MacroDeskPrompt;
+var promptApi = windowObject.MacroStudioPrompt;
 var defaultTemplate = fs.readFileSync(
   path.join(root, "templates", "request-template.txt"),
   "utf8");
@@ -35,6 +35,10 @@ var indexLine = new Array(41).join("-");
 var options = {
   template: defaultTemplate,
   requestText: "一行目\n二行目",
+  outputRules: {
+    title: "出力指示",
+    body: "出力の一行目\n出力の二行目"
+  },
   codeFileName: "台帳_コード全文_20260729_120000.txt",
   book: {
     name: "台帳.xlsm",
@@ -149,9 +153,9 @@ var expectedPrompt = [
     "Excel ブック 台帳.xlsm の VBA コード全文です",
   "（2 モジュール、合計 3 行。省略はありません）。",
   "ソースコードが欠落している・省略されていると判断せず、追加の資料を求めず、",
-  "添付ファイルの内容だけを対象に、下の【依頼】に従って改修してください。",
+  "添付ファイルの内容だけを対象に、下の【改修指示】に従って改修してください。",
   "",
-  "【依頼】",
+  "【改修指示】",
   "一行目",
   "二行目",
   "",
@@ -159,32 +163,9 @@ var expectedPrompt = [
   "  - Module1 （標準モジュール, 3 行）",
   "  - ThisWorkbook （ドキュメントモジュール, 0 行）",
   "",
-  "【出力形式の指定】",
-  "回答は、必ず次の形式・順序で出力してください。",
-  "",
-  "1. 最初に「■ 改修サマリー」という見出しを置き、改修したモジュール名と",
-  "   変更内容の要点を箇条書きで書いてください。",
-  "   これは、読んだ人がこのあと取り込み作業をするための指示書を兼ねます。",
-  "",
-  "2. 続けて、改修したモジュールごとに、モジュール名だけの見出し",
-  "   （例: ■ Module1）を置き、その直後にそのモジュールの改修後コードの",
-  "   全文を 1 つのコードブロックで出力してください。",
-  "",
-  "守ってください:",
-  "- 改修に必要な行だけを変更する。それ以外の行は、空白・インデント・コメント・",
-  "  変数宣言の並び・命名を含め、渡したものと一字一句同じにして返す。",
-  "  整形、リファクタリング、コメントの追加や削除、命名の変更はしない。",
-  "- コードは必ずモジュールの先頭から末尾までの全文を出力する。一部だけの",
-  "  出力や「'（以下変更なし）」のような省略はしない。",
-  "- 変更していないモジュールは出力しない。",
-  "- コードブロックの中には VBA コード以外の文章（説明・注釈・見出し）を",
-  "  入れない。",
-  "- モジュール先頭に「Attribute VB_」で始まる行を付けない（渡したコードにも",
-  "  付いていない。コードの途中に Attribute 行がある場合だけ、そのまま残す）。",
-  "- 複数のモジュールに同じ処理を入れる場合は、新しい標準モジュールを 1 つ作って",
-  "  そこに共通の処理を置き、既存モジュールからは呼び出すだけにしてください。",
-  "  新しいモジュールは「■ <新しいモジュール名>（新規）」の見出しで出力してください。",
-  "- モジュール名の変更と、モジュールの削除はしない。"
+  "【出力指示】",
+  "出力の一行目",
+  "出力の二行目"
 ].join(crlf) + crlf;
 
 var actualPrompt = promptApi.buildRequestPrompt(options);
@@ -196,10 +177,38 @@ assert(
     actualPrompt.indexOf("End Sub") < 0,
   "Module source leaked into the request prompt.");
 assert(
-  actualPrompt.indexOf("一字一句") >= 0 &&
-    actualPrompt.indexOf("省略はありません") >= 0 &&
+  actualPrompt.indexOf("省略はありません") >= 0 &&
     actualPrompt.indexOf("欠落") >= 0,
-  "The default prompt must state completeness and minimal-change rules.");
+  "The template frame must state that the attached code is complete.");
+
+// The template frame carries no output rules of its own: they come
+// from the preset file, or the block is absent.
+var promptWithoutRules = promptApi.buildRequestPrompt({
+  template: defaultTemplate,
+  requestText: options.requestText,
+  outputRules: null,
+  codeFileName: options.codeFileName,
+  book: options.book,
+  modules: options.modules
+});
+assert(
+  promptWithoutRules.indexOf("【出力指示】") < 0 &&
+    promptWithoutRules.indexOf("【") ===
+      promptWithoutRules.indexOf("【改修指示】"),
+  "Without output rules the prompt must not keep an empty block.");
+assert(
+  promptWithoutRules.slice(-4) !== crlf + crlf,
+  "An absent output block must not leave trailing blank lines.");
+assert(
+  promptApi.formatOutputRules({
+    title: "出力指示",
+    body: "本文"
+  }) === "【出力指示】" + crlf + "本文",
+  "Output rules must keep their own heading from the preset file.");
+assert(
+  promptApi.formatOutputRules(null) === "" &&
+    promptApi.formatOutputRules({ title: "出力指示", body: "" }) === "",
+  "Missing output rules must render as nothing.");
 assert(
   actualPrompt.replace(/\r\n/g, "").indexOf("\n") < 0 &&
     actualPrompt.replace(/\r\n/g, "").indexOf("\r") < 0,

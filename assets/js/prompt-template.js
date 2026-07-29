@@ -6,6 +6,8 @@
   var INDEX_LINE = new Array(41).join("-");
   var PLACEHOLDER_NAMES = [
     "REQUEST_TEXT",
+    "OUTPUT_RULES",
+    "REQUEST_ID",
     "BOOK_NAME",
     "MODULE_COUNT",
     "TOTAL_LINE_COUNT",
@@ -75,6 +77,32 @@
     return existing +
       new Array(needed + 1).join(CRLF) +
       preset;
+  }
+
+  // The output rules come from the applied preset file, heading and
+  // all. Nothing about their content is defined here.
+  function formatOutputRules(outputRules) {
+    var title;
+    var body;
+
+    if (!outputRules) {
+      return "";
+    }
+    title = outputRules.title === null ||
+      outputRules.title === undefined
+      ? ""
+      : String(outputRules.title);
+    body = outputRules.body === null ||
+      outputRules.body === undefined
+      ? ""
+      : normalizeCrLf(String(outputRules.body));
+    if (body === "") {
+      return "";
+    }
+    if (title === "") {
+      return body;
+    }
+    return "【" + title + "】" + CRLF + body;
   }
 
   function requireString(value, label) {
@@ -274,6 +302,11 @@
     modules = options.modules;
     variables = {
       REQUEST_TEXT: requestText,
+      OUTPUT_RULES: formatOutputRules(options.outputRules),
+      REQUEST_ID: options.requestId === undefined ||
+        options.requestId === null
+        ? ""
+        : String(options.requestId),
       BOOK_NAME: requireString(book.name, "Book name"),
       MODULE_COUNT: String(modules.length),
       TOTAL_LINE_COUNT: String(book.totalLines),
@@ -286,8 +319,9 @@
     return renderTemplate(template, variables);
   }
 
-  global.MacroDeskPrompt = {
+  global.MacroStudioPrompt = {
     appendPreset: appendPreset,
+    formatOutputRules: formatOutputRules,
     buildCodeFile: buildCodeFile,
     buildRequestPrompt: buildRequestPrompt
   };

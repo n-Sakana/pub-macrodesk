@@ -149,7 +149,7 @@ $stageContainer = Join-Path $testdataRoot (
     'p9-smoke-' + [Guid]::NewGuid().ToString('N'))
 $stageRoot = Join-Path $stageContainer 'distribution'
 $smokeBook = Join-Path $testdataRoot 'test_large.xlsm'
-$stagedScript = Join-Path $stageRoot 'macrodesk.ps1'
+$stagedScript = Join-Path $stageRoot 'macrostudio.ps1'
 $launchPath = Join-Path $stageRoot 'launch.vbs'
 $stagedProcessId = 0
 $launcher = $null
@@ -219,7 +219,7 @@ try {
     foreach ($requiredText in @(
         'launch.vbs',
         'WebView2',
-        '%LOCALAPPDATA%\MacroDesk\logs\',
+        '%LOCALAPPDATA%\MacroStudio\logs\',
         'templates\request-template.txt',
         '.xlsm',
         '.xlam',
@@ -260,8 +260,8 @@ try {
             Join-Path $stageRoot 'presets') -Filter '*.md' -File
     ).Count
     Assert-True (
-        $initialPresets.count -eq $diskPresetCount) `
-        'Initial preset button count does not match staged files.'
+        $initialPresets.stateCount -eq $diskPresetCount) `
+        'Initial preset count does not match staged files.'
 
     $launchText = [IO.File]::ReadAllText(
         $launchPath,
@@ -289,7 +289,7 @@ try {
     $logPath = Join-Path (
         [Environment]::GetFolderPath(
             [Environment+SpecialFolder]::LocalApplicationData)) (
-        'MacroDesk\logs\macrodesk_' +
+        'MacroStudio\logs\macrostudio_' +
         [DateTime]::Now.ToString('yyyyMMdd') +
         '.log')
     $logBefore = Read-SharedText $logPath
@@ -319,7 +319,7 @@ try {
             if (
                 $null -ne $stagedProcess -and
                 $stagedProcess.MainWindowHandle -ne [IntPtr]::Zero -and
-                $stagedProcess.MainWindowTitle -eq 'MacroDesk') {
+                $stagedProcess.MainWindowTitle -like 'MacroStudio*') {
                 break
             }
         }
@@ -328,8 +328,8 @@ try {
     Assert-True (
         $null -ne $stagedProcess -and
         $stagedProcess.MainWindowHandle -ne [IntPtr]::Zero -and
-        $stagedProcess.MainWindowTitle -eq 'MacroDesk') `
-        'Staged launch.vbs did not open the MacroDesk window.'
+        $stagedProcess.MainWindowTitle -like 'MacroStudio*') `
+        'Staged launch.vbs did not open the MacroStudio window.'
 
     $visibleConsoleWindows = @(
         Get-Process -ErrorAction SilentlyContinue |
@@ -343,7 +343,7 @@ try {
                 'WindowsTerminal'
             ) -contains $_.ProcessName -and
             $_.MainWindowHandle -ne [IntPtr]::Zero -and
-            $_.MainWindowTitle -ne 'MacroDesk'
+            -not ($_.MainWindowTitle -like 'MacroStudio*')
         }
     )
     Assert-True ($visibleConsoleWindows.Count -eq 0) `
@@ -405,52 +405,58 @@ try {
         'Option Explicit|Attribute VB_|Debug\.Print') `
         'P9 operational log contains VBA code text.'
 
-    $p5Output = Invoke-WindowsPowerShell `
+    $flowOutput = Invoke-WindowsPowerShell `
         -Executable $windowsPowerShell `
         -Arguments @(
             '-NoProfile',
             '-ExecutionPolicy',
             'Bypass',
             '-File',
-            (Join-Path $PSScriptRoot 'test-p5-webview.ps1'),
+            (Join-Path $PSScriptRoot 'test-flow-webview.ps1'),
             '-ProductRoot',
             $stageRoot,
             '-BookPath',
             $smokeBook
         ) `
-        -Label 'Staged Step 1/2 WebView smoke'
+        -Label 'Staged flow WebView smoke'
     Assert-True (
-        ($p5Output -join "`n") -match
-        'test-p5-webview: PASS') `
-        'Staged Step 1/2 WebView smoke did not report PASS.'
-
-    $p6Output = Invoke-WindowsPowerShell `
-        -Executable $windowsPowerShell `
-        -Arguments @(
-            '-NoProfile',
-            '-ExecutionPolicy',
-            'Bypass',
-            '-File',
-            (Join-Path $PSScriptRoot 'test-p6-webview.ps1'),
-            '-ProductRoot',
-            $stageRoot,
-            '-BookPath',
-            $smokeBook
-        ) `
-        -Label 'Staged Step 3/4 WebView smoke'
-    Assert-True (
-        ($p6Output -join "`n") -match
-        'test-p6-webview: PASS') `
-        'Staged Step 3/4 WebView smoke did not report PASS.'
+        ($flowOutput -join "`n") -match
+        'test-flow-webview: PASS') `
+        'Staged flow WebView smoke did not report PASS.'
 
     $addedPresetName = 'p9-added.md'
     $addedPresetPath = Join-Path (
         Join-Path $stageRoot 'presets') $addedPresetName
+    $addedPresetTitle = 'P9 Added Preset'
+    # The section headings are part of the preset contract, so they are
+    # written by code point to keep this script ASCII.
+    $instructionHeading = '## ' + [string]::Join(
+        '',
+        [char[]](0x6539, 0x4FEE, 0x6307, 0x793A))
+    $outputHeading = '## ' + [string]::Join(
+        '',
+        [char[]](0x51FA, 0x529B, 0x6307, 0x793A))
+    $brokenPresetName = 'p9-broken.md'
+    $brokenPresetPath = Join-Path (
+        Join-Path $stageRoot 'presets') $brokenPresetName
     Assert-True (-not [IO.File]::Exists($addedPresetPath)) `
         "Temporary P9 preset already exists: $addedPresetPath"
+    Assert-True (-not [IO.File]::Exists($brokenPresetPath)) `
+        "Temporary P9 preset already exists: $brokenPresetPath"
     [IO.File]::WriteAllText(
         $addedPresetPath,
-        "P9 preset restart smoke.`r`n",
+        ("# $addedPresetTitle`r`n`r`n" +
+            "<!-- editor note, never sent to the chat -->`r`n`r`n" +
+            "$instructionHeading`r`n`r`n" +
+            "P9 preset restart smoke.`r`n`r`n" +
+            "$outputHeading`r`n`r`n" +
+            "Answer in chat code blocks.`r`n"),
+        (New-Object Text.UTF8Encoding($false)))
+    # A file with no H1 and no sections must stay unusable instead of
+    # falling back to the old plain-body behaviour.
+    [IO.File]::WriteAllText(
+        $brokenPresetPath,
+        "P9 preset without any heading.`r`n",
         (New-Object Text.UTF8Encoding($false)))
 
     $restartedProbeOutput = Invoke-WindowsPowerShell `
@@ -467,18 +473,29 @@ try {
     Assert-True (
         $restartedPresets.count -eq
         ($initialPresets.count + 1)) `
-        'Preset button count did not increase after restart.'
+        'Preset count did not increase after restart.'
     Assert-True (
         @($restartedPresets.files) -contains
         $addedPresetName) `
-        'The added preset button is missing after restart.'
+        'The added preset is missing after restart.'
+    Assert-True (
+        @($restartedPresets.labels) -contains $addedPresetTitle) `
+        'The added preset does not show its H1 name.'
+    Assert-True (
+        @($restartedPresets.invalidFiles) -contains
+        $brokenPresetName) `
+        'The unusable preset is not listed with its reason.'
+    Assert-True (
+        -not (@($restartedPresets.names) -contains
+        'P9 preset without any heading.')) `
+        'An unusable preset must not become selectable.'
 
     Write-Output 'test-p9-distribution: PASS'
     Write-Output (
         'alternate-base=PASS, launch.vbs=no-console, ' +
         'lifecycle-log=PASS')
     Write-Output (
-        'staged step1-4/build/self-loop=PASS, presets=' +
+        'staged flow/build/self-loop=PASS, presets=' +
         $initialPresets.count + '->' +
         $restartedPresets.count)
 } finally {

@@ -14,7 +14,7 @@ function assertEqual(actual, expected, message) {
 }
 
 const windowObject = {
-  MacroDeskState: {
+  MacroStudioState: {
     loadDemoState: function () {}
   }
 };
@@ -33,7 +33,7 @@ vm.runInContext(
     "utf8"),
   sandbox);
 
-const normalize = windowObject.MacroDeskApp.normalizePastedText;
+const normalize = windowObject.MacroStudioApp.normalizePastedText;
 
 assertEqual(
   normalize("  \nOption Explicit\rDim x As Long\r\n\n"),

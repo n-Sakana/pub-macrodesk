@@ -4,19 +4,19 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 
-namespace MacroDesk
+namespace MacroStudio
 {
-    public sealed class MacroDeskException : Exception
+    public sealed class MacroStudioException : Exception
     {
         public string ErrorCode;
 
-        public MacroDeskException(string errorCode, string message)
+        public MacroStudioException(string errorCode, string message)
             : base(message)
         {
             ErrorCode = errorCode;
         }
 
-        public MacroDeskException(
+        public MacroStudioException(
             string errorCode,
             string message,
             Exception innerException)
@@ -157,7 +157,7 @@ namespace MacroDesk
             }
             if (vbaBytes == null)
             {
-                throw new MacroDeskException(
+                throw new MacroStudioException(
                     "E-ATTACH-03",
                     "vbaProject.bin was not found in the workbook.");
             }
@@ -582,7 +582,7 @@ namespace MacroDesk
                 VbaProjectData sourceProject = ReadProject(sourcePath);
                 if (sourceProject.Ole2 == null)
                 {
-                    throw new MacroDeskException(
+                    throw new MacroStudioException(
                         "E-BUILD-01",
                         "The workbook structure could not be parsed " +
                         "for build.");
@@ -648,7 +648,7 @@ namespace MacroDesk
                 result.ErrorCode = "E-BUILD-02";
                 result.Message = ex.Message;
             }
-            catch (MacroDeskException ex)
+            catch (MacroStudioException ex)
             {
                 RemovePendingResults(result.Results);
                 result.ErrorCode = ex.ErrorCode;
@@ -1254,7 +1254,7 @@ namespace MacroDesk
         {
             if (string.IsNullOrEmpty(filePath))
             {
-                throw new MacroDeskException(
+                throw new MacroStudioException(
                     "E-ATTACH-02",
                     "The workbook path is empty.");
             }
@@ -1272,7 +1272,7 @@ namespace MacroDesk
                     throw;
                 }
 
-                throw new MacroDeskException(
+                throw new MacroStudioException(
                     "E-ATTACH-02",
                     "The workbook path is invalid.",
                     ex);
@@ -1292,7 +1292,7 @@ namespace MacroDesk
                 {
                     if (input.Length > int.MaxValue)
                     {
-                        throw new MacroDeskException(
+                        throw new MacroStudioException(
                             "E-ATTACH-02",
                             "The workbook is too large to read.");
                     }
@@ -1305,7 +1305,7 @@ namespace MacroDesk
                     }
                 }
             }
-            catch (MacroDeskException)
+            catch (MacroStudioException)
             {
                 throw;
             }
@@ -1318,7 +1318,7 @@ namespace MacroDesk
                     throw;
                 }
 
-                throw new MacroDeskException(
+                throw new MacroStudioException(
                     "E-ATTACH-02",
                     "The workbook could not be opened.",
                     ex);

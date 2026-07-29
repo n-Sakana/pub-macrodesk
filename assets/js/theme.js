@@ -1,7 +1,7 @@
 (function (global) {
   "use strict";
 
-  var STORAGE_KEY = "macrodesk.theme";
+  var STORAGE_KEY = "macrostudio.theme";
   var button = null;
 
   function getTheme() {
@@ -71,7 +71,7 @@
     });
   }
 
-  global.MacroDeskTheme = {
+  global.MacroStudioTheme = {
     getTheme: getTheme,
     applyTheme: applyTheme
   };

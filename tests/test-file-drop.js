@@ -37,7 +37,7 @@ async function main() {
   let resolveRejection = null;
 
   const windowObject = {
-    MacroDeskState: {
+    MacroStudioState: {
       loadDemoState: function () {},
       getState: function () {
         return { busyAction: null, modules: [] };
@@ -91,7 +91,7 @@ async function main() {
       "utf8"),
     sandbox);
 
-  const app = windowObject.MacroDeskApp;
+  const app = windowObject.MacroStudioApp;
   assert(app.onWindowDragOver, "Drag handlers were not exported.");
 
   // A file drag must be accepted, otherwise no drop event follows.

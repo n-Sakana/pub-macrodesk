@@ -20,7 +20,7 @@ function assertEqual(actual, expected, message) {
 }
 
 var windowObject = {
-  MacroDeskState: {
+  MacroStudioState: {
     loadDemoState: function () {}
   }
 };
@@ -38,7 +38,7 @@ vm.runInContext(
     "utf8"),
   context);
 
-var app = windowObject.MacroDeskApp;
+var app = windowObject.MacroStudioApp;
 var attributes = "Attribute VB_Name = \"Module1\"\r\n";
 var normalized =
   "Option Explicit\r\n" +
@@ -48,8 +48,16 @@ var state = {
     {
       name: "Module1",
       status: "changed",
+      accepted: true,
       attributes: attributes,
       pastedCode: normalized
+    },
+    {
+      name: "ModulePending",
+      status: "changed",
+      accepted: false,
+      attributes: "Attribute VB_Name = \"ModulePending\"\r\n",
+      pastedCode: "Option Explicit\r\n"
     },
     {
       name: "Module2",
@@ -126,7 +134,7 @@ assertEqual(
   "Empty attributes added a leading line.");
 
 var modules = app.createBuildModules(state);
-assert(modules.length === 1, "Only changed modules may be built.");
+assert(modules.length === 1, "Only accepted modules may be built.");
 assertEqual(modules[0].name, "Module1", "Build module name mismatch.");
 assertEqual(
   modules[0].code,
@@ -142,6 +150,7 @@ var newModules = app.createBuildModules({
     {
       name: "CommonHelpers",
       status: "changed",
+      accepted: true,
       attributes: "",
       pastedCode: normalized,
       isNew: true
@@ -180,6 +189,7 @@ try {
       {
         name: "Broken",
         status: "changed",
+        accepted: true,
         pastedCode: null
       }
     ]

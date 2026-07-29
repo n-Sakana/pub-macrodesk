@@ -247,7 +247,7 @@ Get-ChildItem (Join-Path $assetRoot 'css') -Filter '*.css' -File |
     }
 
 $index = [IO.File]::ReadAllText($indexPath)
-Assert-True ($index -match 'macrodesk\.theme') `
+Assert-True ($index -match 'macrostudio\.theme') `
     'The pre-paint theme initialization is missing.'
 Assert-True ($index -match 'id="theme-toggle"') `
     'The theme toggle is missing.'

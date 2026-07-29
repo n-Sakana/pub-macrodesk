@@ -84,10 +84,10 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $testdataRoot = (Resolve-Path (
     Join-Path $PSScriptRoot '..\testdata')).Path
 $resolvedBookPath = (Resolve-Path -LiteralPath $BookPath).Path
-$service = New-Object MacroDesk.HostServices($null, $repoRoot)
+$service = New-Object MacroStudio.HostServices($null, $repoRoot)
 
 $appInfo = $service.GetAppInfo()
-Assert-True ($appInfo['version'] -eq '1.0') `
+Assert-True ($appInfo['version'] -eq 'beta 1.0.0') `
     'Application version mismatch.'
 $expectedBuildFileLabel = [IO.File]::ReadAllText(
     (Join-Path $repoRoot 'assets\messages\build-file-label.txt'),
@@ -202,7 +202,7 @@ Assert-InsideDirectory $missingAttachPath $testdataRoot
 $lockErrorCode = ''
 try {
     $service.AttachBook($missingAttachPath)
-} catch [MacroDesk.MacroDeskException] {
+} catch [MacroStudio.MacroStudioException] {
     $lockErrorCode = $_.Exception.ErrorCode
 }
 Assert-True ($lockErrorCode -eq 'E-ATTACH-02') `
@@ -238,15 +238,72 @@ $requestTemplatePath = Join-Path $templateRoot 'request-template.txt'
     (New-Object Text.UTF8Encoding($false)))
 
 try {
-    $presetService = New-Object MacroDesk.HostServices($null, $tempBase)
+    $presetService = New-Object MacroStudio.HostServices($null, $tempBase)
     $presetInfo = $presetService.GetAppInfo()
     Assert-True ($presetInfo['presets'].Count -eq 2) `
         'Preset count mismatch.'
     Assert-True ($presetInfo['presets'][0]['file'] -eq 'A.md') `
         'Preset sort order mismatch.'
+    # The host carries the markdown text; the UI parses it. No preset
+    # name is computed here.
+    Assert-True (
+        -not $presetInfo['presets'][0].ContainsKey('name')) `
+        'The host must not name presets.'
+    Assert-True (
+        $presetInfo['presets'][0]['content'] -ceq 'first' -and
+        $presetInfo['presets'][1]['content'] -ceq 'second') `
+        'GetAppInfo must return the markdown of every preset.'
     Assert-True (
         $presetService.ReadPreset('A.md')['content'] -eq 'first') `
         'Preset content mismatch.'
+
+    # Discovery is dynamic: adding, removing and renaming files, or
+    # editing one, changes the list with no code change and no restart.
+    [IO.File]::WriteAllText(
+        (Join-Path $presetRoot 'c.md'),
+        'third',
+        (New-Object Text.UTF8Encoding($true)))
+    [IO.File]::WriteAllText(
+        (Join-Path $presetRoot 'notes.txt'),
+        'not a preset',
+        (New-Object Text.UTF8Encoding($true)))
+    $addedInfo = $presetService.GetAppInfo()
+    Assert-True ($addedInfo['presets'].Count -eq 3) `
+        'An added preset file was not discovered.'
+    Assert-True (
+        @($addedInfo['presets'] |
+            ForEach-Object { $_['file'] }) -contains 'c.md') `
+        'The added preset is missing from the list.'
+    Assert-True (
+        -not (@($addedInfo['presets'] |
+            ForEach-Object { $_['file'] }) -contains 'notes.txt')) `
+        'A non-markdown file must not become a preset.'
+
+    [IO.File]::Move(
+        (Join-Path $presetRoot 'c.md'),
+        (Join-Path $presetRoot 'renamed.md'))
+    [IO.File]::WriteAllText(
+        (Join-Path $presetRoot 'b.md'),
+        'edited',
+        (New-Object Text.UTF8Encoding($true)))
+    $renamedInfo = $presetService.GetAppInfo()
+    $renamedFiles = @($renamedInfo['presets'] |
+        ForEach-Object { $_['file'] })
+    Assert-True (
+        ($renamedFiles -contains 'renamed.md') -and
+        -not ($renamedFiles -contains 'c.md')) `
+        'A renamed preset file was not rediscovered.'
+    Assert-True (
+        @($renamedInfo['presets'] |
+            Where-Object { $_['file'] -eq 'b.md' })[0]['content'] -ceq
+        'edited') `
+        'An edited preset was not read again.'
+
+    [IO.File]::Delete((Join-Path $presetRoot 'renamed.md'))
+    [IO.File]::Delete((Join-Path $presetRoot 'notes.txt'))
+    Assert-True (
+        $presetService.GetAppInfo()['presets'].Count -eq 2) `
+        'A deleted preset file is still listed.'
     Assert-True (
         $presetService.ReadRequestTemplate()['content'] -ceq
         'first template') `
@@ -263,7 +320,7 @@ try {
     $presetErrorCode = ''
     try {
         $presetService.ReadPreset('..\outside.md')
-    } catch [MacroDesk.HostActionException] {
+    } catch [MacroStudio.HostActionException] {
         $presetErrorCode = $_.Exception.ErrorCode
     }
     Assert-True ($presetErrorCode -eq 'E-SYS-02') `
@@ -278,7 +335,7 @@ try {
     $presetEncodingUserMessage = ''
     try {
         $presetService.ReadPreset('invalid-encoding.md')
-    } catch [MacroDesk.HostActionException] {
+    } catch [MacroStudio.HostActionException] {
         $presetEncodingErrorCode = $_.Exception.ErrorCode
         $presetEncodingMessage = $_.Exception.Message
         $presetEncodingUserMessage =
@@ -295,11 +352,23 @@ try {
         $presetEncodingUserMessage -eq $expectedEncodingMessage) `
         'Preset encoding user message mismatch.'
 
+    # A file the host cannot decode stays visible in the list, marked
+    # as unreadable, so the mistake is not silently hidden.
+    $encodingEntry = @($presetService.GetAppInfo()['presets'] |
+        Where-Object { $_['file'] -eq 'invalid-encoding.md' })
+    Assert-True ($encodingEntry.Count -eq 1) `
+        'An unreadable preset disappeared from the list.'
+    Assert-True (
+        $encodingEntry[0]['error'] -eq 'read' -and
+        $encodingEntry[0]['content'] -eq '') `
+        'An unreadable preset must be reported with an error flag.'
+    [IO.File]::Delete($invalidPresetPath)
+
     [IO.File]::Delete($requestTemplatePath)
     $missingTemplateErrorCode = ''
     try {
         $presetService.ReadRequestTemplate()
-    } catch [MacroDesk.HostActionException] {
+    } catch [MacroStudio.HostActionException] {
         $missingTemplateErrorCode = $_.Exception.ErrorCode
     }
     Assert-True ($missingTemplateErrorCode -eq 'E-GEN-02') `
@@ -311,7 +380,7 @@ try {
     $templateEncodingErrorCode = ''
     try {
         $presetService.ReadRequestTemplate()
-    } catch [MacroDesk.HostActionException] {
+    } catch [MacroStudio.HostActionException] {
         $templateEncodingErrorCode = $_.Exception.ErrorCode
     }
     Assert-True ($templateEncodingErrorCode -eq 'E-GEN-02') `
@@ -343,11 +412,19 @@ try {
     Assert-True (
         $build['results'][0]['result'] -eq 'skipped_no_change') `
         'Host identity build result mismatch.'
+    $runFolder = [IO.Path]::GetDirectoryName($successOutput)
     Assert-True (
-        [IO.Path]::GetFileNameWithoutExtension($successOutput).EndsWith(
-            $buildTimestamp,
-            [StringComparison]::Ordinal)) `
-        'Host build did not use the requested output timestamp.'
+        [IO.Path]::GetFileName($runFolder) -ceq
+        ('test_large_' + $buildTimestamp)) `
+        'Host build did not use the run folder for this timestamp.'
+    Assert-True (
+        [IO.Path]::GetFileName(
+            [IO.Path]::GetDirectoryName($runFolder)) -ceq 'MacroStudio') `
+        'The run folder must sit under a MacroStudio folder.'
+    Assert-True (
+        [IO.Path]::GetFileName($successOutput) -ceq
+        'test_large_macrostudio.xlsm') `
+        'Host build output name mismatch.'
 } finally {
     if (-not [string]::IsNullOrEmpty($successOutput)) {
         Assert-InsideDirectory $successOutput $testdataRoot
@@ -365,7 +442,7 @@ $diffHtml = (
     '<meta charset="utf-8"><style>body{color:#fff}</style>' +
     '</head><body><h1>diff</h1></body></html>')
 $noAdditions = New-Object `
-    'System.Collections.Generic.List[MacroDesk.VbaModuleAddition]'
+    'System.Collections.Generic.List[MacroStudio.VbaModuleAddition]'
 $diffBuildOutput = ''
 $diffPath = ''
 try {
@@ -385,14 +462,12 @@ try {
     Assert-True ([IO.File]::Exists($diffPath)) `
         'Diff report was not created.'
     Assert-True (
-        [IO.Path]::GetFileName($diffPath) -ceq
-        (
-            'test_large_' +
-            $diffLabel +
-            '_' +
-            $diffTimestamp +
-            '.html')) `
+        [IO.Path]::GetFileName($diffPath) -ceq 'diff-report.html') `
         'Diff report file name mismatch.'
+    Assert-True (
+        [IO.Path]::GetDirectoryName($diffPath) -ceq
+        [IO.Path]::GetDirectoryName($diffBuildOutput)) `
+        'The diff report must sit beside the built workbook.'
     $diffBytes = [IO.File]::ReadAllBytes($diffPath)
     Assert-True (
         $diffBytes.Length -ge 3 -and
@@ -424,17 +499,17 @@ $collisionPath = ''
 try {
     $collisionTimestamp = [DateTime]::Now.AddSeconds(
         4).ToString('yyyyMMdd_HHmmss')
-    $collisionPath = Join-Path $testdataRoot (
-        'test_large_' +
-        $diffLabel +
-        '_' +
-        $collisionTimestamp +
-        '.html')
+    $collisionFolder = Join-Path $testdataRoot (
+        'MacroStudio\test_large_' + $collisionTimestamp)
+    [IO.Directory]::CreateDirectory($collisionFolder) | Out-Null
+    $collisionPath = Join-Path $collisionFolder 'diff-report.html'
     [IO.File]::WriteAllText(
         $collisionPath,
         'existing report',
         (New-Object Text.UTF8Encoding($false)))
-    $collisionBuild = $service.BuildBook(
+    $collisionService = New-Object MacroStudio.HostServices($null, $repoRoot)
+    [void]$collisionService.AttachBook($resolvedBookPath)
+    $collisionBuild = $collisionService.BuildBook(
         $identityChanges,
         $noAdditions,
         $collisionTimestamp,
@@ -476,7 +551,7 @@ try {
     $service.BuildBook(
         $invalidChanges,
         [DateTime]::Now.ToString('yyyyMMdd_HHmmss'))
-} catch [MacroDesk.HostActionException] {
+} catch [MacroStudio.HostActionException] {
     $buildErrorCode = $_.Exception.ErrorCode
     $buildErrorData = $_.Exception.ErrorData
 }
@@ -490,16 +565,16 @@ Assert-True ($null -ne $buildErrorData['results']) `
 $timestampErrorCode = ''
 try {
     $service.BuildBook($identityChanges, '20260230_010203')
-} catch [MacroDesk.HostActionException] {
+} catch [MacroStudio.HostActionException] {
     $timestampErrorCode = $_.Exception.ErrorCode
 }
 Assert-True ($timestampErrorCode -eq 'E-BUILD-01') `
     "Host build timestamp error mismatch: $timestampErrorCode"
 
-$clipboardService = New-Object MacroDesk.HostServices($null, $repoRoot)
+$clipboardService = New-Object MacroStudio.HostServices($null, $repoRoot)
 $originalClipboard = $clipboardService.ReadClipboard()['text']
 try {
-    $clipboardProbe = "MacroDesk clipboard probe`r`n2 lines`r`n"
+    $clipboardProbe = "MacroStudio clipboard probe`r`n2 lines`r`n"
     [void]$clipboardService.WriteClipboard($clipboardProbe)
     $clipboardRead = $clipboardService.ReadClipboard()['text']
     Assert-True ($clipboardRead -ceq $clipboardProbe) `
@@ -507,7 +582,7 @@ try {
     $clipboardNullCode = ''
     try {
         [void]$clipboardService.WriteClipboard([NullString]::Value)
-    } catch [MacroDesk.HostActionException] {
+    } catch [MacroStudio.HostActionException] {
         $clipboardNullCode = $_.Exception.ErrorCode
     }
     Assert-True ($clipboardNullCode -eq 'E-GEN-03') `
@@ -522,85 +597,131 @@ if ($TestExplorer) {
     Assert-True (Test-Path -LiteralPath $requestBookPath -PathType Leaf) `
         "Request test workbook was not found: $requestBookPath"
 
-    $shell = New-Object -ComObject Shell.Application
-    $beforeWindows = @($shell.Windows())
-    $beforeHandles = @{}
-    foreach ($shellWindow in $beforeWindows) {
-        $beforeHandles[[string]$shellWindow.HWND] = $true
-    }
-
-    $requestService = New-Object MacroDesk.HostServices($null, $repoRoot)
+    $requestService = New-Object MacroStudio.HostServices($null, $repoRoot)
     [void]$requestService.AttachBook($requestBookPath)
-    $requestContent = "first line`r`nsecond line`r`n"
-    $requestPath = ''
+    $requestBody = "request body`r`n"
+    $codeBody = "code body`r`n"
+    $runFolder = ''
     try {
-        $requestResult = $requestService.WriteCodeFile(
-            $requestContent)
-        $requestPath = $requestResult['path']
-        Assert-InsideDirectory $requestPath (
+        $stamp = [DateTime]::Now.ToString('yyyyMMdd_HHmmss')
+        $written = $requestService.WriteRequestFiles(
+            $stamp,
+            $requestBody,
+            $codeBody)
+        $runFolder = $written['folderPath']
+        Assert-InsideDirectory $runFolder (
             Join-Path $testdataRoot 't2_6_outputs')
-        Assert-True ([IO.File]::Exists($requestPath)) `
-            'Code file was not created.'
-        $codeFileLabel = [IO.File]::ReadAllText(
-            (Join-Path $repoRoot 'assets\messages\code-file-label.txt'),
-            [Text.Encoding]::UTF8).Trim()
         Assert-True (
-            [IO.Path]::GetFileName($requestPath) -like
-                ('*_' + $codeFileLabel + '_*.txt')) `
-            'Code file name must use the code-file label.'
-
-        $bytes = [IO.File]::ReadAllBytes($requestPath)
+            [IO.Path]::GetFileName($runFolder) -ceq
+            ([IO.Path]::GetFileNameWithoutExtension($requestBookPath) +
+                '_' + $stamp)) `
+            'The run folder name must be the book name plus the stamp.'
         Assert-True (
-            $bytes.Length -ge 3 -and
-            $bytes[0] -eq 0xEF -and
-            $bytes[1] -eq 0xBB -and
-            $bytes[2] -eq 0xBF) `
-            'Request file does not have a UTF-8 BOM.'
-        $requestText = [IO.File]::ReadAllText(
-            $requestPath,
-            [Text.Encoding]::UTF8)
-        Assert-True ($requestText -ceq $requestContent) `
-            'Request file content mismatch.'
+            [IO.Path]::GetFileName(
+                [IO.Path]::GetDirectoryName($runFolder)) -ceq
+            'MacroStudio') `
+            'The run folder must sit under a MacroStudio folder.'
+        Assert-True (
+            [IO.Path]::GetFileName($written['requestPath']) -ceq
+            'request.md' -and
+            [IO.Path]::GetFileName($written['codePath']) -ceq
+            'source-code.md') `
+            'The request files must be request.md and source-code.md.'
 
-        $selected = $false
-        for ($attempt = 0; $attempt -lt 50; $attempt++) {
-            foreach ($shellWindow in @($shell.Windows())) {
-                try {
-                    foreach ($item in @(
-                        $shellWindow.Document.SelectedItems())) {
-                        if ([string]::Equals(
-                            [IO.Path]::GetFullPath($item.Path),
-                            [IO.Path]::GetFullPath($requestPath),
-                            [StringComparison]::OrdinalIgnoreCase)) {
-                            $selected = $true
-                        }
-                    }
-                } catch {
-                }
-            }
-            if ($selected) {
-                break
-            }
-            Start-Sleep -Milliseconds 100
+        foreach ($pair in @(
+            @($written['requestPath'], $requestBody),
+            @($written['codePath'], $codeBody))) {
+            Assert-True ([IO.File]::Exists($pair[0])) `
+                ('Request file was not created: ' + $pair[0])
+            $bytes = [IO.File]::ReadAllBytes($pair[0])
+            Assert-True (
+                $bytes.Length -ge 3 -and
+                $bytes[0] -eq 0xEF -and
+                $bytes[1] -eq 0xBB -and
+                $bytes[2] -eq 0xBF) `
+                ('Request file has no UTF-8 BOM: ' + $pair[0])
+            Assert-True (
+                [IO.File]::ReadAllText(
+                    $pair[0],
+                    [Text.Encoding]::UTF8) -ceq $pair[1]) `
+                ('Request file content mismatch: ' + $pair[0])
         }
-        Assert-True $selected `
-            'Explorer did not select the request file.'
+
+        # The build of the same run reuses the folder created here.
+        $sameRunChanges = New-Object `
+            'System.Collections.Generic.Dictionary[string,string]' `
+            ([StringComparer]::OrdinalIgnoreCase)
+        $sameRunModules = @($requestService.AttachBook(
+            $requestBookPath)['modules'])
+        $requestService.WriteRequestFiles(
+            $stamp,
+            $requestBody,
+            $codeBody) | Out-Null
+        $sameRunChanges.Add(
+            $sameRunModules[0]['name'],
+            $sameRunModules[0]['attributes'] +
+                $sameRunModules[0]['code'])
+        $noAdds = New-Object `
+            'System.Collections.Generic.List[MacroStudio.VbaModuleAddition]'
+        $sameRunBuild = $requestService.BuildBook(
+            $sameRunChanges,
+            $noAdds,
+            $stamp,
+            '<!doctype html><html><body>d</body></html>',
+            'renamed_output.xlsm')
+        Assert-True (
+            [IO.Path]::GetDirectoryName(
+                $sameRunBuild['outputPath']) -ceq $runFolder) `
+            'The build must stay in the run folder of this request.'
+        Assert-True (
+            [IO.Path]::GetFileName(
+                $sameRunBuild['outputPath']) -ceq
+            'renamed_output.xlsm') `
+            'The build must use the name given by the screen.'
+        Assert-True (
+            [IO.File]::Exists(
+                (Join-Path $runFolder 'diff-report.html'))) `
+            'The diff report must join the same folder.'
+
+        $nameErrorCode = ''
+        try {
+            $requestService.BuildBook(
+                $sameRunChanges,
+                $noAdds,
+                $stamp,
+                '<!doctype html><html><body>d</body></html>',
+                '..\escaped.xlsm')
+        } catch [MacroStudio.HostActionException] {
+            $nameErrorCode = $_.Exception.ErrorCode
+        }
+        Assert-True ($nameErrorCode -eq 'E-BUILD-03') `
+            "An unusable output name must be refused: $nameErrorCode"
+
+        $extensionErrorCode = ''
+        try {
+            $requestService.BuildBook(
+                $sameRunChanges,
+                $noAdds,
+                $stamp,
+                '<!doctype html><html><body>d</body></html>',
+                'wrong_kind.txt')
+        } catch [MacroStudio.HostActionException] {
+            $extensionErrorCode = $_.Exception.ErrorCode
+        }
+        Assert-True ($extensionErrorCode -eq 'E-BUILD-03') `
+            "A different extension must be refused: $extensionErrorCode"
     } finally {
-        if (-not [string]::IsNullOrEmpty($requestPath)) {
-            Assert-InsideDirectory $requestPath (
+        if (-not [string]::IsNullOrEmpty($runFolder)) {
+            Assert-InsideDirectory $runFolder (
                 Join-Path $testdataRoot 't2_6_outputs')
-            if ([IO.File]::Exists($requestPath)) {
-                [IO.File]::Delete($requestPath)
+            if ([IO.Directory]::Exists($runFolder)) {
+                [IO.Directory]::Delete($runFolder, $true)
             }
-        }
-
-        foreach ($shellWindow in @($shell.Windows())) {
-            if (-not $beforeHandles.ContainsKey(
-                [string]$shellWindow.HWND)) {
-                try {
-                    $shellWindow.Quit()
-                } catch {
-                }
+            $macroRoot = [IO.Path]::GetDirectoryName($runFolder)
+            if ([IO.Directory]::Exists($macroRoot) -and
+                @([IO.Directory]::GetFileSystemEntries(
+                    $macroRoot)).Count -eq 0) {
+                [IO.Directory]::Delete($macroRoot)
             }
         }
     }
@@ -612,4 +733,4 @@ Write-Output (
     $appInfo['version'],
     $modules.Count,
     $book['totalLines'],
-    $(if ($TestExplorer) { 'selected' } else { 'not-run' }))
+    $(if ($TestExplorer) { 'run-folder' } else { 'not-run' }))

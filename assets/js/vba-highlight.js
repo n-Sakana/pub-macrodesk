@@ -149,7 +149,7 @@
     });
   }
 
-  global.MacroDeskVbaHighlight = {
+  global.MacroStudioVbaHighlight = {
     tokenizeLine: tokenizeLine,
     appendHighlighted: appendHighlighted
   };

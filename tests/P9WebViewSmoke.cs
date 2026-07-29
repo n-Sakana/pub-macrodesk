@@ -9,7 +9,7 @@ using System.Windows.Threading;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 
-namespace MacroDesk.Tests
+namespace MacroStudio.Tests
 {
     public static class P9WebViewSmoke
     {
@@ -121,7 +121,7 @@ namespace MacroDesk.Tests
                     await webView.EnsureCoreWebView2Async(environment);
                     webView.ZoomFactor = 1.0;
                     webView.CoreWebView2.SetVirtualHostNameToFolderMapping(
-                        "macrodesk.local",
+                        "macrostudio.local",
                         Path.Combine(baseDir, "assets"),
                         CoreWebView2HostResourceAccessKind.Allow);
 
@@ -134,7 +134,7 @@ namespace MacroDesk.Tests
                     webView.CoreWebView2.NavigationCompleted +=
                         OnNavigationCompleted;
                     webView.CoreWebView2.Navigate(
-                        "https://macrodesk.local/index.html");
+                        "https://macrostudio.local/index.html");
                 }
                 catch (Exception ex)
                 {
@@ -158,36 +158,69 @@ namespace MacroDesk.Tests
                 try
                 {
                     await WaitFor(
-                        "MacroDeskState.getState().appInfo !== null");
+                        "MacroStudioState.getState().appInfo !== null");
                     Dictionary<string, object> eventData =
                         new Dictionary<string, object>();
                     eventData.Add("path", bookPath);
                     router.PushEvent("bookDropped", eventData);
                     await WaitFor(
-                        "MacroDeskState.getState().book !== null && " +
-                        "MacroDeskState.getState().busyAction === null");
+                        "MacroStudioState.getState().book !== null && " +
+                        "MacroStudioState.getState().busyAction === null");
+                    // 0 -> 1 -> 2: the purpose screen lists the folder.
                     await Execute(
                         "document.querySelector(" +
-                        "'[data-action=\"step1-next\"]').click();");
+                        "'[data-action=\"go-next\"]').click();");
                     await WaitFor(
-                        "MacroDeskState.getState().currentStep === 2");
+                        "MacroStudioState.getState().screen === 1");
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"go-next\"]').click();");
+                    await WaitFor(
+                        "MacroStudioState.getState().screen === 2");
+                    // The list on the next screen belongs to one mode.
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"select-mode\"]" +
+                        "[data-mode=\"refactor\"]').click();");
+                    await WaitFor(
+                        "MacroStudioState.getState().mode === 'refactor'");
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"go-next\"]').click();");
+                    await WaitFor(
+                        "MacroStudioState.getState().screen === 3");
                     Result = await ReadJson(
-                        "({" +
+                        "(function(){" +
+                        "var presets=MacroStudioState.getState()" +
+                        ".appInfo.presets;" +
+                        "var entries=MacroStudioPreset" +
+                        ".describeAll(presets);" +
+                        "return {" +
                         "count:document.querySelectorAll(" +
-                        "'[data-action=\"load-preset\"]').length," +
-                        "stateCount:MacroDeskState.getState()" +
-                        ".appInfo.presets.length," +
+                        "'[data-action=\"select-purpose\"]').length," +
+                        "stateCount:presets.length," +
+                        "invalidCount:entries.filter(function(item){" +
+                        "return !item.valid;}).length," +
+                        "validCount:entries.filter(function(item){" +
+                        "return item.valid && " +
+                        "item.mode === 'refactor';}).length," +
                         "labels:Array.prototype.map.call(" +
-                        "document.querySelectorAll(" +
-                        "'[data-action=\"load-preset\"]')," +
-                        "function(button){" +
-                        "return button.textContent.trim();})," +
-                        "files:MacroDeskState.getState()" +
-                        ".appInfo.presets.map(function(item){" +
+                        "document.querySelectorAll('.choice-title')," +
+                        "function(node){return node.textContent;})," +
+                        "names:entries.filter(function(item){" +
+                        "return item.valid && " +
+                        "item.mode === 'refactor';}).map(function(item){" +
+                        "return item.name;})," +
+                        "files:presets.map(function(item){" +
                         "return item.file;})," +
+                        "invalidFiles:Array.prototype.map.call(" +
+                        "document.querySelectorAll(" +
+                        "'[data-preset-invalid-file]')," +
+                        "function(item){return item.getAttribute(" +
+                        "'data-preset-invalid-file');})," +
                         "horizontal:document.documentElement" +
                         ".scrollWidth>innerWidth" +
-                        "})");
+                        "};}())");
                     Stop();
                 }
                 catch (Exception ex)

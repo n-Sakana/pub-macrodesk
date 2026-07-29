@@ -70,7 +70,7 @@
   function appendCode(cell, text, markStart, markEnd, markClass) {
     var documentObject = cell.ownerDocument || global.document;
     var value = String(text || "");
-    var tokens = global.MacroDeskVbaHighlight.tokenizeLine(value);
+    var tokens = global.MacroStudioVbaHighlight.tokenizeLine(value);
     var mark;
 
     cell.setAttribute("title", value);
@@ -145,63 +145,130 @@
     };
   }
 
-  function createDiffRow(documentObject, row) {
+  // One compared line becomes one inline row, except a changed line,
+  // which becomes the removed row followed by the added row. This is
+  // the unified layout: two line-number gutters, a marker column and
+  // one code column.
+  function expandRow(row) {
+    var inline;
+
+    if (row.type === "removed") {
+      return [{
+        kind: "removed",
+        marker: "-",
+        oldNumber: row.lineA >= 0 ? String(row.lineA + 1) : "",
+        newNumber: "",
+        text: row.textA,
+        changeBlock: row.changeBlock
+      }];
+    }
+    if (row.type === "added") {
+      return [{
+        kind: "added",
+        marker: "+",
+        oldNumber: "",
+        newNumber: row.lineB >= 0 ? String(row.lineB + 1) : "",
+        text: row.textB,
+        changeBlock: row.changeBlock
+      }];
+    }
+    if (row.type === "changed") {
+      inline = getInlineDifference(row.textA, row.textB);
+      return [
+        {
+          kind: "removed",
+          marker: "-",
+          oldNumber: row.lineA >= 0 ? String(row.lineA + 1) : "",
+          newNumber: "",
+          text: row.textA,
+          markStart: inline.leftStart,
+          markEnd: inline.leftEnd,
+          markClass: "diff-inline-mark--removed",
+          changeBlock: row.changeBlock
+        },
+        {
+          kind: "added",
+          marker: "+",
+          oldNumber: "",
+          newNumber: row.lineB >= 0 ? String(row.lineB + 1) : "",
+          text: row.textB,
+          markStart: inline.rightStart,
+          markEnd: inline.rightEnd,
+          markClass: "diff-inline-mark--added",
+          changeBlock: row.changeBlock
+        }
+      ];
+    }
+    return [{
+      kind: "equal",
+      marker: "",
+      oldNumber: row.lineA >= 0 ? String(row.lineA + 1) : "",
+      newNumber: row.lineB >= 0 ? String(row.lineB + 1) : "",
+      text: row.textA,
+      changeBlock: row.changeBlock
+    }];
+  }
+
+  function expandRows(rows) {
+    var expanded = [];
+
+    (rows || []).forEach(function (row) {
+      expandRow(row).forEach(function (inlineRow) {
+        expanded.push(inlineRow);
+      });
+    });
+    return expanded;
+  }
+
+  function createInlineRow(documentObject, inlineRow) {
     var tableRow = createElement(
       documentObject,
       "tr",
-      "diff-row diff-row--" + row.type);
-    var lineA = createElement(
+      "diff-row diff-row--" + inlineRow.kind);
+    var oldNumber = createElement(
       documentObject,
       "td",
-      "diff-line-number diff-line-number--left",
-      row.lineA >= 0 ? String(row.lineA + 1) : "");
-    var codeA = createElement(
+      "diff-line-number diff-line-number--old",
+      inlineRow.oldNumber);
+    var newNumber = createElement(
       documentObject,
       "td",
-      "diff-code diff-code--left");
-    var separator = createElement(
+      "diff-line-number diff-line-number--new",
+      inlineRow.newNumber);
+    var marker = createElement(
       documentObject,
       "td",
-      "diff-separator");
-    var lineB = createElement(
-      documentObject,
-      "td",
-      "diff-line-number diff-line-number--right",
-      row.lineB >= 0 ? String(row.lineB + 1) : "");
-    var codeB = createElement(
-      documentObject,
-      "td",
-      "diff-code diff-code--right");
-    var inline = row.type === "changed"
-      ? getInlineDifference(row.textA, row.textB)
-      : null;
+      "diff-marker",
+      inlineRow.marker);
+    var code = createElement(documentObject, "td", "diff-code");
 
-    lineA.setAttribute("aria-hidden", "true");
-    lineB.setAttribute("aria-hidden", "true");
-    separator.setAttribute("aria-hidden", "true");
-    if (row.changeBlock !== undefined && row.changeBlock !== null) {
+    oldNumber.setAttribute("aria-hidden", "true");
+    newNumber.setAttribute("aria-hidden", "true");
+    marker.setAttribute("aria-hidden", "true");
+    if (inlineRow.changeBlock !== undefined &&
+        inlineRow.changeBlock !== null) {
       tableRow.setAttribute(
         "data-change-block",
-        String(row.changeBlock));
+        String(inlineRow.changeBlock));
     }
     appendCode(
-      codeA,
-      row.textA,
-      inline ? inline.leftStart : undefined,
-      inline ? inline.leftEnd : undefined,
-      "diff-inline-mark--removed");
-    appendCode(
-      codeB,
-      row.textB,
-      inline ? inline.rightStart : undefined,
-      inline ? inline.rightEnd : undefined,
-      "diff-inline-mark--added");
-    tableRow.appendChild(lineA);
-    tableRow.appendChild(codeA);
-    tableRow.appendChild(separator);
-    tableRow.appendChild(lineB);
-    tableRow.appendChild(codeB);
+      code,
+      inlineRow.text,
+      inlineRow.markStart,
+      inlineRow.markEnd,
+      inlineRow.markClass);
+    tableRow.appendChild(oldNumber);
+    tableRow.appendChild(newNumber);
+    tableRow.appendChild(marker);
+    tableRow.appendChild(code);
     return tableRow;
+  }
+
+  function appendComparedRow(documentObject, container, row) {
+    expandRow(row).forEach(function (inlineRow) {
+      container.appendChild(
+        createInlineRow(documentObject, inlineRow));
+    });
   }
 
   function createGapRow(documentObject, hiddenRows) {
@@ -218,12 +285,11 @@
       var fragment = documentObject.createDocumentFragment();
 
       hiddenRows.forEach(function (hiddenRow) {
-        fragment.appendChild(
-          createDiffRow(documentObject, hiddenRow));
+        appendComparedRow(documentObject, fragment, hiddenRow);
       });
       row.parentNode.replaceChild(fragment, row);
     });
-    cell.colSpan = 5;
+    cell.colSpan = 4;
     cell.appendChild(button);
     row.appendChild(cell);
     return row;
@@ -311,32 +377,48 @@
     });
   }
 
-  function createHeaderCell(documentObject, title, note) {
-    var cell = createElement(documentObject, "th", "diff-column-heading");
-    var label = createElement(documentObject, "span", "", title);
+  function createHeaderCell(
+    documentObject,
+    className,
+    title,
+    note
+  ) {
+    var cell = createElement(
+      documentObject,
+      "th",
+      "diff-column-heading " + className);
 
-    cell.colSpan = 2;
-    cell.scope = "colgroup";
-    cell.appendChild(label);
+    cell.scope = "col";
     cell.appendChild(
-      createElement(documentObject, "span", "code-pane-note", note));
+      createElement(documentObject, "span", "", title));
+    if (note) {
+      cell.appendChild(
+        createElement(documentObject, "span", "code-pane-note", note));
+    }
     return cell;
   }
 
   function createHeader(documentObject) {
     var head = documentObject.createElement("thead");
     var row = documentObject.createElement("tr");
-    var separator = createElement(
-      documentObject,
-      "th",
-      "diff-separator diff-separator--heading");
 
-    separator.setAttribute("aria-hidden", "true");
-    row.appendChild(
-      createHeaderCell(documentObject, "現在のコード", "ORIGINAL"));
-    row.appendChild(separator);
-    row.appendChild(
-      createHeaderCell(documentObject, "貼り付けたコード", "COPILOT"));
+    row.appendChild(createHeaderCell(
+      documentObject,
+      "diff-column-heading--line",
+      "前"));
+    row.appendChild(createHeaderCell(
+      documentObject,
+      "diff-column-heading--line",
+      "後"));
+    row.appendChild(createHeaderCell(
+      documentObject,
+      "diff-column-heading--marker",
+      ""));
+    row.appendChild(createHeaderCell(
+      documentObject,
+      "diff-column-heading--code",
+      "コード",
+      "− 現在のコード / ＋ 貼り付けたコード"));
     head.appendChild(row);
     return head;
   }
@@ -352,15 +434,14 @@
       documentObject,
       "caption",
       "visually-hidden",
-      "現在のコードと貼り付けたコードの行単位比較");
+      "現在のコードと貼り付けたコードのインライン比較");
     var columns = documentObject.createElement("colgroup");
     var body = documentObject.createElement("tbody");
 
     [
       "diff-column--line",
-      "diff-column--code",
-      "diff-column--separator",
       "diff-column--line",
+      "diff-column--marker",
       "diff-column--code"
     ].forEach(function (className) {
       columns.appendChild(
@@ -368,10 +449,11 @@
     });
 
     getVisibleRows(rows, contextOnly).forEach(function (row) {
-      body.appendChild(
-        row.type === "gap"
-          ? createGapRow(documentObject, row.rows)
-          : createDiffRow(documentObject, row));
+      if (row.type === "gap") {
+        body.appendChild(createGapRow(documentObject, row.rows));
+        return;
+      }
+      appendComparedRow(documentObject, body, row);
     });
 
     table.appendChild(caption);
@@ -455,7 +537,7 @@
       "visually-hidden",
       "現在のコード");
     var body = documentObject.createElement("tbody");
-    var lines = global.MacroDeskDiff.toLines(text);
+    var lines = global.MacroStudioDiff.toLines(text);
 
     header.appendChild(
       createElement(documentObject, "span", "", "現在のコード"));
@@ -470,7 +552,7 @@
       var code = createElement(documentObject, "td", "source-code");
 
       lineNumber.setAttribute("aria-hidden", "true");
-      global.MacroDeskVbaHighlight.appendHighlighted(code, line);
+      global.MacroStudioVbaHighlight.appendHighlighted(code, line);
       row.appendChild(lineNumber);
       row.appendChild(code);
       body.appendChild(row);
@@ -484,10 +566,12 @@
     return pane;
   }
 
-  global.MacroDeskDiffView = {
+  global.MacroStudioDiffView = {
     contextLines: CONTEXT_LINES,
     assignChangeBlocks: assignChangeBlocks,
     getVisibleRows: getVisibleRows,
+    expandRow: expandRow,
+    expandRows: expandRows,
     getInlineDifference: getInlineDifference,
     hasWhitespaceOnlyChange: hasWhitespaceOnlyChange,
     renderDiff: renderDiff,

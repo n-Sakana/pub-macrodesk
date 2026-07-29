@@ -5,10 +5,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 
-namespace MacroDesk
+namespace MacroStudio
 {
     public class MainWindow : Window
     {
@@ -20,7 +21,7 @@ namespace MacroDesk
 
         public MainWindow()
         {
-            Title = "MacroDesk";
+            Title = "MacroStudio beta 1.0.0";
             Width = 1200;
             Height = 740;
             MinWidth = 1100;
@@ -63,20 +64,101 @@ namespace MacroDesk
             Closed += OnClosed;
         }
 
+        // The first thing anyone sees. It is small and quiet: the mark,
+        // the name, and one bar that keeps moving until the page is up.
         private Border CreateLoadingOverlay()
         {
             Border overlay = new Border();
-            overlay.Background = new SolidColorBrush(Color.FromRgb(20, 22, 28));
+            overlay.Background = new SolidColorBrush(
+                Color.FromRgb(20, 22, 28));
 
-            TextBlock text = new TextBlock();
-            text.Text = "Loading...";
-            text.HorizontalAlignment = HorizontalAlignment.Center;
-            text.VerticalAlignment = VerticalAlignment.Center;
-            text.Foreground = new SolidColorBrush(Color.FromRgb(148, 156, 176));
-            text.FontSize = 13;
-            overlay.Child = text;
+            StackPanel stack = new StackPanel();
+            stack.HorizontalAlignment = HorizontalAlignment.Center;
+            stack.VerticalAlignment = VerticalAlignment.Center;
 
+            Border mark = new Border();
+            mark.Width = 46;
+            mark.Height = 46;
+            mark.CornerRadius = new CornerRadius(12);
+            mark.HorizontalAlignment = HorizontalAlignment.Center;
+            mark.Background = new SolidColorBrush(
+                Color.FromRgb(30, 41, 59));
+            mark.BorderBrush = new SolidColorBrush(
+                Color.FromRgb(51, 65, 85));
+            mark.BorderThickness = new Thickness(1);
+
+            TextBlock initials = new TextBlock();
+            initials.Text = "MS";
+            initials.FontSize = 15;
+            initials.FontWeight = FontWeights.Bold;
+            initials.HorizontalAlignment = HorizontalAlignment.Center;
+            initials.VerticalAlignment = VerticalAlignment.Center;
+            initials.Foreground = new SolidColorBrush(
+                Color.FromRgb(125, 172, 255));
+            mark.Child = initials;
+            stack.Children.Add(mark);
+
+            TextBlock name = new TextBlock();
+            name.Text = "MacroStudio";
+            name.FontSize = 15;
+            name.FontWeight = FontWeights.SemiBold;
+            name.Margin = new Thickness(0, 16, 0, 0);
+            name.HorizontalAlignment = HorizontalAlignment.Center;
+            name.Foreground = new SolidColorBrush(
+                Color.FromRgb(226, 232, 240));
+            stack.Children.Add(name);
+
+            TextBlock version = new TextBlock();
+            version.Text = "beta 1.0.0";
+            version.FontSize = 11;
+            version.Margin = new Thickness(0, 4, 0, 0);
+            version.HorizontalAlignment = HorizontalAlignment.Center;
+            version.Foreground = new SolidColorBrush(
+                Color.FromRgb(110, 122, 143));
+            stack.Children.Add(version);
+
+            stack.Children.Add(CreateLoadingBar());
+            overlay.Child = stack;
             return overlay;
+        }
+
+        // A short track with a lozenge sliding across it. No percentage
+        // is claimed, because the wait is not measurable.
+        private Border CreateLoadingBar()
+        {
+            Border track = new Border();
+            track.Width = 132;
+            track.Height = 3;
+            track.Margin = new Thickness(0, 22, 0, 0);
+            track.CornerRadius = new CornerRadius(2);
+            track.HorizontalAlignment = HorizontalAlignment.Center;
+            track.Background = new SolidColorBrush(
+                Color.FromRgb(32, 38, 48));
+            track.ClipToBounds = true;
+
+            Border pill = new Border();
+            pill.Width = 44;
+            pill.Height = 3;
+            pill.CornerRadius = new CornerRadius(2);
+            pill.HorizontalAlignment = HorizontalAlignment.Left;
+            pill.Background = new SolidColorBrush(
+                Color.FromRgb(59, 130, 246));
+
+            TranslateTransform slide = new TranslateTransform();
+            pill.RenderTransform = slide;
+            track.Child = pill;
+
+            DoubleAnimation move = new DoubleAnimation();
+            move.From = -44;
+            move.To = 132;
+            move.Duration = new Duration(TimeSpan.FromMilliseconds(1100));
+            move.RepeatBehavior = RepeatBehavior.Forever;
+            move.EasingFunction = new SineEase();
+            slide.BeginAnimation(
+                TranslateTransform.XProperty,
+                move);
+
+            return track;
         }
 
         private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -85,7 +167,7 @@ namespace MacroDesk
             {
                 string userDataFolder = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "MacroDesk",
+                    "MacroStudio",
                     "WebView2Cache");
 
                 CoreWebView2Environment environment =
@@ -95,7 +177,7 @@ namespace MacroDesk
                 webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
                 webView.CoreWebView2.Settings.AreDevToolsEnabled = true;
                 webView.CoreWebView2.SetVirtualHostNameToFolderMapping(
-                    "macrodesk.local",
+                    "macrostudio.local",
                     Path.Combine(App.BaseDir, "assets"),
                     CoreWebView2HostResourceAccessKind.Allow);
 
@@ -107,7 +189,7 @@ namespace MacroDesk
                 webView.CoreWebView2.WebMessageReceived +=
                     messageRouter.OnWebMessageReceived;
                 webView.CoreWebView2.NavigationCompleted += OnFirstNavigationCompleted;
-                webView.CoreWebView2.Navigate("https://macrodesk.local/index.html");
+                webView.CoreWebView2.Navigate("https://macrostudio.local/index.html");
             }
             catch (Exception ex)
             {
@@ -162,7 +244,21 @@ namespace MacroDesk
                 webView.Visibility = Visibility.Visible;
                 if (loadingOverlay != null)
                 {
-                    rootGrid.Children.Remove(loadingOverlay);
+                    Border leaving = loadingOverlay;
+                    DoubleAnimation fade = new DoubleAnimation();
+                    fade.From = 1;
+                    fade.To = 0;
+                    fade.Duration = new Duration(
+                        TimeSpan.FromMilliseconds(220));
+                    fade.Completed += delegate(
+                        object fadeSender,
+                        EventArgs fadeArgs)
+                    {
+                        rootGrid.Children.Remove(leaving);
+                    };
+                    leaving.BeginAnimation(
+                        UIElement.OpacityProperty,
+                        fade);
                     loadingOverlay = null;
                 }
             }));

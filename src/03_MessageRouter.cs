@@ -6,7 +6,7 @@ using System.Web.Script.Serialization;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 
-namespace MacroDesk
+namespace MacroStudio
 {
     public sealed class MessageRouter
     {
@@ -145,9 +145,11 @@ namespace MacroDesk
                         GetString(parameters, "file"));
                 case "readRequestTemplate":
                     return services.ReadRequestTemplate();
-                case "writeCodeFile":
-                    return services.WriteCodeFile(
-                        GetString(parameters, "content"));
+                case "writeRequestFiles":
+                    return services.WriteRequestFiles(
+                        GetString(parameters, "outputTimestamp"),
+                        GetString(parameters, "request"),
+                        GetString(parameters, "code"));
                 case "writeClipboard":
                     return services.WriteClipboard(
                         GetString(parameters, "text"));
@@ -160,7 +162,9 @@ namespace MacroDesk
                         buildModules.Changes,
                         buildModules.Additions,
                         GetString(parameters, "outputTimestamp"),
-                        GetString(parameters, "diffHtml"));
+                        GetString(parameters, "diffHtml"),
+                        GetString(parameters, "outputName"),
+                        GetString(parameters, "resultMarkdown"));
                 case "revealPath":
                     services.RevealPath(
                         GetString(parameters, "path"));
@@ -351,11 +355,11 @@ namespace MacroDesk
             }
             else
             {
-                MacroDeskException macroDeskError =
-                    error as MacroDeskException;
-                if (macroDeskError != null)
+                MacroStudioException macroStudioError =
+                    error as MacroStudioException;
+                if (macroStudioError != null)
                 {
-                    code = macroDeskError.ErrorCode;
+                    code = macroStudioError.ErrorCode;
                 }
             }
 

@@ -35,12 +35,12 @@ function Assert-InsideDirectory {
         "Test path is outside the expected directory: $fullPath"
 }
 
-if (-not ('MacroDesk.Tests.NativeWindow' -as [type])) {
+if (-not ('MacroStudio.Tests.NativeWindow' -as [type])) {
     Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 
-namespace MacroDesk.Tests
+namespace MacroStudio.Tests
 {
     public static class NativeWindow
     {
@@ -84,7 +84,7 @@ try {
     $excel = New-Object -ComObject Excel.Application
     $windowHandle = [IntPtr][int64]$excel.Hwnd
     [uint32]$processId = 0
-    [void][MacroDesk.Tests.NativeWindow]::GetWindowThreadProcessId(
+    [void][MacroStudio.Tests.NativeWindow]::GetWindowThreadProcessId(
         $windowHandle,
         [ref]$processId)
     $ownedProcessId = [int]$processId

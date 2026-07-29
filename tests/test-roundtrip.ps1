@@ -43,8 +43,8 @@ function Get-EngineSource {
 
 function Get-EntryPath {
     param(
-        [MacroDesk.Ole2File]$File,
-        [MacroDesk.Ole2DirectoryEntry]$Entry
+        [MacroStudio.Ole2File]$File,
+        [MacroStudio.Ole2DirectoryEntry]$Entry
     )
 
     if ($Entry.Id -eq 0) {
@@ -65,7 +65,7 @@ function Get-EntryPath {
 }
 
 function Get-LogicalEntries {
-    param([MacroDesk.Ole2File]$File)
+    param([MacroStudio.Ole2File]$File)
 
     $result = @{}
     foreach ($entry in $File.Entries) {
@@ -87,7 +87,7 @@ function Assert-LogicalRoundTrip {
         [bool]$RequireDifat
     )
 
-    $source = [MacroDesk.Ole2File]::Parse($SourceBytes)
+    $source = [MacroStudio.Ole2File]::Parse($SourceBytes)
     if ($RequireDifat) {
         Assert-True ($source.FatSectorIds.Count -gt 109) `
             "$Label does not require a DIFAT continuation."
@@ -95,8 +95,8 @@ function Assert-LogicalRoundTrip {
             "$Label has no input DIFAT continuation."
     }
 
-    $rebuiltBytes = [MacroDesk.Ole2Writer]::Rebuild($source)
-    $rebuilt = [MacroDesk.Ole2File]::Parse($rebuiltBytes)
+    $rebuiltBytes = [MacroStudio.Ole2Writer]::Rebuild($source)
+    $rebuilt = [MacroStudio.Ole2File]::Parse($rebuiltBytes)
     if ($RequireDifat) {
         Assert-True ($rebuilt.FatSectorIds.Count -gt 109) `
             "$Label writer output did not exceed the header DIFAT."
@@ -134,7 +134,7 @@ function Assert-LogicalRoundTrip {
         if ($before.ObjectType -eq 2) {
             $beforeBytes = $source.ReadStream($before)
             $afterBytes = $rebuilt.ReadStream($after)
-            $difference = [MacroDesk.TestByteComparer]::FirstDifference(
+            $difference = [MacroStudio.TestByteComparer]::FirstDifference(
                 $beforeBytes,
                 $afterBytes)
             Assert-True ($difference -eq -1) `
@@ -169,7 +169,7 @@ Add-Type -TypeDefinition (Get-EngineSource) `
 $byteComparerSource = @'
 using System;
 
-namespace MacroDesk
+namespace MacroStudio
 {
     public static class TestByteComparer
     {
@@ -217,7 +217,7 @@ Assert-True ($bookFiles.Count -gt 0) `
 $results = New-Object System.Collections.ArrayList
 $stopwatch = [Diagnostics.Stopwatch]::StartNew()
 foreach ($book in $bookFiles) {
-    $content = [MacroDesk.BookIO]::ReadVbaProjectBytes($book.FullName)
+    $content = [MacroStudio.BookIO]::ReadVbaProjectBytes($book.FullName)
     $result = Assert-LogicalRoundTrip `
         $content.VbaProjectBytes `
         $book.Name `

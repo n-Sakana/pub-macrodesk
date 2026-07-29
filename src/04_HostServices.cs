@@ -7,7 +7,7 @@ using System.Text;
 using System.Windows;
 using Microsoft.Win32;
 
-namespace MacroDesk
+namespace MacroStudio
 {
     public sealed class HostActionException : Exception
     {
@@ -46,6 +46,7 @@ namespace MacroDesk
         private readonly Window owner;
         private readonly string baseDir;
         private string attachedBookPath;
+        private string runFolderPath;
 
         public HostServices(Window owner, string baseDir)
         {
@@ -59,6 +60,7 @@ namespace MacroDesk
             this.owner = owner;
             this.baseDir = Path.GetFullPath(baseDir);
             attachedBookPath = string.Empty;
+            runFolderPath = string.Empty;
         }
 
         public Dictionary<string, object> GetAppInfo()
@@ -77,21 +79,43 @@ namespace MacroDesk
                 int index;
                 for (index = 0; index < files.Length; index++)
                 {
+                    if (!string.Equals(
+                        Path.GetExtension(files[index]),
+                        ".md",
+                        StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
                     Dictionary<string, object> preset =
                         new Dictionary<string, object>();
                     preset.Add(
-                        "name",
-                        Path.GetFileNameWithoutExtension(files[index]));
-                    preset.Add(
                         "file",
                         Path.GetFileName(files[index]));
+
+                    // The preset markdown is parsed in the UI, so the
+                    // preset name and its sections have exactly one
+                    // implementation. The host only carries the text.
+                    try
+                    {
+                        preset.Add(
+                            "content",
+                            File.ReadAllText(
+                                files[index],
+                                new UTF8Encoding(false, true)));
+                    }
+                    catch (Exception)
+                    {
+                        preset.Add("content", string.Empty);
+                        preset.Add("error", "read");
+                    }
                     presets.Add(preset);
                 }
             }
 
             Dictionary<string, object> result =
                 new Dictionary<string, object>();
-            result.Add("version", "1.0");
+            result.Add("version", "beta 1.0.0");
             result.Add("presets", presets);
             result.Add(
                 "buildFileLabel",
@@ -175,6 +199,7 @@ namespace MacroDesk
             result.Add("warning", project.HasReadWarnings);
 
             attachedBookPath = fullPath;
+            runFolderPath = string.Empty;
             return result;
         }
 
@@ -281,39 +306,36 @@ namespace MacroDesk
             return result;
         }
 
-        public Dictionary<string, object> WriteCodeFile(
-            string content)
+        // Every run gets one folder next to the workbook:
+        // <book folder>\MacroStudio\<book base>_<timestamp>        // The request, the code file, the rebuilt workbook and the
+        // diff report all land there.
+        public Dictionary<string, object> WriteRequestFiles(
+            string outputTimestamp,
+            string request,
+            string code)
         {
-            if (content == null)
+            if (request == null || code == null)
             {
                 throw new HostActionException(
                     "E-GEN-01",
-                    "The code file content is missing.");
+                    "The request or code content is missing.");
             }
+            ValidateOutputTimestamp(outputTimestamp);
 
             string sourcePath = RequireAttachedBook("E-GEN-01");
-            string outputPath;
+            string folder;
+            string requestPath;
+            string codePath;
             try
             {
-                outputPath = CreateAdjacentOutputPath(
-                    sourcePath,
-                    "code-file-label.txt",
-                    ".txt",
-                    DateTime.Now.ToString("yyyyMMdd_HHmmss"));
-
-                using (FileStream output = new FileStream(
-                    outputPath,
-                    FileMode.CreateNew,
-                    FileAccess.Write,
-                    FileShare.None))
-                using (StreamWriter writer = new StreamWriter(
-                    output,
-                    new UTF8Encoding(true)))
-                {
-                    writer.Write(content);
-                }
-
-                RevealPath(outputPath);
+                // Preparing a request starts a new run, so it never
+                // reuses the folder of the previous one.
+                runFolderPath = string.Empty;
+                folder = CreateRunFolder(sourcePath, outputTimestamp);
+                requestPath = Path.Combine(folder, "request.md");
+                codePath = Path.Combine(folder, "source-code.md");
+                WriteTextFile(requestPath, request);
+                WriteTextFile(codePath, code);
             }
             catch (HostActionException)
             {
@@ -323,14 +345,17 @@ namespace MacroDesk
             {
                 throw new HostActionException(
                     "E-GEN-01",
-                    "The code file could not be created.",
+                    "The request files could not be created.",
                     null,
                     ex);
             }
 
+            runFolderPath = folder;
             Dictionary<string, object> result =
                 new Dictionary<string, object>();
-            result.Add("path", outputPath);
+            result.Add("folderPath", folder);
+            result.Add("requestPath", requestPath);
+            result.Add("codePath", codePath);
             return result;
         }
 
@@ -391,7 +416,9 @@ namespace MacroDesk
                 newModules,
                 outputTimestamp,
                 null,
-                false);
+                false,
+                null,
+                null);
         }
 
         public Dictionary<string, object> BuildBook(
@@ -405,7 +432,44 @@ namespace MacroDesk
                 newModules,
                 outputTimestamp,
                 diffHtml,
-                true);
+                true,
+                null,
+                null);
+        }
+
+        public Dictionary<string, object> BuildBook(
+            IDictionary<string, string> moduleChanges,
+            IList<VbaModuleAddition> newModules,
+            string outputTimestamp,
+            string diffHtml,
+            string outputName)
+        {
+            return BuildBookCore(
+                moduleChanges,
+                newModules,
+                outputTimestamp,
+                diffHtml,
+                true,
+                outputName,
+                null);
+        }
+
+        public Dictionary<string, object> BuildBook(
+            IDictionary<string, string> moduleChanges,
+            IList<VbaModuleAddition> newModules,
+            string outputTimestamp,
+            string diffHtml,
+            string outputName,
+            string resultMarkdown)
+        {
+            return BuildBookCore(
+                moduleChanges,
+                newModules,
+                outputTimestamp,
+                diffHtml,
+                true,
+                outputName,
+                resultMarkdown);
         }
 
         private Dictionary<string, object> BuildBookCore(
@@ -413,7 +477,9 @@ namespace MacroDesk
             IList<VbaModuleAddition> newModules,
             string outputTimestamp,
             string diffHtml,
-            bool createDiffReport)
+            bool createDiffReport,
+            string outputName,
+            string resultMarkdown)
         {
             if (moduleChanges == null)
             {
@@ -431,13 +497,17 @@ namespace MacroDesk
 
             string sourcePath = RequireAttachedBook("E-BUILD-01");
             string outputPath;
+            string folder;
             try
             {
-                outputPath = CreateAdjacentOutputPath(
-                    sourcePath,
-                    "build-file-label.txt",
-                    Path.GetExtension(sourcePath),
-                    outputTimestamp);
+                folder = CreateRunFolder(sourcePath, outputTimestamp);
+                outputPath = Path.Combine(
+                    folder,
+                    ResolveOutputName(sourcePath, outputName));
+            }
+            catch (HostActionException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -447,6 +517,7 @@ namespace MacroDesk
                     null,
                     ex);
             }
+            runFolderPath = folder;
 
             BookBuildResult build = BookIO.BuildCopy(
                 sourcePath,
@@ -477,16 +548,34 @@ namespace MacroDesk
                 {
                     data.Add(
                         "diffPath",
-                        WriteDiffReport(
-                            sourcePath,
-                            diffHtml,
-                            outputTimestamp));
+                        WriteDiffReport(folder, diffHtml));
                 }
                 catch (Exception ex)
                 {
                     data.Add(
                         "diffError",
                         "The diff report file could not be created.");
+                    WriteDiffReportError(ex);
+                }
+            }
+            // The plain summary of the run. Losing it never fails a
+            // build that already produced a workbook.
+            if (!string.IsNullOrEmpty(resultMarkdown))
+            {
+                try
+                {
+                    data.Add(
+                        "resultPath",
+                        WriteRunFile(
+                            folder,
+                            "result.md",
+                            resultMarkdown));
+                }
+                catch (Exception ex)
+                {
+                    data.Add(
+                        "resultError",
+                        "The result file could not be created.");
                     WriteDiffReportError(ex);
                 }
             }
@@ -503,6 +592,13 @@ namespace MacroDesk
             }
 
             string fullPath = Path.GetFullPath(path);
+            if (Directory.Exists(fullPath))
+            {
+                Process.Start(
+                    "explorer.exe",
+                    "\"" + fullPath + "\"");
+                return;
+            }
             Process.Start(
                 "explorer.exe",
                 "/select,\"" + fullPath + "\"");
@@ -524,11 +620,11 @@ namespace MacroDesk
             string logDir = Path.Combine(
                 Environment.GetFolderPath(
                     Environment.SpecialFolder.LocalApplicationData),
-                "MacroDesk",
+                "MacroStudio",
                 "logs");
             string logPath = Path.Combine(
                 logDir,
-                "macrodesk_" +
+                "macrostudio_" +
                 DateTime.Now.ToString("yyyyMMdd") +
                 ".log");
             string line =
@@ -557,7 +653,7 @@ namespace MacroDesk
         {
             if (string.IsNullOrEmpty(path))
             {
-                throw new MacroDeskException(
+                throw new MacroStudioException(
                     "E-ATTACH-02",
                     "The workbook path is empty.");
             }
@@ -569,7 +665,7 @@ namespace MacroDesk
             }
             catch (Exception ex)
             {
-                throw new MacroDeskException(
+                throw new MacroStudioException(
                     "E-ATTACH-02",
                     "The workbook path is invalid.",
                     ex);
@@ -592,24 +688,82 @@ namespace MacroDesk
             return attachedBookPath;
         }
 
-        private string CreateAdjacentOutputPath(
+        // One folder per run, created next to the workbook and reused
+        // for every artifact of that run.
+        private string CreateRunFolder(
             string sourcePath,
-            string labelFile,
-            string extension,
             string timestamp)
         {
-            string label = LoadAssetText(labelFile);
             string directory = Path.GetDirectoryName(sourcePath);
             string name = Path.GetFileNameWithoutExtension(sourcePath);
-            return Path.Combine(
-                directory,
-                name + "_" + label + "_" + timestamp + extension);
+            string root = Path.Combine(directory, "MacroStudio");
+            string folder = Path.Combine(
+                root,
+                name + "_" + timestamp);
+
+            // The folder is fixed when the request is written, so
+            // every later output of the same run joins it.
+            if (!string.IsNullOrEmpty(runFolderPath) &&
+                Directory.Exists(runFolderPath))
+            {
+                return runFolderPath;
+            }
+            Directory.CreateDirectory(folder);
+            return folder;
+        }
+
+        // The name comes from the screen, so it is checked here: a
+        // file name only, keeping the workbook kind.
+        private string ResolveOutputName(
+            string sourcePath,
+            string outputName)
+        {
+            string extension = Path.GetExtension(sourcePath);
+            string fallback =
+                Path.GetFileNameWithoutExtension(sourcePath) +
+                "_macrostudio" + extension;
+            string candidate = outputName == null
+                ? string.Empty
+                : outputName.Trim();
+
+            if (candidate.Length == 0)
+            {
+                return fallback;
+            }
+            if (candidate.Length > 120 ||
+                candidate.IndexOfAny(
+                    Path.GetInvalidFileNameChars()) >= 0 ||
+                candidate.IndexOf("..", StringComparison.Ordinal) >= 0 ||
+                !string.Equals(
+                    Path.GetExtension(candidate),
+                    extension,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new HostActionException(
+                    "E-BUILD-03",
+                    "The output file name is not usable.");
+            }
+            return candidate;
+        }
+
+        private void WriteTextFile(string path, string content)
+        {
+            using (FileStream output = new FileStream(
+                path,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.None))
+            using (StreamWriter writer = new StreamWriter(
+                output,
+                new UTF8Encoding(true)))
+            {
+                writer.Write(content);
+            }
         }
 
         private string WriteDiffReport(
-            string sourcePath,
-            string content,
-            string outputTimestamp)
+            string folder,
+            string content)
         {
             if (content == null)
             {
@@ -617,11 +771,17 @@ namespace MacroDesk
                     "The diff report content is missing.");
             }
 
-            string outputPath = CreateAdjacentOutputPath(
-                sourcePath,
-                "diff-file-label.txt",
-                ".html",
-                outputTimestamp);
+            return WriteRunFile(folder, "diff-report.html", content);
+        }
+
+        private string WriteRunFile(
+            string folder,
+            string fileName,
+            string content)
+        {
+            string outputPath = Path.Combine(
+                folder,
+                fileName);
             bool created = false;
             try
             {

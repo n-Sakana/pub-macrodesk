@@ -227,19 +227,39 @@
 
   --topbar-h: 48px;
   --screen-header-h: 52px;
+  --actionbar-h: 68px;
+  --progress-track-h: 4px;
+  --brand-w: 188px;
+  --brand-mark-size: 28px;
+  --progress-step-h: 36px;
+  --progress-mark-size: 22px;
   --module-width: 25%;
   --module-min-width: 220px;
-  --lecture-height: 150px;
-  --lecture-collapsed-height: 28px;
+  --module-pane-w: 250px;
+  --nav-button-w: 114px;
   --row-h: 40px;
-  --btn-h: 36px;
+  --btn-h: 40px;
   --btn-h-lg: 40px;
-  --btn-h-sm: 30px;
+  --btn-h-sm: 34px;
+  --toolbar-btn-h: 34px;
+  --card-min-h: 82px;
+  --preset-min-h: 68px;
+  --handoff-number-size: 24px;
+  --intake-step-number-size: 22px;
+  --stat-card-w: 116px;
+  --file-kind-size: 28px;
+  --success-icon-size: 46px;
+  --build-bar-h: 6px;
+  --content-flow-w: 880px;
+  --content-flow-wide-w: 1120px;
+  --context-dot-size: 7px;
+  --editor-min-h: 240px;
   --step-done-bar-h: 44px;
   --diff-toolbar-h: 44px;
   --pane-header-h: 28px;
   --diff-line-h: 20px;
   --line-number-w: 46px;
+  --diff-marker-w: 20px;
   --diff-code-min-w: 420px;
   --diff-toggle-box: 14px;
   --jump-rail-w: 4px;
@@ -263,6 +283,8 @@
   --icon-hero: 54px;
   --spinner-size: 15px;
   --rail-w: 3px;
+  --bead-size: 30px;
+  --bead-line-h: 2px;
   --drop-border-w: 1.5px;
   --content-request-w: 860px;
   --content-empty-w: 620px;
@@ -281,8 +303,13 @@
   --spinner-border-w: 2px;
   --opacity-disabled: .45;
   --opacity-unavailable: .4;
-  --transition-fast: 120ms ease;
-  --transition-normal: 180ms ease;
+  /* One curve for everything that moves: quick to start, settling at
+     the end, so nothing snaps into place. */
+  --ease-out: cubic-bezier(.22, .61, .36, 1);
+  --ease-in-out: cubic-bezier(.4, 0, .2, 1);
+  --transition-fast: 140ms var(--ease-out);
+  --transition-normal: 220ms var(--ease-out);
+  --transition-slow: 320ms var(--ease-in-out);
   --guide-duration: 1.2s;
 
   /* Transitional aliases used by components while they adopt semantic names. */

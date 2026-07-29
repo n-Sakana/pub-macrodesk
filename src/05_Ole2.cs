@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace MacroDesk
+namespace MacroStudio
 {
     public sealed class Ole2DirectoryEntry
     {

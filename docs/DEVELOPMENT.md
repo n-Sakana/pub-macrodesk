@@ -1,4 +1,4 @@
-# MacroDesk 開発ガイド
+# MacroStudio 開発ガイド
 
 仕様は [SPEC.md](SPEC.md) が正本。本書はビルド制約、リポジトリ規約、テストの走らせ方を
 まとめたもの。仕様と本書が食い違ったら SPEC.md を優先する。
@@ -7,7 +7,7 @@
 
 ## 1. 言語・構文の制約（守らないと動かない）
 
-MacroDesk は dotnet SDK を必要としない。ホストの C# は Windows PowerShell 5.1 の
+MacroStudio は dotnet SDK を必要としない。ホストの C# は Windows PowerShell 5.1 の
 `Add-Type` がコンパイルするため、使える構文に上限がある。
 
 | 対象 | 制約 |
@@ -21,35 +21,35 @@ MacroDesk は dotnet SDK を必要としない。ホストの C# は Windows Pow
 
 ## 2. リポジトリ規約
 
-- `src/` は番号付きファイル名（`01_App.cs` …）。`macrodesk.ps1` が名前順に連結し、
+- `src/` は番号付きファイル名（`01_App.cs` …）。`macrostudio.ps1` が名前順に連結し、
   using を先頭へ集約して 1 回の `Add-Type` でコンパイルする。
-- 名前空間は `MacroDesk`。WebView2 仮想ホスト名は `macrodesk.local`。
-- ユーザーデータ: `%LOCALAPPDATA%\MacroDesk\WebView2Cache`、ログ: 同 `\logs`。
+- 名前空間は `MacroStudio`。WebView2 仮想ホスト名は `macrostudio.local`。
+- ユーザーデータ: `%LOCALAPPDATA%\MacroStudio\WebView2Cache`、ログ: 同 `\logs`。
 - `lib/` の WebView2 DLL 4 本は NuGet パッケージ `Microsoft.Web.WebView2`
   （SDK 1.0.3856.49）の再配布 DLL。差し替える場合は 4 本の版を揃えること。
 
 ### ファイル構成
 
 ```
-macrodesk/
+macrostudio/
 ├── launch.vbs               # 本番起動（黒画面なし）
 ├── launch.bat               # 開発起動（コンソールあり）
-├── macrodesk.ps1            # ホスト: src/*.cs を集約 → Add-Type → App.Run
+├── macrostudio.ps1            # ホスト: src/*.cs を集約 → Add-Type → App.Run
 ├── src/                     # C#（ホスト + エンジン）
 │   ├── 01_App.cs            # エントリ。AssemblyResolve、STA スレッド、WebView2 ランタイム確認
 │   ├── 02_MainWindow.cs     # WPF 窓 + WebView2 + 仮想ホスト + D&D 受け
 │   ├── 03_MessageRouter.cs  # JS⇔C# の id 付き request/response IPC
-│   ├── 04_HostServices.cs   # ダイアログ、クリップボード読み書き、explorer /select、コード・差分ファイル出力、template / presets 読み、ログ
+│   ├── 04_HostServices.cs   # ダイアログ、クリップボード、explorer、実行フォルダと成果物の出力、template / presets 読み、ログ
 │   ├── 05_Ole2.cs           # OLE2(CFB) リーダ/ライタ
 │   ├── 06_VbaCompression.cs # MS-OVBA 2.4.1 展開・圧縮
 │   ├── 07_VbaProject.cs     # dir の MODULE レコードを正本とするモジュール一覧・コード取得・コードページ・書き戻し計画
 │   └── 08_BookIO.cs         # xlsm/xlam/xlsb(zip) の入出力、コピー生成、ビルド、検証
 ├── assets/                  # UI 実体
 │   ├── fonts/               # Noto Sans JP / UDEV Gothic の TTF と OFL
-│   ├── css/                 # 2 テーマのトークンとコンポーネント
-│   └── js/                  # UI、diff、ハイライト、テーマ切替
-├── presets/                 # 依頼文のひな形（*.md、1 ファイル = 1 ボタン）
-├── templates/               # 依頼文（チャット貼付用）の編集可能なテンプレート
+│   ├── css/                 # variables / layout / flow / module-list / diff
+│   └── js/                  # screens（画面表）/ state / app / diff-* / preset-document
+├── presets/                 # 依頼の正本（*.md、1 ファイル = 1 ボタン。SPEC §5.2.1）
+├── templates/               # 依頼文（チャット貼付用）の中立な組み立て枠
 ├── lib/                     # WebView2 DLL（4 本）
 ├── docs/                    # SPEC.md / DEVELOPMENT.md（本書）
 └── tests/                   # ヘッドレス検証スクリプト
@@ -61,8 +61,26 @@ macrodesk/
   （子プロセスや別モジュールを作らない）。理由は SPEC §2.3。
 - **エンジン（05〜08）は UI に依存しない**。この分離があるので、`tests/` は
   エンジンだけを Add-Type してヘッドレスに検証できる。
+- **画面フローの正本は `assets/js/screens.js`**。画面の順序・見出し・「次へ」を
+  有効化する条件はこの表だけが持ち、`state.js` は現在地と履歴、`app.js` は描画と
+  操作を担当する。画面を足すときはまず screens.js を直す。画面番号を JS の中へ
+  literal で書かず、`screens.js` が公開する名前（`intakeScreen` など）を使う。
+- **用途は 3 つ（改修 / 診断 / 相談）**。診断と相談は AI へ渡すファイルを作って
+  終わり、取り込みもビルドも通らない（SPEC §4）。分岐は `nextIndex` の 2 か所だけで、
+  ここ以外に用途による条件分岐を増やさない。
 - **ツールは判断を持たない**（SPEC §1.2）。SPEC に列挙のない正規化・解釈・自動判定を
   実装中に追加しないこと。貼り付けテキストの正規化規則は SPEC §8 が全量。
+- **ひな形の解釈は `assets/js/preset-document.js` だけが持つ**（SPEC §5.2.1）。
+  ホスト（C#）は `presets/*.md` の列挙とテキスト読み出しに徹し、H1 も節も解釈しない。
+  改修指示・出力指示の文面を `templates/` や `src/` や `assets/js/` へ複製しないこと
+  （`tests\test-preset-migration.js` が門番として検査する）。
+- **返答パッケージの解釈は `assets/js/response-package.js` だけが持つ**（SPEC §6.5）。
+  区切り行の書式・依頼 ID の検証・拒否理由はここにまとめ、`app.js` は結果を
+  画面へ出すだけにする。ホスト（C#）はクリップボードの文字列を渡すだけで、
+  区切りを解釈しない。
+- **既存モジュールの種類はブックが正本**（SPEC §6.5 / §13.3）。返答の `<種類>` で
+  既存モジュールの型を変えないこと。新規追加は標準モジュールのみで、これを
+  広げる場合は writer・読み直し検証・ひな形の出力指示を同時に直す必要がある。
 
 ## 4. テストデータ（`testdata/`。git 管理外）
 
@@ -92,11 +110,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-roundtrip.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-bookio.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-build.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-hostservices.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-p3-webview.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-p4-webview.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-p5-webview.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-p6-webview.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-p8-webview.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-flow-webview.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-p9-distribution.ps1
 ```
 
@@ -109,12 +123,12 @@ node tests\test-file-drop.js
 node tests\test-diff-view.js
 node tests\test-diff-report.js
 node tests\test-host-bridge.js
-node tests\test-p4-state.js
+node tests\test-flow-state.js
 node tests\test-p6-state.js
 node tests\test-p7-state.js
-node tests\test-p8-lecture.js
 node tests\test-paste-edit.js
 node tests\test-paste-normalize.js
+node tests\test-preset-document.js
 node tests\test-preset-migration.js
 node tests\test-prompt-template.js
 node tests\test-vba-highlight.js
@@ -122,15 +136,18 @@ node tests\test-vba-highlight.js
 
 補助 runner:
 
-- `tests\test-p9-preset.ps1` は `test-p9-distribution.ps1` から呼ばれる helper。
+- `tests\test-flow-webview.ps1` が 12 画面の通し検証（実ブック → 実行フォルダ →
+  ビルド → 差分レポート）を担う。旧 P3〜P8 の個別スモークはこの 1 本へ統合した。
+- `tests\test-p9-preset.ps1` と `tests\test-flow-webview.ps1` は
+  `test-p9-distribution.ps1` からも呼ばれ、配布物のコピーへ同じ検証を回す。
 - `tests\test-excel-macro.ps1` は Excel 実機確認用。`WorkbookPath` と `MacroName` の
   明示指定が必要。
 
 注意:
 
-- `*-webview.ps1` と `test-p9-distribution.ps1` は MacroDesk のウィンドウと Explorer を
-  一時的に表示し、通常の製品ログを `%LOCALAPPDATA%\MacroDesk\logs` に書く。
-  途中で中断した場合は、MacroDesk 以外のプロセスを巻き込まないよう対象 PID を確認すること。
+- `test-flow-webview.ps1` と `test-p9-distribution.ps1` は MacroStudio のウィンドウを
+  一時的に表示し、通常の製品ログを `%LOCALAPPDATA%\MacroStudio\logs` に書く。
+  途中で中断した場合は、MacroStudio 以外のプロセスを巻き込まないよう対象 PID を確認すること。
 - テストは production と同じ `src/*.cs` を Add-Type する。エンジンの検証は
   UI を起動せずに行える。
 

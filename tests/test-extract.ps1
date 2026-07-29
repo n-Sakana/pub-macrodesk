@@ -113,7 +113,7 @@ Add-Type -TypeDefinition (Get-EngineSource) `
     -ReferencedAssemblies $references `
     -Language CSharp
 
-$project = [MacroDesk.BookIO]::ReadProject(
+$project = [MacroStudio.BookIO]::ReadProject(
     (Resolve-Path -LiteralPath $BookPath))
 $expectedNames = @(
     'Sheet1',

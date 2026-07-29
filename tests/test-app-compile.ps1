@@ -49,13 +49,13 @@ Add-Type -TypeDefinition $source `
     -ReferencedAssemblies $references `
     -Language CSharp
 
-if ($null -eq ('MacroDesk.MessageRouter' -as [type])) {
+if ($null -eq ('MacroStudio.MessageRouter' -as [type])) {
     throw 'MessageRouter type was not compiled.'
 }
-if ($null -eq ('MacroDesk.HostServices' -as [type])) {
+if ($null -eq ('MacroStudio.HostServices' -as [type])) {
     throw 'HostServices type was not compiled.'
 }
-if ($null -eq ('MacroDesk.BookIO' -as [type])) {
+if ($null -eq ('MacroStudio.BookIO' -as [type])) {
     throw 'BookIO type was not compiled.'
 }
 

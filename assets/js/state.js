@@ -3,56 +3,35 @@
 
   var listeners = [];
 
-  var transitionTable = {
-    "1-unattached": {
-      1: false,
-      2: false,
-      3: false,
-      4: false
-    },
-    "1-attached": {
-      1: false,
-      2: true,
-      3: true,
-      4: "changed"
-    },
-    "2": {
-      1: true,
-      2: false,
-      3: true,
-      4: "changed"
-    },
-    "3": {
-      1: true,
-      2: true,
-      3: false,
-      4: "changed"
-    },
-    "4": {
-      1: true,
-      2: true,
-      3: true,
-      4: false
-    }
-  };
-
   function createInitialState() {
     return {
-      currentStep: 1,
+      screen: 0,
+      history: [],
       appInfo: null,
       book: null,
       modules: [],
       selectedModuleName: null,
-      newModuleIntake: false,
       pasteEditing: false,
+      mode: null,
+      presetFile: null,
+      presetName: "",
+      questions: [],
+      answers: {},
+      questionIndex: 0,
+      requestBase: "",
+      requestId: null,
+      intakeResult: null,
       requestText: "",
+      outputRules: null,
       requestFilePath: null,
       requestPrompt: null,
-      returnedFromStep3: false,
+      runFolder: null,
+      promptCopied: false,
+      codeFolderOpened: false,
+      outputName: "",
       buildTimestamp: null,
       buildResult: null,
       lastError: null,
-      lectureCollapsed: false,
       busyAction: null
     };
   }
@@ -79,116 +58,28 @@
     return count;
   }
 
-  function getGuideTarget() {
-    var presets;
-    var pendingName = null;
-    var selected = null;
-    var pendingCount = 0;
-    var changedCount = getChangedModuleCount();
+  // Files that fail to parse are listed with their reason but are not
+  // usable presets, so they must not become a guide target.
+  function countUsablePresets() {
+    var presets = state.appInfo && state.appInfo.presets
+      ? state.appInfo.presets
+      : [];
 
-    if (state.busyAction !== null) {
-      return null;
+    if (global.MacroStudioPreset) {
+      return global.MacroStudioPreset.countValid(presets);
     }
+    return presets.length;
+  }
+
+  function getAcceptedModuleCount() {
+    var count = 0;
+
     state.modules.forEach(function (module) {
-      if (module.name === state.selectedModuleName) {
-        selected = module;
-      }
-      if (module.status === "pending") {
-        pendingCount += 1;
-        if (pendingName === null) {
-          pendingName = module.name;
-        }
+      if (module.status === "changed" && module.accepted === true) {
+        count += 1;
       }
     });
-
-    if (state.currentStep === 1) {
-      return state.book
-        ? {
-          id: "step1-next",
-          label: "［次へ（依頼を作る）］"
-        }
-        : {
-          id: "attach",
-          label: "［ファイルを選ぶ］"
-        };
-    }
-    if (state.currentStep === 2) {
-      presets = state.appInfo && state.appInfo.presets
-        ? state.appInfo.presets
-        : [];
-      if (state.requestFilePath) {
-        return {
-          id: "step2-next",
-          label: "［次へ（返答を取り込む）］"
-        };
-      }
-      if (state.requestText.trim().length === 0) {
-        return presets.length > 0
-          ? {
-            id: "presets",
-            label: "ひな形を選ぶ"
-          }
-          : {
-            id: "request-field",
-            label: "依頼内容を入力する"
-          };
-      }
-      return {
-        id: "create-request",
-        label: "［依頼を準備する］"
-      };
-    }
-    if (state.currentStep === 3) {
-      if (state.newModuleIntake) {
-        return {
-          id: "import-new-module",
-          label: "［新規モジュールとして取り込む］"
-        };
-      }
-      if (state.pasteEditing) {
-        return {
-          id: "apply-paste-edit",
-          label: "［修正を反映］"
-        };
-      }
-      if (pendingCount === 0) {
-        return changedCount > 0
-          ? {
-            id: "step3-next",
-            label: "［次へ（ビルドの確認）］"
-          }
-          : null;
-      }
-      if (selected && selected.status === "pending") {
-        return {
-          id: "paste-response",
-          label: "［返答コードを貼り付ける］"
-        };
-      }
-      return {
-        id: "module",
-        moduleName: pendingName,
-        label: "左の一覧で ［" + pendingName + "］ を選ぶ"
-      };
-    }
-    if (state.buildResult &&
-        state.buildResult.status === "success") {
-      return {
-        id: "reveal-build-output",
-        label: "［出力フォルダを開く］"
-      };
-    }
-    if (state.buildResult &&
-        state.buildResult.status === "error") {
-      return {
-        id: "retry-build",
-        label: "［もう一度ビルド］"
-      };
-    }
-    return {
-      id: "build-book",
-      label: "［ビルド］"
-    };
+    return count;
   }
 
   function getLineCount(value) {
@@ -205,80 +96,117 @@
     return lines.length;
   }
 
-  function getTransitionRow() {
-    var key = String(state.currentStep);
-    var source;
-    var target = {};
-    var step;
-
-    if (state.currentStep === 1) {
-      key += state.book ? "-attached" : "-unattached";
-    }
-
-    source = transitionTable[key];
-    for (step = 1; step <= 4; step += 1) {
-      target[step] = source[step] === "changed"
-        ? getChangedModuleCount() > 0
-        : source[step];
-    }
-    return target;
+  // Screen flow. The screen table (screens.js) owns the order and the
+  // readiness rules; the state owns where we are and how we got here.
+  function screenApi() {
+    return global.MacroStudioScreens;
   }
 
-  function canNavigate(targetStep) {
-    var step = Number(targetStep);
-    var row;
+  function canGoNext() {
+    var api = screenApi();
 
-    if (step < 1 || step > 4 || step % 1 !== 0) {
-      return false;
-    }
-
-    row = getTransitionRow();
-    return row[step] === true;
+    return api ? api.canAdvance(state, state.screen) : false;
   }
 
-  function navigate(targetStep) {
-    var step = Number(targetStep);
-    var fromStep = state.currentStep;
+  function canGoBack() {
+    var api = screenApi();
 
-    if (!canNavigate(step)) {
+    return api ? api.canGoBack(state, state.screen) : false;
+  }
+
+  function goTo(index, remember) {
+    var api = screenApi();
+    var count = api ? api.count : 1;
+    var next = Math.max(0, Math.min(count - 1, Number(index) || 0));
+
+    if (next === state.screen) {
       return false;
     }
-
-    state.currentStep = step;
+    if (remember !== false) {
+      state.history.push(state.screen);
+    }
+    state.screen = next;
     state.pasteEditing = false;
-    if (step !== 3) {
-      state.newModuleIntake = false;
-    }
-    if (step === 2 && fromStep === 3) {
-      state.returnedFromStep3 = true;
-    }
     notify();
     return true;
   }
 
+  function goNext() {
+    var api = screenApi();
+
+    if (!api || !canGoNext()) {
+      return false;
+    }
+    return goTo(api.nextIndex(state, state.screen), true);
+  }
+
+  function goBack() {
+    var api = screenApi();
+    var target;
+
+    if (!canGoBack()) {
+      return false;
+    }
+    target = state.history.length > 0
+      ? state.history.pop()
+      : state.screen - 1;
+    if (api && state.screen === api.doneScreen) {
+      state.buildResult = null;
+    }
+    return goTo(target, false);
+  }
+
+  function getDefaultOutputName(book) {
+    var name;
+    var extension;
+
+    if (!book || !book.name) {
+      return "";
+    }
+    extension = book.ext ? String(book.ext) : "";
+    name = String(book.name);
+    if (extension &&
+        name.toLowerCase().slice(-extension.length) ===
+          extension.toLowerCase()) {
+      name = name.slice(0, name.length - extension.length);
+    }
+    return name + "_macrostudio" + extension;
+  }
+
   function setBook(book, modules) {
-    state.currentStep = 1;
+    state.screen = 0;
+    state.history = [];
     state.book = book;
     state.modules = modules || [];
     state.modules.forEach(function (module) {
       module.status = "pending";
       module.changedLineCount = 0;
       module.written = false;
+      module.accepted = false;
       module.pastedCode = null;
       module.showChangesOnly = module.lineCount > 200;
       module.wrapDiff = true;
     });
     state.selectedModuleName = null;
-    state.newModuleIntake = false;
     state.pasteEditing = false;
+    state.mode = null;
+    state.presetFile = null;
+    state.presetName = "";
+    state.questions = [];
+    state.answers = {};
+    state.requestId = null;
+    state.intakeResult = null;
     state.requestText = "";
+    state.outputRules = null;
     state.requestFilePath = null;
     state.requestPrompt = null;
-    state.returnedFromStep3 = false;
+    state.runFolder = null;
+    state.promptCopied = false;
+    state.codeFolderOpened = false;
+    state.outputName = getDefaultOutputName(book);
     state.buildTimestamp = null;
     state.buildResult = null;
     state.lastError = null;
-    state.lectureCollapsed = false;
     notify();
   }
 
@@ -304,7 +232,6 @@
     }
 
     state.selectedModuleName = moduleName;
-    state.newModuleIntake = false;
     state.pasteEditing = false;
     notify();
     return true;
@@ -326,13 +253,14 @@
   function acceptModuleCode(moduleName, code, changedLineCount) {
     var module = findModule(moduleName);
 
-    if (!module || module.status === "excluded") {
+    if (!module) {
       return null;
     }
 
     module.pastedCode = code;
     module.changedLineCount = changedLineCount || 0;
     module.status = code === module.code ? "unchanged" : "changed";
+    module.accepted = module.status === "changed";
     if (module.status === "unchanged") {
       module.changedLineCount = 0;
     }
@@ -352,8 +280,7 @@
   function beginPasteEdit() {
     var module = findModule(state.selectedModuleName);
 
-    if (state.currentStep !== 3 ||
-        state.newModuleIntake ||
+    if (state.screen !== global.MacroStudioScreens.reviewScreen ||
         !module ||
         (module.status !== "changed" &&
          module.status !== "unchanged")) {
@@ -371,111 +298,6 @@
     }
 
     state.pasteEditing = false;
-    notify();
-    return true;
-  }
-
-  function beginNewModuleIntake() {
-    if (state.currentStep !== 3 || !state.book) {
-      return false;
-    }
-
-    state.selectedModuleName = null;
-    state.newModuleIntake = true;
-    state.pasteEditing = false;
-    notify();
-    return true;
-  }
-
-  function cancelNewModuleIntake() {
-    if (!state.newModuleIntake) {
-      return false;
-    }
-
-    state.newModuleIntake = false;
-    notify();
-    return true;
-  }
-
-  function addNewModule(
-    name,
-    code,
-    changedLineCount,
-    lineCount
-  ) {
-    if (!state.newModuleIntake ||
-        typeof name !== "string" ||
-        typeof code !== "string" ||
-        findModule(name)) {
-      return null;
-    }
-
-    var module = {
-      name: name,
-      type: "standard",
-      typeLabel: "標準モジュール",
-      ext: "bas",
-      lineCount: lineCount || 0,
-      code: "",
-      attributes: "",
-      pastedCode: code,
-      status: "changed",
-      changedLineCount: changedLineCount || 0,
-      showChangesOnly: lineCount > 200,
-      wrapDiff: true,
-      written: false,
-      isNew: true
-    };
-    state.modules.push(module);
-    state.selectedModuleName = name;
-    state.newModuleIntake = false;
-    notify();
-    return module;
-  }
-
-  function cancelModulePaste(moduleName) {
-    var module = findModule(moduleName);
-
-    if (!module ||
-        (module.status !== "changed" &&
-         module.status !== "unchanged")) {
-      return false;
-    }
-
-    if (module.isNew === true) {
-      state.modules.splice(
-        state.modules.indexOf(module),
-        1);
-      state.selectedModuleName = null;
-      notify();
-      return true;
-    }
-
-    module.status = "pending";
-    module.changedLineCount = 0;
-    module.pastedCode = null;
-    module.written = false;
-    module.showChangesOnly = module.lineCount > 200;
-    module.wrapDiff = true;
-    state.pasteEditing = false;
-    notify();
-    return true;
-  }
-
-  function toggleModuleExcluded(moduleName) {
-    var module = findModule(moduleName);
-
-    if (!module) {
-      return false;
-    }
-    if (module.status === "pending") {
-      module.status = "excluded";
-    } else if (module.status === "excluded") {
-      module.status = "pending";
-    } else {
-      return false;
-    }
-
     notify();
     return true;
   }
@@ -519,6 +341,19 @@
     notify();
   }
 
+  // The text the preset supplied, before the answers are folded in.
+  function setRequestBase(requestBase) {
+    state.requestBase = requestBase || "";
+    notify();
+  }
+
+  // The applied preset supplies the output rules. Applying another
+  // preset replaces them; the request text keeps appending.
+  function setOutputRules(outputRules) {
+    state.outputRules = outputRules || null;
+    notify();
+  }
+
   function setRequestFilePath(requestFilePath) {
     state.requestFilePath = requestFilePath || null;
     notify();
@@ -527,6 +362,186 @@
   function setRequestPrompt(requestPrompt) {
     state.requestPrompt = requestPrompt || null;
     notify();
+  }
+
+  // Refactor or diagnose. Changing the answer drops the preset that
+  // belonged to the previous one.
+  function setMode(mode) {
+    var next = mode === "diagnose" ? "diagnose" : "refactor";
+
+    if (state.mode === next) {
+      return false;
+    }
+    state.mode = next;
+    state.presetFile = null;
+    state.presetName = "";
+    state.questions = [];
+    state.answers = {};
+    state.questionIndex = 0;
+    state.requestBase = "";
+    state.requestId = null;
+    state.requestText = "";
+    state.outputRules = null;
+    state.intakeResult = null;
+    notify();
+    return true;
+  }
+
+  // One purpose, one preset file, one request id. The questions the
+  // preset asks come with it, and switching preset drops old answers.
+  function setPurpose(file, name, requestId, questions) {
+    state.presetFile = file || null;
+    state.presetName = name || "";
+    state.requestId = requestId || null;
+    state.questions = Array.isArray(questions) ? questions : [];
+    state.answers = {};
+    state.questionIndex = 0;
+    state.intakeResult = null;
+    notify();
+  }
+
+  // One question fills the screen at a time, so the form needs to know
+  // which one that is.
+  function setQuestionIndex(index) {
+    var next = Math.max(
+      0,
+      Math.min(state.questions.length - 1, Number(index) || 0));
+
+    if (state.questions.length === 0 || next === state.questionIndex) {
+      return false;
+    }
+    state.questionIndex = next;
+    notify();
+    return true;
+  }
+
+  function setAnswer(index, value) {
+    var key = String(index);
+
+    if (!state.questions[index]) {
+      return false;
+    }
+    state.answers[key] = String(value === undefined ? "" : value);
+    notify();
+    return true;
+  }
+
+  function setRunFolder(runFolder) {
+    state.runFolder = runFolder || null;
+    notify();
+  }
+
+  function setHandoffProgress(promptCopied, codeFolderOpened) {
+    if (promptCopied !== undefined && promptCopied !== null) {
+      state.promptCopied = promptCopied === true;
+    }
+    if (codeFolderOpened !== undefined && codeFolderOpened !== null) {
+      state.codeFolderOpened = codeFolderOpened === true;
+    }
+    notify();
+  }
+
+  function setOutputName(outputName) {
+    state.outputName = outputName === undefined || outputName === null
+      ? ""
+      : String(outputName);
+    notify();
+  }
+
+  // The accept decision on the review screen is what puts a module in
+  // the build. Pasting alone never does.
+  function acceptModuleChange(moduleName) {
+    var module = findModule(moduleName);
+
+    if (!module || module.status !== "changed") {
+      return false;
+    }
+    module.accepted = true;
+    notify();
+    return true;
+  }
+
+  function importPackage(items) {
+    var applied = [];
+
+    (items || []).forEach(function (item) {
+      var module = findModule(item.name);
+
+      if (!module) {
+        module = {
+          name: item.name,
+          type: "standard",
+          typeLabel: "標準モジュール",
+          ext: "bas",
+          lineCount: item.lineCount || 0,
+          code: "",
+          attributes: "",
+          isNew: true
+        };
+        state.modules.push(module);
+      }
+      module.pastedCode = item.code;
+      module.status = item.code === module.code ? "unchanged" : "changed";
+      module.changedLineCount = module.status === "changed"
+        ? item.changedLineCount || 0
+        : 0;
+      // Taking the answer in IS the decision: there is no separate
+      // accept step on the review screen.
+      module.accepted = module.status === "changed";
+      module.written = false;
+      module.showChangesOnly = Math.max(
+        module.lineCount || 0,
+        item.lineCount || 0) > 200;
+      module.wrapDiff = true;
+      if (module.isNew === true) {
+        module.lineCount = item.lineCount || 0;
+      }
+      applied.push(module);
+    });
+    state.selectedModuleName = applied.length > 0
+      ? applied[0].name
+      : state.selectedModuleName;
+    state.pasteEditing = false;
+    notify();
+    return applied.length;
+  }
+
+  function setIntakeResult(result) {
+    state.intakeResult = result || null;
+    notify();
+  }
+
+  // Taking the whole answer back out again, so a wrong package leaves
+  // nothing behind.
+  function discardImportedModules() {
+    var kept = [];
+    var discarded = 0;
+
+    state.modules.forEach(function (module) {
+      if (module.isNew === true &&
+          (module.status === "changed" ||
+           module.status === "unchanged")) {
+        discarded += 1;
+        return;
+      }
+      if (module.status === "changed" || module.status === "unchanged") {
+        discarded += 1;
+        module.status = "pending";
+        module.changedLineCount = 0;
+        module.pastedCode = null;
+        module.accepted = false;
+        module.written = false;
+        module.showChangesOnly = module.lineCount > 200;
+        module.wrapDiff = true;
+      }
+      kept.push(module);
+    });
+    state.modules = kept;
+    state.selectedModuleName = null;
+    state.pasteEditing = false;
+    state.intakeResult = null;
+    notify();
+    return discarded;
   }
 
   function setBuildResult(result) {
@@ -561,11 +576,6 @@
     notify();
   }
 
-  function setLectureCollapsed(collapsed) {
-    state.lectureCollapsed = collapsed === true;
-    notify();
-  }
-
   function setBusyAction(action) {
     state.busyAction = action || null;
     notify();
@@ -586,109 +596,154 @@
     notify();
   }
 
+  // ?demo opens the review screen with one package already taken in.
   function loadDemoState() {
     state = createInitialState();
-    state.currentStep = 3;
+    state.screen = global.MacroStudioScreens.reviewScreen;
     state.appInfo = {
       version: "1.0",
       presets: [
         {
-          name: "サンプル_新端末移行",
-          file: "サンプル_新端末移行.md"
+          file: "sample.md",
+          content: [
+            "# デモ用プリセット",
+            "",
+            "## 改修指示",
+            "",
+            "デモ用のひな形です。",
+            "",
+            "## 出力指示",
+            "",
+            "デモ用の出力指示です。",
+            ""
+          ].join("\n")
         }
       ]
     };
     state.book = {
       name: "受注管理.xlsm",
       path: "samples\\受注管理.xlsm",
-      ext: ".xlsm"
+      ext: ".xlsm",
+      totalLines: 306
     };
+    state.outputName = getDefaultOutputName(state.book);
+    state.runFolder = "samples\\MacroStudio\\受注管理_20260729_101500";
+    state.presetFile = "sample.md";
+    state.presetName = "デモ用プリセット";
+    state.requestId = "3f1c9c7a-2b64-4a1e-9f52-0b5a4d2e77c1";
+    state.promptCopied = true;
+    state.codeFolderOpened = true;
     state.modules = [
       {
         name: "Sheet1",
         type: "document",
         typeLabel: "ドキュメントモジュール",
+        ext: "cls",
         lineCount: 31,
         code: "Option Explicit\r\n\r\nPrivate Sub Worksheet_Activate()\r\nEnd Sub\r\n",
-        pastedCode: "Option Explicit\r\n\r\nPrivate Sub Worksheet_Activate()\r\nEnd Sub\r\n",
-        status: "unchanged",
+        attributes: "",
+        pastedCode: null,
+        status: "pending",
         changedLineCount: 0,
         showChangesOnly: false,
+        wrapDiff: true,
         written: false
       },
       {
         name: "ThisWorkbook",
         type: "document",
         typeLabel: "ドキュメントモジュール",
+        ext: "cls",
         lineCount: 18,
         code: "Option Explicit\r\n",
+        attributes: "",
         pastedCode: null,
         status: "pending",
         changedLineCount: 0,
         showChangesOnly: false,
-        written: false
-      },
-      {
-        name: "受注入力",
-        type: "form",
-        typeLabel: "フォームモジュール",
-        lineCount: 76,
-        code: "Option Explicit\r\n",
-        pastedCode: null,
-        status: "excluded",
-        changedLineCount: 0,
-        showChangesOnly: false,
+        wrapDiff: true,
         written: false
       },
       {
         name: "ExportHelpers",
         type: "standard",
         typeLabel: "標準モジュール",
+        ext: "bas",
         lineCount: 54,
         code: "Option Explicit\r\n\r\nPublic Sub ExportData()\r\nEnd Sub\r\n",
+        attributes: "",
         pastedCode: "Option Explicit\r\n\r\nPublic Sub ExportData()\r\n    Debug.Print \"done\"\r\nEnd Sub\r\n",
         status: "changed",
         changedLineCount: 2,
+        accepted: false,
         showChangesOnly: false,
-        written: true
+        wrapDiff: true,
+        written: false
       },
       {
         name: "Main",
         type: "standard",
         typeLabel: "標準モジュール",
+        ext: "bas",
         lineCount: 84,
         code: "Option Explicit\r\n\r\nPrivate Sub SaveRecord()\r\n    If Range(\"A2\").Value = \"\" Then Exit Sub\r\n    Range(\"D2\").Value = Now\r\nEnd Sub\r\n",
+        attributes: "",
         pastedCode: "Option Explicit\r\n\r\nPrivate Sub SaveRecord()\r\n    If Len(Trim$(Range(\"A2\").Value)) = 0 Then\r\n        MsgBox \"伝票番号を入力してください。\"\r\n        Exit Sub\r\n    End If\r\n    Range(\"D2\").Value = Now\r\nEnd Sub\r\n",
         status: "changed",
         changedLineCount: 4,
+        accepted: false,
         showChangesOnly: false,
+        wrapDiff: true,
+        written: false
+      },
+      {
+        name: "CompatHelpers",
+        type: "standard",
+        typeLabel: "標準モジュール",
+        ext: "bas",
+        lineCount: 4,
+        code: "",
+        attributes: "",
+        pastedCode: "Option Explicit\r\n\r\nPublic Sub WaitMilliseconds(ByVal ms As Long)\r\nEnd Sub\r\n",
+        status: "changed",
+        changedLineCount: 4,
+        accepted: false,
+        isNew: true,
+        showChangesOnly: false,
+        wrapDiff: true,
         written: false
       },
       {
         name: "OrderRecord",
         type: "class",
         typeLabel: "クラスモジュール",
+        ext: "cls",
         lineCount: 43,
         code: "Option Explicit\r\n",
+        attributes: "",
         pastedCode: null,
         status: "pending",
         changedLineCount: 0,
         showChangesOnly: false,
+        wrapDiff: true,
         written: false
       }
     ];
+    state.intakeResult = { total: 3, existing: 2, added: 1 };
     state.selectedModuleName = "Main";
     notify();
   }
 
-  global.MacroDeskState = {
-    transitionTable: transitionTable,
+  global.MacroStudioState = {
     getState: getState,
-    getTransitionRow: getTransitionRow,
     getChangedModuleCount: getChangedModuleCount,
-    getGuideTarget: getGuideTarget,
-    canNavigate: canNavigate,
-    navigate: navigate,
+    getAcceptedModuleCount: getAcceptedModuleCount,
+    getDefaultOutputName: getDefaultOutputName,
+    canGoNext: canGoNext,
+    canGoBack: canGoBack,
+    goTo: goTo,
+    goNext: goNext,
+    goBack: goBack,
     setBook: setBook,
     setAppInfo: setAppInfo,
     hasImportedModules: hasImportedModules,
@@ -697,22 +752,29 @@
     acceptModuleCode: acceptModuleCode,
     beginPasteEdit: beginPasteEdit,
     cancelPasteEdit: cancelPasteEdit,
-    beginNewModuleIntake: beginNewModuleIntake,
-    cancelNewModuleIntake: cancelNewModuleIntake,
-    addNewModule: addNewModule,
-    cancelModulePaste: cancelModulePaste,
-    toggleModuleExcluded: toggleModuleExcluded,
     setModuleShowChangesOnly: setModuleShowChangesOnly,
     setModuleWrapDiff: setModuleWrapDiff,
     setRequestState: setRequestState,
     setRequestText: setRequestText,
+    setRequestBase: setRequestBase,
+    setMode: setMode,
+    setPurpose: setPurpose,
+    setAnswer: setAnswer,
+    setQuestionIndex: setQuestionIndex,
+    setRunFolder: setRunFolder,
+    setHandoffProgress: setHandoffProgress,
+    setOutputName: setOutputName,
+    acceptModuleChange: acceptModuleChange,
+    importPackage: importPackage,
+    setIntakeResult: setIntakeResult,
+    discardImportedModules: discardImportedModules,
+    setOutputRules: setOutputRules,
     setRequestFilePath: setRequestFilePath,
     setRequestPrompt: setRequestPrompt,
     setBuildResult: setBuildResult,
     setBuildConfirmation: setBuildConfirmation,
     markModulesWritten: markModulesWritten,
     setLastError: setLastError,
-    setLectureCollapsed: setLectureCollapsed,
     setBusyAction: setBusyAction,
     subscribe: subscribe,
     reset: reset,

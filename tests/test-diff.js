@@ -30,7 +30,7 @@ vm.runInContext(
     "utf8"),
   sandbox);
 
-const diff = sandbox.window.MacroDeskDiff;
+const diff = sandbox.window.MacroStudioDiff;
 assert(diff.lookahead === 100, "Lookahead must be 100.");
 assert(diff.runSelfTest(), "Built-in diff self-test failed.");
 
@@ -65,7 +65,7 @@ for (let index = 0; index < 40; index += 1) {
     type: index === 20 ? "changed" : "equal"
   });
 }
-const visible = sandbox.window.MacroDeskDiffView.getVisibleRows(rows, true);
+const visible = sandbox.window.MacroStudioDiffView.getVisibleRows(rows, true);
 assert(
   visible.length === 23,
   "Context-only diff must include two gaps and 21 context rows.");

@@ -76,7 +76,7 @@
       if (!webview) {
         reject(makeError(
           "E-SYS-02",
-          "The MacroDesk host is not available.",
+          "The MacroStudio host is not available.",
           null,
           action
         ));

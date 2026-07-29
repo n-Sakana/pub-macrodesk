@@ -22,433 +22,48 @@ body {
 button,
 textarea,
 input {
+  color: inherit;
   font: inherit;
 }
 
 button {
+  cursor: pointer;
   touch-action: manipulation;
 }
 
+button,
+input,
+textarea,
+summary,
+a {
+  transition: outline-color var(--transition-fast);
+}
+
 button:focus-visible,
-a:focus-visible,
-[role="button"]:focus-visible,
-[tabindex]:focus-visible {
-  outline: 0;
-  box-shadow: var(--focus-ring);
+input:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+a:focus-visible {
+  outline: var(--space-half) solid var(--focus-color);
+  outline-offset: var(--space-half);
 }
 
 .skip-link {
-  position: fixed;
-  z-index: 100;
+  position: absolute;
+  z-index: 40;
   top: var(--space-2);
   left: var(--space-2);
   padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: var(--text-on-accent);
-  font-weight: var(--weight-bold);
-  text-decoration: none;
-  transform: translateY(-160%);
+  background: var(--surface);
+  color: var(--accent-text);
+  font-size: var(--type-meta-size);
+  transform: translateY(calc(-1 * var(--space-8) - var(--space-6)));
 }
 
 .skip-link:focus {
   transform: translateY(0);
-}
-
-.app-shell {
-  display: grid;
-  width: 100vw;
-  height: 100vh;
-  min-width: 0;
-  grid-template-columns:
-    minmax(var(--module-min-width), var(--module-width))
-    minmax(0, 1fr);
-  grid-template-rows: var(--topbar-h) minmax(0, 1fr);
-  overflow: hidden;
-  background: var(--surface-canvas);
-}
-
-.progress-region {
-  z-index: 10;
-  grid-column: 1 / -1;
-  grid-row: 1;
-  display: grid;
-  height: var(--topbar-h);
-  grid-template-columns:
-    minmax(var(--module-min-width), var(--module-width))
-    minmax(0, 1fr)
-    var(--theme-area-w);
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--surface);
-}
-
-.brand {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  padding: 0 var(--space-4);
-  border-right: 1px solid var(--border-subtle);
-  gap: var(--space-2);
-}
-
-.brand-mark {
-  display: inline-grid;
-  width: var(--theme-button-size);
-  height: var(--theme-button-size);
-  flex: 0 0 auto;
-  place-items: center;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-md);
-  background: var(--accent-soft);
-  color: var(--accent-text);
-  font-family: var(--font-code);
-  font-size: var(--type-micro-size);
-  font-weight: var(--weight-bold);
-  letter-spacing: .04em;
-}
-
-.brand-name {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--text);
-  font-size: var(--type-title-size);
-  font-weight: var(--weight-bold);
-  letter-spacing: .02em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.progress-nav {
-  grid-column: 2;
-  min-width: 0;
-  padding: 0 var(--space-4);
-}
-
-.progress-list {
-  display: grid;
-  height: 100%;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.progress-item {
-  position: relative;
-  min-width: 0;
-}
-
-.progress-item:not(:last-child)::after {
-  position: absolute;
-  z-index: 0;
-  top: calc(50% - 1px);
-  right: calc(-50% + var(--progress-number-size));
-  left: calc(50% + var(--progress-number-size));
-  height: var(--progress-connector-h);
-  background: var(--border-subtle);
-  content: "";
-}
-
-.progress-item.is-complete:not(:last-child)::after {
-  background: var(--accent-soft);
-}
-
-.progress-step {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  background: transparent;
-  color: var(--text-sub);
-  cursor: pointer;
-  gap: var(--space-2);
-}
-
-.progress-step:hover:not(:disabled) {
-  color: var(--text);
-}
-
-.progress-step.is-unavailable {
-  cursor: default;
-  opacity: var(--opacity-unavailable);
-}
-
-.progress-step[aria-current="step"] {
-  color: var(--text);
-  cursor: default;
-  font-weight: var(--weight-bold);
-}
-
-.progress-number {
-  display: inline-grid;
-  width: var(--progress-number-size);
-  height: var(--progress-number-size);
-  flex: 0 0 auto;
-  place-items: center;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  background: var(--surface);
-  color: var(--text-sub);
-  font-family: var(--font-code);
-  font-size: var(--type-micro-size);
-  font-weight: var(--weight-semibold);
-  font-variant-numeric: tabular-nums;
-}
-
-.progress-step.is-complete .progress-number {
-  border-color: var(--accent-soft);
-  background: var(--accent-soft);
-  color: var(--accent-text);
-}
-
-.progress-step[aria-current="step"] .progress-number {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--text-on-accent);
-}
-
-.progress-step.is-ready {
-  color: var(--accent-text);
-}
-
-.progress-step.is-ready .progress-number {
-  border-color: var(--accent);
-  color: var(--accent-text);
-}
-
-.progress-label {
-  min-width: 0;
-  overflow: hidden;
-  font-size: var(--type-label-size);
-  font-weight: var(--type-label-weight);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.theme-toggle {
-  align-self: center;
-  justify-self: center;
-  display: inline-grid;
-  width: var(--theme-button-size);
-  height: var(--theme-button-size);
-  padding: var(--space-1);
-  place-items: center;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.theme-toggle:hover {
-  background: var(--surface-hover);
-  color: var(--text);
-}
-
-.theme-icon {
-  width: var(--icon-md);
-  height: var(--icon-md);
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.5;
-}
-
-.theme-icon[hidden] {
-  display: none;
-}
-
-.module-region {
-  grid-column: 1;
-  grid-row: 2;
-  display: flex;
-  min-width: 0;
-  min-height: 0;
-  flex-direction: column;
-  border-right: 1px solid var(--border-subtle);
-  background: var(--surface);
-  overflow: hidden;
-}
-
-.work-region {
-  grid-column: 2;
-  grid-row: 2;
-  display: grid;
-  min-width: 0;
-  min-height: 0;
-  grid-template-rows: minmax(0, 1fr) var(--lecture-height);
-  overflow: hidden;
-}
-
-.work-region.is-lecture-collapsed {
-  grid-template-rows:
-    minmax(0, 1fr)
-    var(--lecture-collapsed-height);
-}
-
-.main-region {
-  min-width: 0;
-  min-height: 0;
-  background: var(--surface-canvas);
-  overflow: hidden;
-}
-
-.screen {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.screen-header {
-  display: flex;
-  min-height: var(--screen-header-h);
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-2) var(--space-5);
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--surface);
-  gap: var(--space-4);
-}
-
-.screen-heading {
-  min-width: 0;
-}
-
-.screen-eyebrow {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: var(--type-micro-size);
-  font-weight: var(--type-micro-weight);
-  line-height: var(--type-micro-line);
-}
-
-.screen-title {
-  margin: var(--space-half) 0 0;
-  overflow: hidden;
-  color: var(--text);
-  font-size: var(--type-title-size);
-  font-feature-settings: "palt";
-  font-weight: var(--type-title-weight);
-  letter-spacing: .01em;
-  line-height: var(--type-title-line);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.screen-meta-group {
-  display: flex;
-  min-width: 0;
-  align-items: flex-end;
-  flex-direction: column;
-  gap: var(--space-half);
-}
-
-.screen-meta {
-  max-width: var(--content-modal-w);
-  overflow: hidden;
-  color: var(--text-muted);
-  font-family: var(--font-code);
-  font-size: var(--type-meta-size);
-  font-variant-numeric: tabular-nums;
-  line-height: var(--type-meta-line);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.screen-book-chip {
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-sm);
-  background: var(--surface-sunken);
-  color: var(--text-sub);
-}
-
-.screen-body {
-  display: flex;
-  min-width: 0;
-  min-height: 0;
-  flex: 1 1 auto;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-5);
-  overflow: auto;
-}
-
-.step-three-body {
-  min-width: 0;
-  min-height: 0;
-  flex: 1 1 auto;
-  overflow: hidden;
-}
-
-.placeholder-card {
-  width: min(var(--content-empty-w), 100%);
-  padding: var(--space-7);
-  border: var(--drop-border-w) dashed var(--border-strong);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
-  text-align: center;
-}
-
-.placeholder-index {
-  display: inline-grid;
-  width: var(--step-done-bar-h);
-  height: var(--step-done-bar-h);
-  margin-bottom: var(--space-4);
-  place-items: center;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-pill);
-  color: var(--accent-text);
-  font-family: var(--font-code);
-  font-size: var(--type-meta-size);
-  font-weight: var(--weight-bold);
-}
-
-.placeholder-card h2,
-.placeholder-card h3,
-.placeholder-card p {
-  margin: 0;
-}
-
-.placeholder-card p {
-  margin-top: var(--space-3);
-  color: var(--text-sub);
-}
-
-.code-pane {
-  display: flex;
-  min-width: 0;
-  min-height: 0;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.code-pane-header {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--space-3);
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--surface);
-  color: var(--text-sub);
-}
-
-.code-pane-note {
-  color: var(--text-muted);
-  font-family: var(--font-code);
-  font-weight: var(--weight-regular);
 }
 
 .status-announcer,
@@ -460,9 +75,411 @@ a:focus-visible,
   border: 0;
   margin: -1px;
   overflow: hidden;
-  clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* One screen at a time: progress on top, the work in the middle, the
+   fixed back / next pair at the bottom right. */
+.app-shell {
+  display: grid;
+  width: 100%;
+  height: 100vh;
+  grid-template-rows:
+    var(--topbar-h)
+    var(--progress-track-h)
+    minmax(0, 1fr)
+    var(--actionbar-h);
+  background: var(--surface-canvas);
+}
+
+.topbar {
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface);
+  grid-template-columns:
+    var(--brand-w)
+    minmax(0, 1fr)
+    var(--brand-w);
+}
+
+.brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  font-size: var(--type-label-size);
+  font-weight: var(--weight-bold);
+  gap: var(--space-2);
+}
+
+.brand-mark {
+  display: grid;
+  width: var(--brand-mark-size);
+  height: var(--brand-mark-size);
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: var(--type-micro-size);
+  font-weight: var(--weight-bold);
+}
+
+/* The build is a beta, and the shell says so quietly: a line under the
+   name, not a badge shouting next to it. */
+.brand-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.15;
+}
+
+.brand-beta {
+  color: var(--text-muted);
+  font-size: var(--type-micro-size);
+  font-weight: var(--weight-regular);
+  letter-spacing: .06em;
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+
+.progress-nav {
+  min-width: 0;
+  height: 100%;
+}
+
+/* The step list changes width when the run's purpose becomes known.
+   Growing is fine; it must not look like a glitch. */
+.progress-list {
+  display: grid;
+  transition: grid-template-columns var(--transition-slow);
+  height: 100%;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  gap: var(--space-1);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+}
+
+.progress-step {
+  display: flex;
+  width: 100%;
+  height: var(--progress-step-h);
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: var(--type-meta-size);
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.progress-number {
+  display: grid;
+  width: var(--progress-mark-size);
+  height: var(--progress-mark-size);
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: var(--type-micro-size);
+  font-weight: var(--weight-bold);
+}
+
+.progress-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progress-step.is-done {
+  color: var(--text-sub);
+}
+
+.progress-step.is-done .progress-number {
+  border-color: var(--success);
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+
+.progress-step.is-active {
+  background: var(--surface-selected);
+  color: var(--accent-text);
+  font-weight: var(--weight-bold);
+}
+
+.progress-step.is-active .progress-number {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+}
+
+.icon-button {
+  display: inline-flex;
+  height: var(--theme-button-size);
+  align-items: center;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--type-meta-size);
+  gap: var(--space-1);
+}
+
+.icon-button--square {
+  width: var(--theme-button-size);
+  justify-content: center;
+  padding: 0;
+}
+
+.icon-button:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.topbar-icon,
+.theme-icon {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.progress-track {
+  position: relative;
+  background: var(--surface-sunken);
+}
+
+.progress-fill {
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+  transition: width var(--transition-normal);
+}
+
+.main-region {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.main-region:focus {
+  outline: none;
+}
+
+.actionbar {
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  padding: 0 var(--space-6);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.action-context {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--type-meta-size);
+  gap: var(--space-2);
+}
+
+.context-dot {
+  width: var(--context-dot-size);
+  height: var(--context-dot-size);
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+
+.action-context span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* Back and next never move and never change size. */
+.nav-actions {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(2, var(--nav-button-w));
+}
+
+.nav-actions .button {
+  width: var(--nav-button-w);
+  transition:
+    color var(--transition-normal),
+    border-color var(--transition-normal),
+    background-color var(--transition-normal);
+}
+
+.progress-step.is-new {
+  animation: progress-step-in var(--transition-slow) both;
+}
+
+@keyframes progress-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--space-3)));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+
+.flow-modal {
+  width: min(var(--content-modal-w), calc(100% - var(--space-8)));
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+  color: var(--text);
+}
+
+.flow-modal::backdrop {
+  background: var(--overlay);
+}
+
+.flow-modal-content {
+  padding: var(--space-5);
+}
+
+.flow-modal h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--type-title-size);
+  line-height: var(--type-title-line);
+}
+
+.flow-modal p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--type-meta-size);
+  line-height: var(--type-body-line);
+}
+
+.flow-modal .actions {
+  margin-top: var(--space-5);
+}
+
+.toast-region {
+  position: fixed;
+  z-index: 30;
+  bottom: calc(var(--actionbar-h) + var(--space-3));
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  transform: translateX(-50%);
+}
+
+.toast {
+  display: flex;
+  max-width: var(--toast-w);
+  align-items: baseline;
+  animation: toast-in var(--transition-slow) both;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  color: var(--text-sub);
+  font-size: var(--type-meta-size);
+  gap: var(--space-2);
+}
+
+.toast.is-leaving {
+  animation: toast-out var(--transition-normal) both;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-3)) scale(.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(var(--space-2)) scale(.98);
+  }
+}
+
+.toast--error {
+  border-color: var(--danger);
+}
+
+.toast--warning {
+  border-color: var(--caution);
+}
+
+.toast--success {
+  border-color: var(--success);
+}
+
+.toast-label {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  font-size: var(--type-micro-size);
+  font-weight: var(--weight-semibold);
+}
+
+.toast--error .toast-label {
+  color: var(--danger-text);
+}
+
+.toast--success .toast-label {
+  color: var(--success-text);
+}
+
+body.is-file-drag .drop-zone {
+  border-color: var(--accent);
+  background: var(--surface-selected);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -472,4 +489,5 @@ a:focus-visible,
     scroll-behavior: auto !important;
     transition-duration: .01ms !important;
   }
+
 }

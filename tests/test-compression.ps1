@@ -61,8 +61,8 @@ function Assert-RoundTrip {
         [string]$Message
     )
 
-    $compressed = [MacroDesk.VbaCompression]::Compress($Data)
-    $actual = [MacroDesk.VbaCompression]::Decompress($compressed)
+    $compressed = [MacroStudio.VbaCompression]::Compress($Data)
+    $actual = [MacroStudio.VbaCompression]::Decompress($compressed)
     Assert-Bytes $actual $Data ($Message + ' roundtrip')
     return $compressed.Length
 }
@@ -117,13 +117,13 @@ Add-Type -TypeDefinition (Get-EngineSource) -Language CSharp
 
 [byte[]]$literalContainer = 0x01, 0x03, 0xB0, 0x00, 0x41, 0x42, 0x43
 [byte[]]$literalExpected = 0x41, 0x42, 0x43
-$literalActual = [MacroDesk.VbaCompression]::Decompress($literalContainer)
+$literalActual = [MacroStudio.VbaCompression]::Decompress($literalContainer)
 Assert-Bytes $literalActual $literalExpected 'Literal chunk'
 
 [byte[]]$copyContainer = `
     0x01, 0x05, 0xB0, 0x08, 0x41, 0x42, 0x43, 0x00, 0x20
 [byte[]]$copyExpected = 0x41, 0x42, 0x43, 0x41, 0x42, 0x43
-$copyActual = [MacroDesk.VbaCompression]::Decompress($copyContainer)
+$copyActual = [MacroStudio.VbaCompression]::Decompress($copyContainer)
 Assert-Bytes $copyActual $copyExpected 'Copy token'
 
 [byte[]]$rawContainer = New-Object byte[] (1 + 2 + 4096)
@@ -133,7 +133,7 @@ $rawContainer[2] = 0x3F
 for ($index = 0; $index -lt 4096; $index++) {
     $rawContainer[3 + $index] = [byte]($index % 251)
 }
-$rawActual = [MacroDesk.VbaCompression]::Decompress($rawContainer)
+$rawActual = [MacroStudio.VbaCompression]::Decompress($rawContainer)
 Assert-True ($rawActual.Length -eq 4096) 'Raw chunk length mismatch.'
 Assert-True ($rawActual[0] -eq 0) 'Raw chunk first byte mismatch.'
 Assert-True ($rawActual[4095] -eq [byte](4095 % 251)) `
@@ -141,12 +141,12 @@ Assert-True ($rawActual[4095] -eq [byte](4095 % 251)) `
 
 [byte[]]$badSignature = 0x00, 0x03, 0xB0, 0x00, 0x41, 0x42, 0x43
 Assert-InvalidData {
-    [MacroDesk.VbaCompression]::Decompress($badSignature)
+    [MacroStudio.VbaCompression]::Decompress($badSignature)
 } 'Invalid container signature was accepted.'
 
 [byte[]]$badCopy = 0x01, 0x02, 0xB0, 0x01, 0x00, 0x00
 Assert-InvalidData {
-    [MacroDesk.VbaCompression]::Decompress($badCopy)
+    [MacroStudio.VbaCompression]::Decompress($badCopy)
 } 'Copy token without preceding data was accepted.'
 
 [byte[]]$emptyBytes = @()
@@ -163,7 +163,7 @@ $random = New-Object Random 123456
 $random.NextBytes($randomBytes)
 $randomLength = Assert-RoundTrip $randomBytes 'Raw chunk input'
 Assert-True ($randomLength -eq 4099) 'Raw chunk container length mismatch.'
-$randomCompressed = [MacroDesk.VbaCompression]::Compress($randomBytes)
+$randomCompressed = [MacroStudio.VbaCompression]::Compress($randomBytes)
 Assert-True (
     $randomCompressed[1] -eq 0xFF -and
     $randomCompressed[2] -eq 0x3F) `
@@ -199,18 +199,18 @@ if (-not (Test-Path -LiteralPath $BookPath -PathType Leaf)) {
 }
 
 $vbaBytes = Read-VbaProjectBytes (Resolve-Path -LiteralPath $BookPath)
-$ole2 = [MacroDesk.Ole2File]::Parse($vbaBytes)
+$ole2 = [MacroStudio.Ole2File]::Parse($vbaBytes)
 $vbaStorage = $ole2.FindChild($ole2.RootEntry, 'VBA', 1)
 $dirEntry = $ole2.FindChild($vbaStorage, 'dir', 2)
 $dirCompressed = $ole2.ReadStream($dirEntry)
-$dirDecompressed = [MacroDesk.VbaCompression]::Decompress($dirCompressed)
+$dirDecompressed = [MacroStudio.VbaCompression]::Decompress($dirCompressed)
 Assert-True ($dirDecompressed.Length -gt 0) 'Decompressed dir was empty.'
 Assert-True ([BitConverter]::ToUInt16($dirDecompressed, 0) -eq 0x0001) `
     'Decompressed dir does not start with PROJECTSYSKIND.'
 $dirRoundTripLength = Assert-RoundTrip $dirDecompressed `
     'Real dir stream'
 
-$project = [MacroDesk.VbaProjectReader]::Read($vbaBytes)
+$project = [MacroStudio.VbaProjectReader]::Read($vbaBytes)
 foreach ($module in $project.Modules) {
     [void](Assert-RoundTrip $module.FullSourceBytes `
         ('Real module ' + $module.Name))

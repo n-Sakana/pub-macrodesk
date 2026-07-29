@@ -1,4 +1,4 @@
-# MacroDesk WPF + WebView2 launcher.
+# MacroStudio WPF + WebView2 launcher.
 
 $ErrorActionPreference = 'Stop'
 
@@ -13,13 +13,13 @@ function Write-LauncherLog {
     )
 
     try {
-        $logDir = Join-Path $env:LOCALAPPDATA 'MacroDesk\logs'
+        $logDir = Join-Path $env:LOCALAPPDATA 'MacroStudio\logs'
         if (-not (Test-Path -LiteralPath $logDir -PathType Container)) {
             New-Item -ItemType Directory -Path $logDir -Force | Out-Null
         }
 
         $logPath = Join-Path $logDir (
-            'macrodesk_' + (Get-Date -Format 'yyyyMMdd') + '.log')
+            'macrostudio_' + (Get-Date -Format 'yyyyMMdd') + '.log')
         $line = '[' + (Get-Date -Format 'HH:mm:ss') + '] ' +
             '[' + $Level + '] ' + $Message
 
@@ -102,7 +102,7 @@ try {
 
     Add-Type -TypeDefinition $source -ReferencedAssemblies $references -Language CSharp
 
-    [MacroDesk.App]::Run($baseDir)
+    [MacroStudio.App]::Run($baseDir)
 }
 catch {
     $location = ''
@@ -115,7 +115,7 @@ catch {
     Write-LauncherLog 'ERROR' $detail
 
     # launch.bat keeps this text on screen; launch.vbs points at the log file.
-    [Console]::Error.WriteLine('MacroDesk: ' + $detail)
+    [Console]::Error.WriteLine('MacroStudio: ' + $detail)
 
     exit $startupFailureExitCode
 }

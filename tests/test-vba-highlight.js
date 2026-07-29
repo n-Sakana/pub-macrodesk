@@ -21,7 +21,7 @@ vm.runInContext(
     "utf8"),
   sandbox);
 
-const highlight = sandbox.window.MacroDeskVbaHighlight;
+const highlight = sandbox.window.MacroStudioVbaHighlight;
 let tokens = highlight.tokenizeLine(
   "If value = 42 Then MsgBox \"a\"\"b\" ' note");
 assert(
