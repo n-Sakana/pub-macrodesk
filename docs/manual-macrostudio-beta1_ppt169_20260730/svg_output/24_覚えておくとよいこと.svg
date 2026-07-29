@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="100 44 1080 100">
+    <text x="100" y="84" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">覚えておくとよいこと</text>
+    <text x="100" y="128" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">増やせるのは決まった範囲だけ。ひな形は部門で増やせる</text>
+  </g>
+
+  <g id="limit" data-pptx-bounds="100 162 520 150">
+    <rect x="100" y="162" width="520" height="150" rx="16" fill="#F1F5F9"/>
+    <use data-icon="tabler-filled/settings" x="124" y="184" width="26" height="26" fill="#1F4E79"/>
+    <text x="164" y="206" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#1F4E79">増やせるのは標準モジュールだけ</text>
+    <text x="124" y="248" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933"><tspan x="124" dy="0">既存のクラスモジュールやシートのモジュールを</tspan><tspan x="124" dy="28">直すことはできます。新しいクラスやユーザー</tspan><tspan x="124" dy="28">フォームを含む返答は取り込みません。</tspan></text>
+  </g>
+
+  <g id="preset-howto" data-pptx-bounds="660 162 520 150">
+    <rect x="660" y="162" width="520" height="150" rx="16" fill="#F1F5F9"/>
+    <use data-icon="tabler-filled/list-check" x="684" y="184" width="26" height="26" fill="#1F4E79"/>
+    <text x="724" y="206" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#1F4E79">ひな形は自分で増やせる</text>
+    <text x="684" y="248" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933"><tspan x="684" dy="0">presets フォルダに Markdown ファイル</tspan><tspan x="684" dy="28">（UTF-8）を置くと、ファイル 1 つにつき</tspan><tspan x="684" dy="28">1 件、目的の画面に自動で現れます。</tspan></text>
+  </g>
+
+  <g id="preset-rules" data-pptx-bounds="100 326 1080 128">
+    <text x="100" y="348" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933"><tspan x="100" dy="0">・最初の「# ...」が一覧に出る名前です。アプリの再起動は不要です。</tspan><tspan x="100" dy="28">・「## 用途」に「改修」か「診断」と書くと、その使いかたの一覧に並びます（省略すると改修）。</tspan><tspan x="100" dy="28">・「## 質問」を書くと、1 問ずつ質問する画面が出ます。</tspan><tspan x="100" dy="28">・書式が足りないファイルは選べず、理由付きで一覧の下に出ます。</tspan></text>
+  </g>
+
+  <g id="trouble-label" data-pptx-bounds="100 448 1080 28">
+    <use data-icon="tabler-filled/alert-triangle" x="100" y="450" width="24" height="24" fill="#E07B39"/>
+    <text x="136" y="470" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#1F4E79">うまくいかないとき</text>
+  </g>
+
+  <g id="trouble" data-pptx-replace-with="table" data-pptx-bounds="100 482 1080 190">
+    <metadata type="application/json">{"name":"p24-troubleshooting","columns":["症状","対処"],"rows":[["起動しない・白い画面のまま","WebView2 ランタイムが未導入の可能性。起動時のエラー案内に従う"],["返答を取り込めない","コードブロック全体（区切り行を含む）をコピーし直す"],["ひな形が一覧に出ない","その Markdown の見出しが揃っているか確認する。画面に理由が出る"],["ビルドに失敗した","画面の指示に従う。元のファイルは変更されていないので何度でもやり直せる"]],"style":{"font_family":"'Yu Gothic UI','Segoe UI',sans-serif","font_size":20,"colors":["#1F4E79","#F1F5F9"]}}</metadata>
+    <rect x="100" y="482" width="360" height="36" rx="10" fill="#1F4E79"/>
+    <text x="124" y="507" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">症状</text>
+    <rect x="472" y="482" width="708" height="36" rx="10" fill="#1F4E79"/>
+    <text x="496" y="507" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">対処</text>
+
+    <rect x="100" y="524" width="360" height="34" rx="8" fill="#F1F5F9"/>
+    <text x="124" y="548" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">起動しない・白い画面のまま</text>
+    <text x="496" y="548" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">WebView2 ランタイムが未導入の可能性。起動時のエラー案内に従う</text>
+
+    <rect x="100" y="562" width="360" height="34" rx="8" fill="#F1F5F9"/>
+    <text x="124" y="586" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">返答を取り込めない</text>
+    <text x="496" y="586" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">コードブロック全体（区切り行を含む）をコピーし直す</text>
+
+    <rect x="100" y="600" width="360" height="34" rx="8" fill="#F1F5F9"/>
+    <text x="124" y="624" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">ひな形が一覧に出ない</text>
+    <text x="496" y="624" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">その Markdown の見出しが揃っているか確認する。画面に理由が出る</text>
+
+    <rect x="100" y="638" width="360" height="34" rx="8" fill="#F1F5F9"/>
+    <text x="124" y="662" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">ビルドに失敗した</text>
+    <text x="496" y="662" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">画面の指示に従う。元のファイルは変更されていないので何度でもやり直せる</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 690 1080 22">
+    <text x="1180" y="706" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">24</text>
+  </g>
+</svg>

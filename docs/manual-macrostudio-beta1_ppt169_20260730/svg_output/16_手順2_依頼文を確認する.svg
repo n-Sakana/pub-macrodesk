@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="step-mark" data-pptx-role="decoration" data-pptx-bounds="100 36 100 122">
+    <text x="100" y="120" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="96" font-weight="bold" fill="#E2E8F0">2</text>
+  </g>
+
+  <g id="header" data-pptx-bounds="200 40 980 120">
+    <text x="200" y="62" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">手順 2 ・ 依頼文を確認する</text>
+    <text x="200" y="106" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">AIへ送る依頼文を用意しました</text>
+    <text x="200" y="150" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">できあがっているので、そのまま進んで構わない</text>
+  </g>
+
+  <g id="shot-closed" data-pptx-bounds="100 180 530 350">
+    <rect x="100" y="180" width="530" height="315" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/08-request.png" x="120" y="200" width="490" height="275" preserveAspectRatio="xMidYMid meet"/>
+    <text x="100" y="521" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">そのままの状態</text>
+  </g>
+
+  <g id="shot-open" data-pptx-bounds="650 180 530 350">
+    <rect x="650" y="180" width="530" height="315" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/09-request-open.png" x="670" y="200" width="490" height="275" preserveAspectRatio="xMidYMid meet"/>
+    <text x="650" y="521" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">「依頼文を確認・編集」を開いた状態</text>
+  </g>
+
+  <g id="note-1" data-pptx-bounds="100 534 1080 40">
+    <use data-icon="tabler-filled/file-text" x="100" y="538" width="26" height="26" fill="#4A87C4"/>
+    <text x="140" y="562" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">依頼文はできあがっています。そのまま進んで構いません。</text>
+  </g>
+
+  <g id="note-2" data-pptx-bounds="100 578 1080 40">
+    <use data-icon="tabler-filled/eye" x="100" y="582" width="26" height="26" fill="#4A87C4"/>
+    <text x="140" y="606" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">直したいときだけ「依頼文を確認・編集」を開きます。全文が編集できます。</text>
+  </g>
+
+  <g id="note-3" data-pptx-bounds="100 622 1080 46">
+    <use data-icon="tabler-filled/alert-triangle" x="100" y="626" width="26" height="26" fill="#E07B39"/>
+    <text x="140" y="650" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">依頼文には毎回変わる依頼番号が入ります。取り込みの照合に使うので消さないでください。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 684 1080 24">
+    <text x="100" y="702" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1180" y="702" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">16</text>
+  </g>
+</svg>

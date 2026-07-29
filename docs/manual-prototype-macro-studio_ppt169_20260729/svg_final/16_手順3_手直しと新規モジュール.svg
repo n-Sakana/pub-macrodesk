@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96" />
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">手順 3 の補足</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">手直ししたいとき・新しいモジュール</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1" />
+  </g>
+
+  <g id="no-shot-notice" data-pptx-bounds="40 132 1200 44">
+    <rect x="40" y="132" width="700" height="44" rx="14" fill="#FFFFFF" stroke="#A2701C" stroke-width="2" />
+    
+  <g transform="translate(60, 145) scale(0.916667)" fill="#A2701C">
+    <path d="M12 1.67c.955 0 1.845 .467 2.39 1.247l.105 .16l8.114 13.548a2.914 2.914 0 0 1 -2.307 4.363l-.195 .008h-16.225a2.914 2.914 0 0 1 -2.582 -4.2l.099 -.185l8.11 -13.538a2.914 2.914 0 0 1 2.491 -1.403zm.01 13.33l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -7a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" />
+  </g>
+    <text x="92" y="161" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#A2701C">画面写真なし（試作）— 画面内の一時的な状態のため、素材が未整備です</text>
+  </g>
+
+  <g id="card-manual-fix" data-pptx-bounds="40 192 588 412">
+    <rect x="40" y="192" width="588" height="412" rx="16" fill="#F2F6FB" />
+    
+  <g transform="translate(68, 220) scale(1.41667)" fill="#2B5C96">
+    <path d="M8 7a1 1 0 0 1 -1 1h-1a1 1 0 0 0 -1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1 -1v-1a1 1 0 0 1 2 0v1a3 3 0 0 1 -3 3h-9a3 3 0 0 1 -3 -3v-9a3 3 0 0 1 3 -3h1a1 1 0 0 1 1 1" />
+    <path d="M14.596 5.011l4.392 4.392l-6.28 6.303a1 1 0 0 1 -.708 .294h-3a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 .294 -.708zm6.496 -2.103a3.097 3.097 0 0 1 .165 4.203l-.164 .18l-.693 .694l-4.387 -4.387l.695 -.69a3.1 3.1 0 0 1 4.384 0" />
+  </g>
+    <text x="114" y="248" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#2B5C96">［手動修正］</text>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="68" y="294">コードフェンスが混ざった、行が欠けた</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="68" y="328">といった軽微な写し間違いは、AI へ戻ら</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="68" y="362">ずここで直せます。</text><circle cx="86" cy="410" r="15" fill="#2B5C96" />
+    <text x="86" y="416" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="114" y="418" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">押すと右側が編集欄になります。</text>
+    <circle cx="86" cy="464" r="15" fill="#2B5C96" />
+    <text x="86" y="470" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="114" y="472">直して［修正を反映］を押すと、</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="114" y="506">差分を見直せます。</text><circle cx="86" cy="552" r="15" fill="#2B5C96" />
+    <text x="86" y="558" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3</text>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="114" y="560">未反映のまま画面を離れようと</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="114" y="594">すると、確認が出ます。</text></g>
+
+  <g id="card-new-module" data-pptx-bounds="652 192 588 412">
+    <rect x="652" y="192" width="588" height="412" rx="16" fill="#F4F6F8" />
+    
+  <g transform="translate(680, 220) scale(1.41667)" fill="#4C9155">
+    <path d="M4 11a1 1 0 0 1 .117 1.993l-.117 .007h-1a1 1 0 0 1 -.117 -1.993l.117 -.007h1z" />
+    <path d="M12 2a1 1 0 0 1 .993 .883l.007 .117v1a1 1 0 0 1 -1.993 .117l-.007 -.117v-1a1 1 0 0 1 1 -1z" />
+    <path d="M21 11a1 1 0 0 1 .117 1.993l-.117 .007h-1a1 1 0 0 1 -.117 -1.993l.117 -.007h1z" />
+    <path d="M4.893 4.893a1 1 0 0 1 1.32 -.083l.094 .083l.7 .7a1 1 0 0 1 -1.32 1.497l-.094 -.083l-.7 -.7a1 1 0 0 1 0 -1.414z" />
+    <path d="M17.693 4.893a1 1 0 0 1 1.497 1.32l-.083 .094l-.7 .7a1 1 0 0 1 -1.497 -1.32l.083 -.094l.7 -.7z" />
+    <path d="M14 18a1 1 0 0 1 1 1a3 3 0 0 1 -6 0a1 1 0 0 1 .883 -.993l.117 -.007h4z" />
+    <path d="M12 6a6 6 0 0 1 3.6 10.8a1 1 0 0 1 -.471 .192l-.129 .008h-6a1 1 0 0 1 -.6 -.2a6 6 0 0 1 3.6 -10.8z" />
+  </g>
+    <text x="726" y="248" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#4C9155">［AIが追加したモジュール］</text>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="680" y="294">AI が新しい標準モジュールを返した</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="680" y="328">ときに使います。</text><circle cx="698" cy="376" r="15" fill="#4C9155" />
+    <text x="698" y="382" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="726" y="384">左の一覧の下にあるボタンを</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="726" y="418">押します（取り込みの画面で</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="726" y="452">のみ押せます）。</text><circle cx="698" cy="486" r="15" fill="#4C9155" />
+    <text x="698" y="492" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="726" y="494">返答のコードブロックをコピー</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="726" y="528">しておきます。</text><circle cx="698" cy="544" r="15" fill="#4C9155" />
+    <text x="698" y="550" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3</text>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="726" y="552">モジュール名を入力して</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="726" y="586">［新規モジュールとして取り込む］。</text></g>
+
+  <g id="limit-band" data-pptx-bounds="40 614 1200 44">
+    <rect x="40" y="614" width="1200" height="44" rx="14" fill="#FFFFFF" stroke="#C25560" stroke-width="2" />
+    <text x="68" y="644" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">追加できるのは標準モジュールだけです。モジュールの削除と名前の変更はできません。</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">16</text>
+  </g>
+</svg>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="100 44 1080 100">
+    <text x="100" y="84" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">改修せずに、聞くだけのとき</text>
+    <text x="100" y="128" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">手順 2 で［完了］。ブックは何も変わらない</text>
+  </g>
+
+  <g id="shot-1" data-pptx-bounds="100 166 340 240">
+    <rect x="100" y="166" width="340" height="209" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/20-mode-diagnose.png" x="120" y="186" width="300" height="169" preserveAspectRatio="xMidYMid meet"/>
+    <text x="100" y="399" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">1. 「マクロについてAIに聞く」を選ぶ</text>
+  </g>
+
+  <g id="shot-2" data-pptx-bounds="460 166 340 240">
+    <rect x="460" y="166" width="340" height="209" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/21-purpose-diagnose.png" x="480" y="186" width="300" height="169" preserveAspectRatio="xMidYMid meet"/>
+    <text x="460" y="399" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">2. 「AIに何を聞くか選びます」</text>
+  </g>
+
+  <g id="shot-3" data-pptx-bounds="100 420 340 240">
+    <rect x="100" y="420" width="340" height="209" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/25-request-diagnose.png" x="120" y="440" width="300" height="169" preserveAspectRatio="xMidYMid meet"/>
+    <text x="100" y="653" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">3. 依頼文の画面（改修と同じ）</text>
+  </g>
+
+  <g id="shot-4" data-pptx-bounds="460 420 340 240">
+    <rect x="460" y="420" width="340" height="209" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/26-handoff-diagnose.png" x="480" y="440" width="300" height="169" preserveAspectRatio="xMidYMid meet"/>
+    <rect x="736" y="583" width="44" height="26" rx="6" fill="none" stroke="#E07B39" stroke-width="2"/>
+    <text x="460" y="653" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">4. ここで終わり。枠は［完了］</text>
+  </g>
+
+  <g id="how-it-ends" data-pptx-bounds="830 166 350 400">
+    <rect x="830" y="166" width="350" height="400" rx="16" fill="#F1F5F9"/>
+    <use data-icon="tabler-filled/help-circle" x="854" y="192" width="26" height="26" fill="#1F4E79"/>
+    <text x="854" y="248" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#1F4E79">聞くだけの終わり方</text>
+    <text x="854" y="292" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933"><tspan x="854" dy="0">「AIチャットへ質問します」</tspan><tspan x="854" dy="28">で終わりです。右下が</tspan><tspan x="854" dy="28">［完了］になります。</tspan></text>
+    <text x="854" y="404" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933"><tspan x="854" dy="0">できるのは依頼文とコード</tspan><tspan x="854" dy="28">全文の 2 ファイルだけで、</tspan><tspan x="854" dy="28">ブックは変更されません。</tspan></text>
+    <text x="854" y="516" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C"><tspan x="854" dy="0">質問のあるひな形なら、</tspan><tspan x="854" dy="28">先に 1 問ずつ答えます。</tspan></text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 684 1080 24">
+    <text x="100" y="702" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1180" y="702" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">23</text>
+  </g>
+</svg>

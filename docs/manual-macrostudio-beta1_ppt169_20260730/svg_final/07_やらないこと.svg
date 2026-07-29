@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="header" data-pptx-bounds="100 56 1080 136">
+    <text x="100" y="100" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">このツールがやらないこと</text>
+    <text x="100" y="150" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">判断と最終確認は人と AI に残す。だから壊れない</text>
+    <rect x="100" y="188" width="1080" height="2" fill="#CBD5E1" />
+  </g>
+
+  <g id="dont-1" data-pptx-bounds="100 226 1080 44">
+    
+  <g transform="translate(100, 230) scale(1.25)" fill="#5B6B7C">
+    <path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-6.489 5.8a1 1 0 0 0 -1.218 1.567l1.292 1.293l-1.292 1.293l-.083 .094a1 1 0 0 0 1.497 1.32l1.293 -1.292l1.293 1.292l.094 .083a1 1 0 0 0 1.32 -1.497l-1.292 -1.293l1.292 -1.293l.083 -.094a1 1 0 0 0 -1.497 -1.32l-1.293 1.292l-1.293 -1.292l-.094 -.083z" />
+  </g>
+    <text x="160" y="256" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">どこをどう直すかを決めること。それは AI に聞く。</text>
+  </g>
+
+  <g id="dont-2" data-pptx-bounds="100 310 1080 44">
+    
+  <g transform="translate(100, 314) scale(1.25)" fill="#5B6B7C">
+    <path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-6.489 5.8a1 1 0 0 0 -1.218 1.567l1.292 1.293l-1.292 1.293l-.083 .094a1 1 0 0 0 1.497 1.32l1.293 -1.292l1.293 1.292l.094 .083a1 1 0 0 0 1.32 -1.497l-1.292 -1.293l1.292 -1.293l.083 -.094a1 1 0 0 0 -1.497 -1.32l-1.293 1.292l-1.293 -1.292l-.094 -.083z" />
+  </g>
+    <text x="160" y="340" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">元のブックを書き換えること。必ず別名で作る。</text>
+  </g>
+
+  <g id="dont-3" data-pptx-bounds="100 394 1080 78">
+    
+  <g transform="translate(100, 398) scale(1.25)" fill="#5B6B7C">
+    <path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-6.489 5.8a1 1 0 0 0 -1.218 1.567l1.292 1.293l-1.292 1.293l-.083 .094a1 1 0 0 0 1.497 1.32l1.293 -1.292l1.293 1.292l.094 .083a1 1 0 0 0 1.32 -1.497l-1.292 -1.293l1.292 -1.293l.083 -.094a1 1 0 0 0 -1.497 -1.32l-1.293 1.292l-1.293 -1.292l-.094 -.083z" />
+  </g>
+    <text fill="#1F2933" font-size="24" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="160" y="424">マクロを勝手に増やして構造を変えること。</text><text fill="#1F2933" font-size="24" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="160" y="458">増やせる範囲は限ってある（詳しくは第二部）。</text></g>
+
+  <g id="dont-4" data-pptx-bounds="100 512 1080 44">
+    
+  <g transform="translate(100, 516) scale(1.25)" fill="#5B6B7C">
+    <path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-6.489 5.8a1 1 0 0 0 -1.218 1.567l1.292 1.293l-1.292 1.293l-.083 .094a1 1 0 0 0 1.497 1.32l1.293 -1.292l1.293 1.292l.094 .083a1 1 0 0 0 1.32 -1.497l-1.292 -1.293l1.292 -1.293l.083 -.094a1 1 0 0 0 -1.497 -1.32l-1.293 1.292l-1.293 -1.292l-.094 -.083z" />
+  </g>
+    <text x="160" y="542" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">直ったマクロを実際に動かして確かめること。最後に Excel で開いて確認するのは人。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 684 1080 24">
+    <text x="100" y="702" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第一部 サービス説明</text>
+    <text x="1180" y="702" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">7</text>
+  </g>
+</svg>

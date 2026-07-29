@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="header" data-pptx-bounds="100 44 1080 100">
+    <text x="100" y="84" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">できあがるもの</text>
+    <text x="100" y="128" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">依頼から結果まで、1 つのフォルダに全部残る</text>
+  </g>
+
+  <g id="folder-tree" data-pptx-bounds="100 170 520 250">
+    <rect x="100" y="170" width="520" height="250" rx="16" fill="#F1F5F9" />
+    <text fill="#1F2933" font-size="20" font-family="Consolas,monospace" x="124" y="210">&lt;元のブックのフォルダ&gt;\MacroStudio\</text><text fill="#1F2933" font-size="20" font-family="Consolas,monospace" x="124" y="238">  &lt;ブック名&gt;_&lt;日付_時刻&gt;\</text><text fill="#1F2933" font-size="20" font-family="Consolas,monospace" x="124" y="266">    request.md</text><text fill="#1F2933" font-size="20" font-family="Consolas,monospace" x="124" y="294">    source-code.md</text><text fill="#1F2933" font-size="20" font-family="Consolas,monospace" x="124" y="322">    &lt;ブック名&gt;_macrostudio.xlsm</text><text fill="#1F2933" font-size="20" font-family="Consolas,monospace" x="124" y="350">    diff-report.html</text><text fill="#1F2933" font-size="20" font-family="Consolas,monospace" x="124" y="378">    result.md</text></g>
+
+  <g id="file-1" data-pptx-bounds="660 170 520 54">
+    
+  <g transform="translate(660, 176)" fill="#4A87C4">
+    <path d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm3 14h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m0 -4h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m-5 -4h-1a1 1 0 1 0 0 2h1a1 1 0 0 0 0 -2" />
+    <path d="M19 7h-4l-.001 -4.001z" />
+  </g>
+    <text x="696" y="194" font-family="Consolas,monospace" font-size="20" font-weight="bold" fill="#1F2933">request.md</text>
+    <text x="696" y="218" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">AIへ渡した依頼文</text>
+  </g>
+
+  <g id="file-2" data-pptx-bounds="660 234 520 54">
+    
+  <g transform="translate(660, 240)" fill="#4A87C4">
+    <path d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm-1.553 11.106a1 1 0 0 0 -1.341 .447l-1 2a1 1 0 0 0 0 .894l1 2a1 1 0 0 0 1.341 .447l.102 -.058a1 1 0 0 0 .345 -1.283l-.776 -1.553l.776 -1.553a1 1 0 0 0 -.447 -1.341m4.447 .447a1 1 0 0 0 -1.341 -.447l-.102 .058a1 1 0 0 0 -.345 1.283l.774 1.553l-.775 1.553a1 1 0 0 0 1.788 .894l1 -2a1 1 0 0 0 0 -.894z" />
+    <path d="M19 7h-4l-.001 -4.001z" />
+  </g>
+    <text x="696" y="258" font-family="Consolas,monospace" font-size="20" font-weight="bold" fill="#1F2933">source-code.md</text>
+    <text x="696" y="282" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">元マクロのコード全文</text>
+  </g>
+
+  <g id="file-3" data-pptx-bounds="660 298 520 54">
+    
+  <g transform="translate(660, 304)" fill="#4A87C4">
+    <path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-1.293 5.953a1 1 0 0 0 -1.32 -.083l-.094 .083l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.403 1.403l.083 .094l2 2l.094 .083a1 1 0 0 0 1.226 0l.094 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z" />
+  </g>
+    <text x="696" y="322" font-family="Consolas,monospace" font-size="20" font-weight="bold" fill="#1F2933">&lt;ブック名&gt;_macrostudio.xlsm</text>
+    <text x="696" y="346" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">改修済みブック</text>
+  </g>
+
+  <g id="file-4" data-pptx-bounds="660 362 520 54">
+    
+  <g transform="translate(660, 368)" fill="#4A87C4">
+    <path d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm2 15h-4a1 1 0 0 0 0 2h4a1 1 0 0 0 0 -2m-2 -7a1 1 0 0 0 -1 1v1h-1a1 1 0 0 0 0 2h1v1a1 1 0 0 0 2 0v-1h1a1 1 0 0 0 0 -2h-1v-1a1 1 0 0 0 -1 -1" />
+    <path d="M19 7h-4l-.001 -4.001z" />
+  </g>
+    <text x="696" y="386" font-family="Consolas,monospace" font-size="20" font-weight="bold" fill="#1F2933">diff-report.html</text>
+    <text x="696" y="410" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">変更内容の確認レポート</text>
+  </g>
+
+  <g id="file-5" data-pptx-bounds="660 426 520 54">
+    
+  <g transform="translate(660, 432)" fill="#4A87C4">
+    <path d="M8.207 3.793a1 1 0 0 1 0 1.414l-2.5 2.5a1 1 0 0 1 -1.414 0l-1.5 -1.5a1 1 0 0 1 1.414 -1.414l.793 .793l1.793 -1.793a1 1 0 0 1 1.414 0" />
+    <path d="M8.207 9.793a1 1 0 0 1 0 1.414l-2.5 2.5a1 1 0 0 1 -1.414 0l-1.5 -1.5a1 1 0 0 1 1.414 -1.414l.793 .793l1.793 -1.793a1 1 0 0 1 1.414 0" />
+    <path d="M8.207 15.793a1 1 0 0 1 0 1.414l-2.5 2.5a1 1 0 0 1 -1.414 0l-1.5 -1.5a1 1 0 0 1 1.414 -1.414l.793 .793l1.793 -1.793a1 1 0 0 1 1.414 0" />
+    <path d="M21 6a1 1 0 0 1 -1 1h-9a1 1 0 0 1 0 -2h9a1 1 0 0 1 1 1" />
+    <path d="M21 12a1 1 0 0 1 -1 1h-9a1 1 0 0 1 0 -2h9a1 1 0 0 1 1 1" />
+    <path d="M21 18a1 1 0 0 1 -1 1h-9a1 1 0 0 1 0 -2h9a1 1 0 0 1 1 1" />
+  </g>
+    <text x="696" y="450" font-family="Consolas,monospace" font-size="20" font-weight="bold" fill="#1F2933">result.md</text>
+    <text x="696" y="474" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">改修の概要メモ（何をどう直したか）</text>
+  </g>
+
+  <g id="diff-note" data-pptx-bounds="100 510 1080 100">
+    <rect x="100" y="510" width="1080" height="100" rx="16" fill="#F1F5F9" />
+    
+  <g transform="translate(124, 532) scale(1.08333)" fill="#1F4E79">
+    <path d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm2 15h-4a1 1 0 0 0 0 2h4a1 1 0 0 0 0 -2m-2 -7a1 1 0 0 0 -1 1v1h-1a1 1 0 0 0 0 2h1v1a1 1 0 0 0 2 0v-1h1a1 1 0 0 0 0 -2h-1v-1a1 1 0 0 0 -1 -1" />
+    <path d="M19 7h-4l-.001 -4.001z" />
+  </g>
+    <text fill="#1F2933" font-size="24" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="164" y="552">差分レポートはブラウザで開ける自己完結のファイルです。変更しなかったモジュールも</text><text fill="#1F2933" font-size="24" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="164" y="586">含めて全モジュールが入っているので、改修後の記録としてそのまま保管できます。</text></g>
+
+  <g id="open-note" data-pptx-bounds="100 626 1080 40">
+    
+  <g transform="translate(100, 630) scale(1.08333)" fill="#4A87C4">
+    <path d="M2 6c0 -.796 .316 -1.558 .879 -2.121c.563 -.563 1.325 -.879 2.121 -.879h4l.099 .005c.229 .023 .444 .124 .608 .288l2.707 2.707h6.586c.796 0 1.558 .316 2.121 .879c.319 .319 .559 .703 .707 1.121l-14.523 0c-.407 0 -.805 .125 -1.14 .356c-.292 .203 -.525 .48 -.674 .801l-.058 .141l-1.379 3.676c-.194 .517 .068 1.093 .585 1.287c.517 .194 1.094 -.068 1.288 -.585l1.134 -3.027c.146 -.39 .519 -.649 .937 -.649h13.002l.217 .012c.216 .024 .426 .082 .624 .173c.054 .025 .107 .053 .159 .083c.199 .115 .377 .263 .525 .439c.188 .222 .325 .482 .403 .762c.077 .28 .092 .573 .045 .859c-.001 .008 -.003 .016 -.005 .024l-.995 5.21c-.131 .686 -.497 1.304 -1.036 1.749c-.47 .389 -1.046 .624 -1.65 .677l-.261 .012h-14.026c-.796 0 -1.558 -.316 -2.121 -.879c-.563 -.563 -.879 -1.325 -.879 -2.121v-11z" />
+  </g>
+    <text x="136" y="652" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">［出力フォルダをエクスプローラーで開く］でそのフォルダを開けます。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 684 1080 24">
+    <text x="100" y="702" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1180" y="702" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">22</text>
+  </g>
+</svg>

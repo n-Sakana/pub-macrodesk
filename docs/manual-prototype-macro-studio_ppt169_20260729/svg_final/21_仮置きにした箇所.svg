@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="ending">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#A2701C" />
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">参考</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">この試作版で仮置きにした箇所</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1" />
+  </g>
+
+  <g id="lede" data-pptx-bounds="40 132 1200 44">
+    
+  <g transform="translate(40, 140) scale(1.25)" fill="#A2701C">
+    <path d="M12 1.67c.955 0 1.845 .467 2.39 1.247l.105 .16l8.114 13.548a2.914 2.914 0 0 1 -2.307 4.363l-.195 .008h-16.225a2.914 2.914 0 0 1 -2.582 -4.2l.099 -.185l8.11 -13.538a2.914 2.914 0 0 1 2.491 -1.403zm.01 13.33l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -7a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" />
+  </g>
+    <text x="82" y="164" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">未確定は 6 点。いずれも本文の事実ではなく、名称と画面素材に関するものです。</text>
+  </g>
+
+  <g id="pending-left" data-pptx-bounds="40 192 588 396">
+    <rect x="40" y="192" width="588" height="120" rx="16" fill="#F2F6FB" />
+    <rect x="40" y="192" width="8" height="120" rx="4" fill="#A2701C" />
+    <text x="72" y="228" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F2A37">1. 製品名</text>
+    <text fill="#5D6B7A" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" x="72" y="262">本書は「Macro Studio（仮称）」。アプリ画面・ロゴ・ログの</text><text fill="#5D6B7A" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" x="72" y="288">保存先は MacroDesk のまま。改名時に画面写真の差し替えが必要。</text><rect x="40" y="330" width="588" height="120" rx="16" fill="#F2F6FB" />
+    <rect x="40" y="330" width="8" height="120" rx="4" fill="#A2701C" />
+    <text x="72" y="366" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F2A37">2. 画面写真</text>
+    <text fill="#5D6B7A" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" x="72" y="400">アプリ同梱のデモ用データを表示した現行 UI。ブック名・行数・</text><text fill="#5D6B7A" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" x="72" y="426">日時はデモ用の値。UI デザインは開発中のため細部は変わりうる。</text><rect x="40" y="468" width="588" height="120" rx="16" fill="#F2F6FB" />
+    <rect x="40" y="468" width="8" height="120" rx="4" fill="#A2701C" />
+    <text x="72" y="504" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F2A37">3. AI チャット側の画面</text>
+    <text fill="#5D6B7A" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" x="72" y="538">外部サービスのためツールの管轄外。正確な素材を用意できず、</text><text fill="#5D6B7A" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" x="72" y="564">模式図で代替（手順 2 の続きのページ）。</text></g>
+
+  <g id="pending-right" data-pptx-bounds="652 192 588 396">
+    <rect x="652" y="192" width="588" height="120" rx="16" fill="#F2F6FB" />
+    <rect x="652" y="192" width="8" height="120" rx="4" fill="#A2701C" />
+    <text x="684" y="228" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F2A37">4. 手動修正・新規モジュールの画面</text>
+    <text x="684" y="262" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">画面内の一時的な状態のため素材が未整備。文章と模式図で代替。</text>
+    <rect x="652" y="330" width="588" height="120" rx="16" fill="#F2F6FB" />
+    <rect x="652" y="330" width="8" height="120" rx="4" fill="#A2701C" />
+    <text x="684" y="366" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F2A37">5. 出力ファイル名</text>
+    <text fill="#5D6B7A" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" x="684" y="400">現行実装の「_macrodesk」を正とした。仕様書には旧案が残って</text><text fill="#5D6B7A" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" x="684" y="426">おり、実装と文書が一致していない。</text><rect x="652" y="468" width="588" height="120" rx="16" fill="#F2F6FB" />
+    <rect x="652" y="468" width="8" height="120" rx="4" fill="#A2701C" />
+    <text x="684" y="504" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F2A37">6. ひな形</text>
+    <text x="684" y="538" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">同梱は「新端末移行」の 1 件のみ。運用時に増える想定。</text>
+  </g>
+
+  <g id="next-action" data-pptx-bounds="40 604 1200 48">
+    <rect x="40" y="604" width="1200" height="48" rx="14" fill="#2B5C96" />
+    <text x="640" y="635" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF" text-anchor="middle">確定後、この試作を配布用マニュアルと社内展開資料の下敷きとして再利用します。</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">21</text>
+  </g>
+</svg>

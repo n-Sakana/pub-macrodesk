@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96" />
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">はじめに</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">判断するのはAI。この道具は運ぶだけ。</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1" />
+  </g>
+
+  <g id="lane-you" data-pptx-bounds="40 148 1200 132">
+    <rect x="40" y="148" width="1200" height="132" rx="16" fill="#F4F6F8" />
+    <rect x="64" y="190" width="280" height="48" rx="24" fill="#1F2A37" />
+    <text x="204" y="221" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF" text-anchor="middle">あなた</text>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="376" y="206">どのブックを直すか決める。何を直したいかを言葉にする。</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="376" y="242">AIの変更を採用するかどうかを決める。</text></g>
+
+  <g id="lane-tool" data-pptx-bounds="40 296 1200 132">
+    <rect x="40" y="296" width="1200" height="132" rx="16" fill="#F2F6FB" />
+    <rect x="64" y="338" width="280" height="48" rx="24" fill="#2B5C96" />
+    <text x="204" y="369" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Macro Studio（仮称）</text>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="376" y="354">マクロのコードを取り出す。依頼文とコードを渡せる形にする。</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="376" y="390">採用した変更だけを、新しいブックへ書き戻す。</text></g>
+
+  <g id="lane-ai" data-pptx-bounds="40 444 1200 132">
+    <rect x="40" y="444" width="1200" height="132" rx="16" fill="#F4F6F8" />
+    <rect x="64" y="486" width="280" height="48" rx="24" fill="#4C9155" />
+    <text x="204" y="517" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF" text-anchor="middle">AI チャット</text>
+    
+  <g transform="translate(360, 492) scale(1.41667)" fill="#4C9155">
+    <path d="M18 3a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-4.724l-4.762 2.857a1 1 0 0 1 -1.508 -.743l-.006 -.114v-2h-1a4 4 0 0 1 -3.995 -3.8l-.005 -.2v-8a4 4 0 0 1 4 -4zm-2.8 9.286a1 1 0 0 0 -1.414 .014a2.5 2.5 0 0 1 -3.572 0a1 1 0 0 0 -1.428 1.4a4.5 4.5 0 0 0 6.428 0a1 1 0 0 0 -.014 -1.414m-5.69 -4.286h-.01a1 1 0 1 0 0 2h.01a1 1 0 0 0 0 -2m5 0h-.01a1 1 0 0 0 0 2h.01a1 1 0 0 0 0 -2" />
+  </g>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="410" y="502">どこをどう直すかを判断する。</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="410" y="538">直したコードをチャットの本文で返す。</text></g>
+
+  <g id="promise-band" data-pptx-bounds="40 596 1200 56">
+    <rect x="40" y="596" width="1200" height="56" rx="16" fill="#FFFFFF" stroke="#4C9155" stroke-width="2" />
+    
+  <g transform="translate(68, 610) scale(1.16667)" fill="#4C9155">
+    <path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-1.293 5.953a1 1 0 0 0 -1.32 -.083l-.094 .083l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.403 1.403l.083 .094l2 2l.094 .083a1 1 0 0 0 1.226 0l.094 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z" />
+  </g>
+    <text x="110" y="632" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">ツールは完全ローカル動作。元のブックは、最初から最後まで一切変更されません。</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">03</text>
+  </g>
+</svg>

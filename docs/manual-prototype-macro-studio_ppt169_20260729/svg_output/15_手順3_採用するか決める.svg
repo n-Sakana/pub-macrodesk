@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <defs>
+    <clipPath id="shot-clip"><rect x="40" y="148" width="672" height="378" rx="10"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96"/>
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">手順 3 · 2/3</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">採用するか、使わないかを決めます</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1"/>
+  </g>
+
+  <g id="shot" data-pptx-bounds="36 144 680 386">
+    <rect x="36" y="144" width="680" height="386" rx="14" fill="#F4F6F8"/>
+    <image href="../images/s10-diff-accepted.png" x="40" y="148" width="672" height="378" preserveAspectRatio="xMidYMid meet" clip-path="url(#shot-clip)"/>
+    <rect x="40" y="148" width="672" height="378" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1"/>
+    <rect x="50" y="332" width="126" height="30" rx="6" fill="none" stroke="#4C9155" stroke-width="3"/>
+    <text x="184" y="352" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#4C9155">採用済みは緑</text>
+    <rect x="180" y="452" width="520" height="32" rx="8" fill="none" stroke="#2B5C96" stroke-width="3"/>
+    <text x="180" y="502" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#2B5C96">ここで決めます</text>
+  </g>
+
+  <g id="key-message" data-pptx-bounds="36 550 680 102">
+    <rect x="36" y="550" width="680" height="102" rx="14" fill="#FFFFFF" stroke="#2B5C96" stroke-width="2"/>
+    <text x="66" y="596" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F2A37">［採用する］を押して初めて</text>
+    <text x="66" y="632" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F2A37">ビルドの対象になります。貼っただけでは書き戻されません。</text>
+  </g>
+
+  <g id="decisions" data-pptx-bounds="736 148 504 232">
+    <rect x="736" y="148" width="504" height="104" rx="16" fill="#FFFFFF" stroke="#4C9155" stroke-width="2"/>
+    <use data-icon="tabler-filled/circle-check" x="762" y="172" width="30" height="30" fill="#4C9155"/>
+    <text x="802" y="196" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#4C9155">この変更を採用する</text>
+    <text x="762" y="232" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">ビルドで書き戻す対象になります</text>
+    <rect x="736" y="268" width="504" height="104" rx="16" fill="#FFFFFF" stroke="#C25560" stroke-width="2"/>
+    <text x="762" y="316" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#C25560">この変更を使わない</text>
+    <text x="762" y="352" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">取り込みを取り消します</text>
+  </g>
+
+  <g id="state-legend" data-pptx-bounds="736 392 504 260">
+    <rect x="736" y="392" width="504" height="260" rx="16" fill="#F2F6FB"/>
+    <text x="762" y="428" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#2B5C96">左の一覧に出る状態</text>
+    <circle cx="770" cy="466" r="7" fill="#5D6B7A"/>
+    <text x="790" y="472" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#1F2A37">未取り込み — まだ何もしていない</text>
+    <circle cx="770" cy="506" r="7" fill="#A2701C"/>
+    <text x="790" y="512" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#1F2A37">取込済み・確認中 — まだ決めていない</text>
+    <circle cx="770" cy="546" r="7" fill="#4C9155"/>
+    <text x="790" y="552" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#1F2A37">採用済み — ビルドで書き戻される</text>
+    <circle cx="770" cy="586" r="7" fill="#5D6B7A"/>
+    <text x="790" y="592" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#1F2A37">変更なし — 貼ったが元と同じだった</text>
+    <circle cx="770" cy="626" r="7" fill="#5D6B7A"/>
+    <text x="790" y="632" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#1F2A37">対象外 — 対象から外した</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">15</text>
+  </g>
+</svg>

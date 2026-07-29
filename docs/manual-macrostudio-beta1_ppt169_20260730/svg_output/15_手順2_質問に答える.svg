@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="step-mark" data-pptx-role="decoration" data-pptx-bounds="100 36 100 122">
+    <text x="100" y="120" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="96" font-weight="bold" fill="#E2E8F0">2</text>
+  </g>
+
+  <g id="header" data-pptx-bounds="200 40 980 120">
+    <text x="200" y="62" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">手順 2 ・ 質問に答える（ひな形に質問がある場合だけ）</text>
+    <text x="200" y="106" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">いくつか教えてください</text>
+    <text x="200" y="150" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">1 問ずつ。分かるところだけで大丈夫</text>
+  </g>
+
+  <g id="shot-choice" data-pptx-bounds="100 190 340 250">
+    <rect x="100" y="190" width="340" height="209" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/22-questions.png" x="120" y="210" width="300" height="169" preserveAspectRatio="xMidYMid meet"/>
+    <text x="100" y="425" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">選択式の問</text>
+  </g>
+
+  <g id="shot-text" data-pptx-bounds="470 190 340 250">
+    <rect x="470" y="190" width="340" height="209" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/23-questions-text.png" x="490" y="210" width="300" height="169" preserveAspectRatio="xMidYMid meet"/>
+    <text x="470" y="425" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">自由記述の問</text>
+  </g>
+
+  <g id="shot-last" data-pptx-bounds="840 190 340 250">
+    <rect x="840" y="190" width="340" height="209" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/24-questions-last.png" x="860" y="210" width="300" height="169" preserveAspectRatio="xMidYMid meet"/>
+    <text x="840" y="425" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">最後の問</text>
+  </g>
+
+  <g id="steps" data-pptx-bounds="100 448 1080 200">
+    <circle cx="110" cy="463" r="5" fill="#4A87C4"/>
+    <text x="132" y="470" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">質問が 1 問ずつ出ます。上の丸（番号入り）が進捗で、答えた問は色が付きます。</text>
+    <circle cx="110" cy="501" r="5" fill="#4A87C4"/>
+    <text x="132" y="508" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">移動は左右の矢印、または丸を直接クリック。問数が多いときは中間の丸が省略されます。</text>
+    <circle cx="110" cy="539" r="5" fill="#4A87C4"/>
+    <text x="132" y="546" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">選択式の問はボタンを 1 回押すだけ。自由記述の問は複数行で書けます。</text>
+    <circle cx="110" cy="577" r="5" fill="#4A87C4"/>
+    <text x="132" y="584" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">分かるところだけで大丈夫です。1 問以上答えると［次へ］が使えます。</text>
+    <circle cx="110" cy="615" r="5" fill="#4A87C4"/>
+    <text x="132" y="622" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">答えた内容は、次の画面の依頼文に【質問への回答】として折り込まれます。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 684 1080 24">
+    <text x="100" y="702" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1180" y="702" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">15</text>
+  </g>
+</svg>

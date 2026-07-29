@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="section">
+  <rect x="0" y="0" width="1280" height="720" fill="#1F4E79" />
+
+  <g id="section-number" data-pptx-role="decoration" data-pptx-bounds="100 276 200 122">
+    <text x="100" y="360" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="96" font-weight="bold" fill="#4A87C4">2</text>
+  </g>
+
+  <g id="section-title" data-pptx-bounds="200 280 980 220">
+    <text x="200" y="356" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="76" font-weight="bold" fill="#FFFFFF">第二部 操作マニュアル</text>
+    <text fill="#FFFFFF" font-size="30" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="200" y="436">ここからは、実際に操作する人向けです。</text><text fill="#FFFFFF" font-size="30" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="200" y="478">画面の順にそのまま進みます。</text></g>
+</svg>

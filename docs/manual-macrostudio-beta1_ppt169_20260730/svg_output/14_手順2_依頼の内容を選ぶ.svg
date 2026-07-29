@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="step-mark" data-pptx-role="decoration" data-pptx-bounds="100 36 100 122">
+    <text x="100" y="120" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="96" font-weight="bold" fill="#E2E8F0">2</text>
+  </g>
+
+  <g id="header" data-pptx-bounds="200 40 980 120">
+    <text x="200" y="62" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">手順 2 ・ 依頼の内容を選ぶ</text>
+    <text x="200" y="106" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">どんな改修をするか選びます</text>
+    <text x="200" y="150" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">一覧に出るのはファイル名ではなく、ひな形の見出し</text>
+  </g>
+
+  <g id="preset-1" data-pptx-bounds="100 190 630 50">
+    <rect x="100" y="190" width="76" height="26" rx="13" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+    <text x="138" y="209" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#1F4E79">改修</text>
+    <text x="192" y="210" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#1F2933">VBAリファクター（動きを変えずに整理・改善する）</text>
+    <text x="192" y="234" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">動作を変えずに、読みやすさ・速さ・壊れにくさを直します</text>
+  </g>
+
+  <g id="preset-2" data-pptx-bounds="100 254 630 50">
+    <rect x="100" y="254" width="76" height="26" rx="13" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+    <text x="138" y="273" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#1F4E79">改修</text>
+    <text x="192" y="274" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#1F2933">Win32 API を使わない形へ直す</text>
+    <text x="192" y="298" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">依存した箇所を、VBA 標準機能だけの形へ置き換えます</text>
+  </g>
+
+  <g id="preset-3" data-pptx-bounds="100 318 630 50">
+    <rect x="100" y="318" width="76" height="26" rx="13" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+    <text x="138" y="337" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#1F4E79">改修</text>
+    <text x="192" y="338" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#1F2933">自分で改修内容を書く</text>
+    <text x="192" y="362" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">改修してほしい内容を自分の言葉で書きます</text>
+  </g>
+
+  <g id="preset-4" data-pptx-bounds="100 382 630 50">
+    <rect x="100" y="382" width="76" height="26" rx="13" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+    <text x="138" y="401" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#4A87C4">聞く</text>
+    <text x="192" y="402" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#1F2933">新しい端末で動くかを調べてもらう</text>
+    <text x="192" y="426" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">動かなくなる箇所と直し方の方針を挙げてもらいます</text>
+  </g>
+
+  <g id="preset-5" data-pptx-bounds="100 446 630 50">
+    <rect x="100" y="446" width="76" height="26" rx="13" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+    <text x="138" y="465" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#4A87C4">聞く</text>
+    <text x="192" y="466" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#1F2933">相談用の依頼文を作る（進め方を決めたいとき）</text>
+    <text x="192" y="490" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">質問に答え、AI と方針を決めるための 1 通目を作ります</text>
+  </g>
+
+  <g id="preset-6" data-pptx-bounds="100 510 630 50">
+    <rect x="100" y="510" width="76" height="26" rx="13" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+    <text x="138" y="529" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#4A87C4">聞く</text>
+    <text x="192" y="530" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#1F2933">聞きたいことを自分で書く</text>
+    <text x="192" y="554" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">聞きたいことを自分の言葉で書きます</text>
+  </g>
+
+  <g id="screenshot" data-pptx-bounds="760 190 420 290">
+    <rect x="760" y="190" width="420" height="254" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/07-purpose-refactor.png" x="780" y="210" width="380" height="214" preserveAspectRatio="xMidYMid meet"/>
+    <text x="760" y="470" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">「改修する」を選んだときの一覧</text>
+  </g>
+
+  <g id="note" data-pptx-bounds="100 596 1080 76">
+    <rect x="100" y="596" width="1080" height="76" rx="14" fill="#F1F5F9"/>
+    <use data-icon="tabler-filled/list-check" x="124" y="618" width="26" height="26" fill="#1F4E79"/>
+    <text x="164" y="630" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933"><tspan x="164" dy="0">「AIに聞く」を選んだ場合、この画面の見出しは「AIに何を聞くか選びます」になります。</tspan><tspan x="164" dy="28">ひな形は自分で増やせます（「覚えておくとよいこと」で説明します）。</tspan></text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 684 1080 24">
+    <text x="100" y="702" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1180" y="702" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">14</text>
+  </g>
+</svg>

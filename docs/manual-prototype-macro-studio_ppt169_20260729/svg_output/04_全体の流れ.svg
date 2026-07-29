@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="toc">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96"/>
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">はじめに</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">全体の流れ — 4つの手順・12画面</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1"/>
+  </g>
+
+  <g id="step-1" data-pptx-bounds="40 142 1200 100">
+    <rect x="40" y="142" width="1200" height="100" rx="16" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/circle-number-1" x="68" y="168" width="48" height="48" fill="#2B5C96"/>
+    <use data-icon="tabler-filled/file-upload" x="136" y="176" width="32" height="32" fill="#2B5C96"/>
+    <text x="182" y="186" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F2A37">ブックを読み込む</text>
+    <text x="182" y="220" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">2 画面</text>
+    <line x1="500" y1="166" x2="500" y2="218" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="532" y="200" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">どのブックを改修するかを決めます</text>
+  </g>
+
+  <g id="step-2" data-pptx-bounds="40 254 1200 100">
+    <rect x="40" y="254" width="1200" height="100" rx="16" fill="#F4F6F8"/>
+    <use data-icon="tabler-filled/circle-number-2" x="68" y="280" width="48" height="48" fill="#2B5C96"/>
+    <use data-icon="tabler-filled/message-chatbot" x="136" y="288" width="32" height="32" fill="#2B5C96"/>
+    <text x="182" y="298" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F2A37">AIへ依頼する</text>
+    <text x="182" y="332" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">4 画面</text>
+    <line x1="500" y1="278" x2="500" y2="330" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="532" y="312" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">AI に何を依頼するかを決めます</text>
+  </g>
+
+  <g id="step-3" data-pptx-bounds="40 366 1200 100">
+    <rect x="40" y="366" width="1200" height="100" rx="16" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/circle-number-3" x="68" y="392" width="48" height="48" fill="#2B5C96"/>
+    <use data-icon="tabler-filled/eye" x="136" y="400" width="32" height="32" fill="#2B5C96"/>
+    <text x="182" y="410" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F2A37">返答を取り込む</text>
+    <text x="182" y="444" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">3 画面</text>
+    <line x1="500" y1="390" x2="500" y2="442" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="532" y="424" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">AI の変更を採用するかを決めます</text>
+  </g>
+
+  <g id="step-4" data-pptx-bounds="40 478 1200 100">
+    <rect x="40" y="478" width="1200" height="100" rx="16" fill="#F4F6F8"/>
+    <use data-icon="tabler-filled/circle-number-4" x="68" y="504" width="48" height="48" fill="#2B5C96"/>
+    <use data-icon="tabler-filled/circle-check" x="136" y="512" width="32" height="32" fill="#2B5C96"/>
+    <text x="182" y="522" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F2A37">ブックを作る</text>
+    <text x="182" y="556" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">3 画面</text>
+    <line x1="500" y1="502" x2="500" y2="554" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="532" y="536" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">出力名を確認してビルドします</text>
+  </g>
+
+  <g id="rule-band" data-pptx-bounds="40 596 1200 56">
+    <rect x="40" y="596" width="1200" height="56" rx="16" fill="#FFFFFF" stroke="#2B5C96" stroke-width="2"/>
+    <text x="68" y="632" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">右下の［次へ］は、その画面ですべきことが終わるまで押せません。押せたら合図です。</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">04</text>
+  </g>
+</svg>

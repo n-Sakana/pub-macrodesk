@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96"/>
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">はじめに</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">判断するのはAI。この道具は運ぶだけ。</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1"/>
+  </g>
+
+  <g id="lane-you" data-pptx-bounds="40 148 1200 132">
+    <rect x="40" y="148" width="1200" height="132" rx="16" fill="#F4F6F8"/>
+    <rect x="64" y="190" width="280" height="48" rx="24" fill="#1F2A37"/>
+    <text x="204" y="221" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF" text-anchor="middle">あなた</text>
+    <text x="376" y="206" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">どのブックを直すか決める。何を直したいかを言葉にする。<tspan x="376" dy="36">AIの変更を採用するかどうかを決める。</tspan></text>
+  </g>
+
+  <g id="lane-tool" data-pptx-bounds="40 296 1200 132">
+    <rect x="40" y="296" width="1200" height="132" rx="16" fill="#F2F6FB"/>
+    <rect x="64" y="338" width="280" height="48" rx="24" fill="#2B5C96"/>
+    <text x="204" y="369" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Macro Studio（仮称）</text>
+    <text x="376" y="354" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">マクロのコードを取り出す。依頼文とコードを渡せる形にする。<tspan x="376" dy="36">採用した変更だけを、新しいブックへ書き戻す。</tspan></text>
+  </g>
+
+  <g id="lane-ai" data-pptx-bounds="40 444 1200 132">
+    <rect x="40" y="444" width="1200" height="132" rx="16" fill="#F4F6F8"/>
+    <rect x="64" y="486" width="280" height="48" rx="24" fill="#4C9155"/>
+    <text x="204" y="517" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF" text-anchor="middle">AI チャット</text>
+    <use data-icon="tabler-filled/message-chatbot" x="360" y="492" width="34" height="34" fill="#4C9155"/>
+    <text x="410" y="502" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">どこをどう直すかを判断する。<tspan x="410" dy="36">直したコードをチャットの本文で返す。</tspan></text>
+  </g>
+
+  <g id="promise-band" data-pptx-bounds="40 596 1200 56">
+    <rect x="40" y="596" width="1200" height="56" rx="16" fill="#FFFFFF" stroke="#4C9155" stroke-width="2"/>
+    <use data-icon="tabler-filled/circle-check" x="68" y="610" width="28" height="28" fill="#4C9155"/>
+    <text x="110" y="632" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">ツールは完全ローカル動作。元のブックは、最初から最後まで一切変更されません。</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">03</text>
+  </g>
+</svg>

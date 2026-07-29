@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="100 44 1080 100">
+    <text x="100" y="84" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">できあがるもの</text>
+    <text x="100" y="128" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">依頼から結果まで、1 つのフォルダに全部残る</text>
+  </g>
+
+  <g id="folder-tree" data-pptx-bounds="100 170 520 250">
+    <rect x="100" y="170" width="520" height="250" rx="16" fill="#F1F5F9"/>
+    <text x="124" y="210" font-family="Consolas,monospace" font-size="20" fill="#1F2933"><tspan x="124" dy="0">&lt;元のブックのフォルダ&gt;\MacroStudio\</tspan><tspan x="124" dy="28">  &lt;ブック名&gt;_&lt;日付_時刻&gt;\</tspan><tspan x="124" dy="28">    request.md</tspan><tspan x="124" dy="28">    source-code.md</tspan><tspan x="124" dy="28">    &lt;ブック名&gt;_macrostudio.xlsm</tspan><tspan x="124" dy="28">    diff-report.html</tspan><tspan x="124" dy="28">    result.md</tspan></text>
+  </g>
+
+  <g id="file-1" data-pptx-bounds="660 170 520 54">
+    <use data-icon="tabler-filled/file-text" x="660" y="176" width="24" height="24" fill="#4A87C4"/>
+    <text x="696" y="194" font-family="Consolas,monospace" font-size="20" font-weight="bold" fill="#1F2933">request.md</text>
+    <text x="696" y="218" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">AIへ渡した依頼文</text>
+  </g>
+
+  <g id="file-2" data-pptx-bounds="660 234 520 54">
+    <use data-icon="tabler-filled/file-code" x="660" y="240" width="24" height="24" fill="#4A87C4"/>
+    <text x="696" y="258" font-family="Consolas,monospace" font-size="20" font-weight="bold" fill="#1F2933">source-code.md</text>
+    <text x="696" y="282" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">元マクロのコード全文</text>
+  </g>
+
+  <g id="file-3" data-pptx-bounds="660 298 520 54">
+    <use data-icon="tabler-filled/circle-check" x="660" y="304" width="24" height="24" fill="#4A87C4"/>
+    <text x="696" y="322" font-family="Consolas,monospace" font-size="20" font-weight="bold" fill="#1F2933">&lt;ブック名&gt;_macrostudio.xlsm</text>
+    <text x="696" y="346" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">改修済みブック</text>
+  </g>
+
+  <g id="file-4" data-pptx-bounds="660 362 520 54">
+    <use data-icon="tabler-filled/file-diff" x="660" y="368" width="24" height="24" fill="#4A87C4"/>
+    <text x="696" y="386" font-family="Consolas,monospace" font-size="20" font-weight="bold" fill="#1F2933">diff-report.html</text>
+    <text x="696" y="410" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">変更内容の確認レポート</text>
+  </g>
+
+  <g id="file-5" data-pptx-bounds="660 426 520 54">
+    <use data-icon="tabler-filled/list-check" x="660" y="432" width="24" height="24" fill="#4A87C4"/>
+    <text x="696" y="450" font-family="Consolas,monospace" font-size="20" font-weight="bold" fill="#1F2933">result.md</text>
+    <text x="696" y="474" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">改修の概要メモ（何をどう直したか）</text>
+  </g>
+
+  <g id="diff-note" data-pptx-bounds="100 510 1080 100">
+    <rect x="100" y="510" width="1080" height="100" rx="16" fill="#F1F5F9"/>
+    <use data-icon="tabler-filled/file-diff" x="124" y="532" width="26" height="26" fill="#1F4E79"/>
+    <text x="164" y="552" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933"><tspan x="164" dy="0">差分レポートはブラウザで開ける自己完結のファイルです。変更しなかったモジュールも</tspan><tspan x="164" dy="34">含めて全モジュールが入っているので、改修後の記録としてそのまま保管できます。</tspan></text>
+  </g>
+
+  <g id="open-note" data-pptx-bounds="100 626 1080 40">
+    <use data-icon="tabler-filled/folder-open" x="100" y="630" width="26" height="26" fill="#4A87C4"/>
+    <text x="136" y="652" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">［出力フォルダをエクスプローラーで開く］でそのフォルダを開けます。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 684 1080 24">
+    <text x="100" y="702" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1180" y="702" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">22</text>
+  </g>
+</svg>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <defs>
+    <clipPath id="shot-clip"><rect x="40" y="148" width="672" height="378" rx="10"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96"/>
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">手順 2 · 2/4</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">目的に近い改修依頼を選びます</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1"/>
+  </g>
+
+  <g id="shot" data-pptx-bounds="36 144 680 386">
+    <rect x="36" y="144" width="680" height="386" rx="14" fill="#F4F6F8"/>
+    <image href="../images/s04-preset-list.png" x="40" y="148" width="672" height="378" preserveAspectRatio="xMidYMid meet" clip-path="url(#shot-clip)"/>
+    <rect x="40" y="148" width="672" height="378" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1"/>
+    <circle cx="185" cy="355" r="17" fill="#2B5C96" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="185" y="362" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <circle cx="567" cy="355" r="17" fill="#2B5C96" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="567" y="362" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+  </g>
+
+  <g id="shot-note" data-pptx-bounds="36 550 680 102">
+    <rect x="36" y="550" width="680" height="102" rx="14" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/clipboard-list" x="62" y="572" width="28" height="28" fill="#2B5C96"/>
+    <text x="100" y="594" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">同梱されているひな形は「新端末移行」の<tspan x="100" dy="34">1 件です。運用時に増える想定です。</tspan></text>
+  </g>
+
+  <g id="steps" data-pptx-bounds="736 144 504 508">
+    <circle cx="760" cy="180" r="17" fill="#2B5C96"/>
+    <text x="760" y="187" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="792" y="188" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">一覧からひとつ選びます。<tspan x="792" dy="34">ひな形の名前と、改修指示の</tspan><tspan x="792" dy="34">1 行目が要約として出ます。</tspan></text>
+    <circle cx="760" cy="330" r="17" fill="#2B5C96"/>
+    <text x="760" y="337" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="792" y="338" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">選ぶと右端にチェックが付き、<tspan x="792" dy="34">［次へ］が押せます。</tspan></text>
+    <rect x="736" y="440" width="504" height="182" rx="14" fill="#FFFFFF" stroke="#A2701C" stroke-width="2"/>
+    <use data-icon="tabler-filled/alert-triangle" x="760" y="462" width="28" height="28" fill="#A2701C"/>
+    <text x="798" y="484" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#A2701C">ボタンが出ないとき</text>
+    <text x="760" y="530" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">画面の下に「読み込めない<tspan x="760" dy="34">ひな形」としてファイル名と</tspan><tspan x="760" dy="34">理由が出ます。直せばその</tspan><tspan x="760" dy="34">まま使えます。</tspan></text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">09</text>
+  </g>
+</svg>

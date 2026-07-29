@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="cover">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="cover-field" data-pptx-role="decoration" data-pptx-bounds="900 0 380 430">
+    <circle cx="1214" cy="112" r="316" fill="#F1F5F9" />
+  </g>
+
+  <g id="cover-title" data-pptx-bounds="100 240 1024 256">
+    <text x="104" y="332" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="76" font-weight="bold" fill="#1F4E79">コードは読めなくていい。</text>
+    <rect x="104" y="372" width="440" height="8" fill="#1F4E79" />
+    <rect x="544" y="372" width="80" height="8" fill="#E07B39" />
+    <text fill="#1F2933" font-size="32" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="104" y="438">AIチャットが使えれば、Excel マクロは直せます。</text><text fill="#1F2933" font-size="32" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="104" y="484">開発画面は開きません。</text></g>
+
+  <g id="cover-stamp" data-pptx-bounds="640 640 600 40">
+    <text x="1240" y="670" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">MacroStudio ベータ版 1.0.0 ／ サービス説明と操作マニュアル</text>
+  </g>
+</svg>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="step-mark" data-pptx-role="decoration" data-pptx-bounds="100 36 100 122">
+    <text x="100" y="120" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="96" font-weight="bold" fill="#E2E8F0">3</text>
+  </g>
+
+  <g id="header" data-pptx-bounds="200 40 980 120">
+    <text x="200" y="62" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">手順 3 ・ 2/2</text>
+    <text x="200" y="106" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">取り込んだ変更を確認します</text>
+    <text x="200" y="150" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">取り込めた内容が、そのまま書き戻す対象。採用ボタンは無い</text>
+  </g>
+
+  <g id="shot-summary" data-pptx-bounds="100 180 530 350">
+    <rect x="100" y="180" width="530" height="315" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/15-review.png" x="120" y="200" width="490" height="275" preserveAspectRatio="xMidYMid meet"/>
+    <text x="100" y="521" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">結果の要約。採用ボタンはありません</text>
+  </g>
+
+  <g id="shot-diff" data-pptx-bounds="650 180 530 350">
+    <rect x="650" y="180" width="530" height="315" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/16-review-diff.png" x="670" y="200" width="490" height="275" preserveAspectRatio="xMidYMid meet"/>
+    <text x="650" y="521" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">「変更内容を見る」を開いた状態。左が一覧、右が差分</text>
+  </g>
+
+  <g id="detail-left" data-pptx-bounds="100 538 530 120">
+    <use data-icon="tabler-filled/eye" x="100" y="540" width="24" height="24" fill="#4A87C4"/>
+    <text x="136" y="560" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#1F2933">左：モジュール一覧</text>
+    <text x="136" y="592" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C"><tspan x="136" dy="0">標準 / クラス / シートで区分され、</tspan><tspan x="136" dy="28">+5 −2 のように増減行数が出ます。</tspan></text>
+  </g>
+
+  <g id="detail-right" data-pptx-bounds="650 538 530 120">
+    <use data-icon="tabler-filled/file-diff" x="650" y="540" width="24" height="24" fill="#4A87C4"/>
+    <text x="686" y="560" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#1F2933">右：インライン差分</text>
+    <text x="686" y="592" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C"><tspan x="686" dy="0">削除行は赤、追加行は緑。［変更箇所のみ］</tspan><tspan x="686" dy="28">［折り返し］［↑前の変更］［↓次の変更］。</tspan></text>
+  </g>
+
+  <g id="redo-note" data-pptx-bounds="100 630 1080 62">
+    <use data-icon="tabler-filled/shield-check" x="100" y="634" width="24" height="24" fill="#E07B39"/>
+    <text x="136" y="653" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933"><tspan x="136" dy="0">軽微な修正は［手動修正］でその場で直せます。違うと思ったら［戻る］で取り込み直せます。</tspan><tspan x="136" dy="28">元のブックは何も変わりません。</tspan></text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 684 1080 24">
+    <text x="100" y="702" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1180" y="702" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">20</text>
+  </g>
+</svg>

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="step-mark" data-pptx-role="decoration" data-pptx-bounds="100 36 100 122">
+    <text x="100" y="120" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="96" font-weight="bold" fill="#E2E8F0">3</text>
+  </g>
+
+  <g id="header" data-pptx-bounds="200 40 980 120">
+    <text x="200" y="62" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">手順 3 ・ 1/2</text>
+    <text x="200" y="106" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">AIの返答をまとめて取り込みます</text>
+    <text x="200" y="150" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">コードブロックをコピーして、ボタンを 1 回押すだけ</text>
+  </g>
+
+  <g id="shot-before" data-pptx-bounds="100 190 340 250">
+    <rect x="100" y="190" width="340" height="209" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/12-intake.png" x="120" y="210" width="300" height="169" preserveAspectRatio="xMidYMid meet"/>
+    <text x="100" y="425" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">取り込む前</text>
+  </g>
+
+  <g id="shot-result" data-pptx-bounds="470 190 340 250">
+    <rect x="470" y="190" width="340" height="209" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/13-intake-done.png" x="490" y="210" width="300" height="169" preserveAspectRatio="xMidYMid meet"/>
+    <text x="470" y="425" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">取り込んだ結果（既存・新規の内訳）</text>
+  </g>
+
+  <g id="shot-summary" data-pptx-bounds="840 190 340 250">
+    <rect x="840" y="190" width="340" height="209" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/14-intake-summary.png" x="860" y="210" width="300" height="169" preserveAspectRatio="xMidYMid meet"/>
+    <text x="840" y="425" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">「AIが書いた改修内容を見る」を開いた状態</text>
+  </g>
+
+  <g id="how-1" data-pptx-bounds="100 452 1080 74">
+    <circle cx="110" cy="467" r="5" fill="#4A87C4"/>
+    <text x="132" y="474" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933"><tspan x="132" dy="0">AI は、変更したモジュールと新しく作ったモジュールの全文を</tspan><tspan x="132" dy="34">1 つのコードブロックにまとめて返します。</tspan></text>
+  </g>
+
+  <g id="how-2" data-pptx-bounds="100 520 1080 74">
+    <use data-icon="tabler-filled/clipboard-check" x="100" y="524" width="26" height="26" fill="#1F4E79"/>
+    <text x="132" y="546" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F2933"><tspan x="132" dy="0">そのコードブロックをコピーして、［クリップボードからAIの返答を取り込む］を</tspan><tspan x="132" dy="34">1 回押すだけ。Ctrl+V でも同じです。</tspan></text>
+  </g>
+
+  <g id="how-3" data-pptx-bounds="100 588 1080 40">
+    <circle cx="110" cy="603" r="5" fill="#4A87C4"/>
+    <text x="132" y="610" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#E07B39">モジュールを選ぶ必要も、1 つずつ貼る必要もありません。</text>
+  </g>
+
+  <g id="how-4" data-pptx-bounds="100 622 1080 40">
+    <circle cx="110" cy="637" r="5" fill="#4A87C4"/>
+    <text x="132" y="644" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">AI が書いた改修内容の要約も一緒に取り込まれ、日本語で読めます。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 684 1080 24">
+    <text x="100" y="702" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1180" y="702" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">18</text>
+  </g>
+</svg>

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <defs>
+    <clipPath id="shot-clip"><rect x="40" y="148" width="672" height="378" rx="10"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96"/>
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">手順 3 · 2/3</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">AIの変更を、元のコードと見比べます</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1"/>
+  </g>
+
+  <g id="shot" data-pptx-bounds="36 144 680 386">
+    <rect x="36" y="144" width="680" height="386" rx="14" fill="#F4F6F8"/>
+    <image href="../images/s09-diff.png" x="40" y="148" width="672" height="378" preserveAspectRatio="xMidYMid meet" clip-path="url(#shot-clip)"/>
+    <rect x="40" y="148" width="672" height="378" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1"/>
+    <circle cx="250" cy="240" r="17" fill="#2B5C96" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="250" y="247" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3</text>
+    <circle cx="373" cy="240" r="17" fill="#2B5C96" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="373" y="247" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">4</text>
+    <circle cx="202" cy="296" r="17" fill="#2B5C96" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="202" y="303" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <circle cx="316" cy="316" r="17" fill="#2B5C96" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="316" y="323" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+  </g>
+
+  <g id="color-key" data-pptx-bounds="36 550 680 102">
+    <rect x="36" y="550" width="680" height="102" rx="14" fill="#FFFFFF" stroke="#E2E7EC" stroke-width="1"/>
+    <rect x="62" y="576" width="10" height="24" rx="5" fill="#C25560"/>
+    <text x="86" y="596" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">赤い行 ＝ 消える行</text>
+    <rect x="62" y="616" width="10" height="24" rx="5" fill="#4C9155"/>
+    <text x="86" y="636" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">緑の行 ＝ 増える行</text>
+    <line x1="380" y1="572" x2="380" y2="632" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="410" y="596" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">左のモジュール一覧が、そのまま<tspan x="410" dy="26">モジュールツリーです。</tspan></text>
+  </g>
+
+  <g id="steps" data-pptx-bounds="736 144 504 508">
+    <circle cx="760" cy="172" r="17" fill="#2B5C96"/>
+    <text x="760" y="179" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="792" y="180" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">行番号は 2 列。左が「前」、<tspan x="792" dy="34">右が「後」の行番号です。</tspan></text>
+    <circle cx="760" cy="272" r="17" fill="#2B5C96"/>
+    <text x="760" y="279" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="792" y="280" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">赤が消える行、緑が増える行<tspan x="792" dy="34">です。</tspan></text>
+    <circle cx="760" cy="372" r="17" fill="#2B5C96"/>
+    <text x="760" y="379" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3</text>
+    <text x="792" y="380" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">［↑ 前の変更］［↓ 次の変更］<tspan x="792" dy="34">で変更箇所を順に送れます。</tspan></text>
+    <circle cx="760" cy="472" r="17" fill="#2B5C96"/>
+    <text x="760" y="479" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">4</text>
+    <text x="792" y="480" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">［変更箇所のみ］で変更のない<tspan x="792" dy="34">行を隠せます。［折り返し］は</tspan><tspan x="792" dy="34">長い行を折り返します。</tspan></text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">14</text>
+  </g>
+</svg>

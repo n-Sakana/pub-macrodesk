@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <defs>
+    <clipPath id="name-clip"><rect x="40" y="180" width="540" height="304" rx="10"/></clipPath>
+    <clipPath id="build-clip"><rect x="700" y="180" width="540" height="304" rx="10"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96"/>
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">手順 4 · 1-2/3</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">出力名を確認して、ビルドします</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1"/>
+  </g>
+
+  <g id="shot-name" data-pptx-bounds="40 140 540 344">
+    <text x="40" y="166" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#5D6B7A">出力ファイル名を確認する</text>
+    <image href="../images/s12-output-name.png" x="40" y="180" width="540" height="304" preserveAspectRatio="xMidYMid meet" clip-path="url(#name-clip)"/>
+    <rect x="40" y="180" width="540" height="304" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1"/>
+  </g>
+
+  <g id="build-flow-arrow" data-pptx-bounds="600 304 80 56">
+    <g id="p18-build-arrow" data-pptx-authoring="preset" data-pptx-object="shape" data-pptx-prst="rightArrow" data-pptx-frame="600 304 80 56" fill="#2B5C96" stroke="none">
+      <path d="M 600 318 L 652 318 L 652 304 L 680 332 L 652 360 L 652 346 L 600 346 Z"/>
+    </g>
+  </g>
+
+  <g id="shot-build" data-pptx-bounds="700 140 540 344">
+    <text x="700" y="166" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#2B5C96">［次へ］でビルドが始まる</text>
+    <image href="../images/s13-building.png" x="700" y="180" width="540" height="304" preserveAspectRatio="xMidYMid meet" clip-path="url(#build-clip)"/>
+    <rect x="700" y="180" width="540" height="304" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1"/>
+  </g>
+
+  <g id="name-rules" data-pptx-bounds="40 504 588 148">
+    <rect x="40" y="504" width="588" height="148" rx="16" fill="#F2F6FB"/>
+    <text x="68" y="540" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#2B5C96">出力名の決まり</text>
+    <text x="68" y="580" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">既定は「元のブック名 + _macrodesk + 元の<tspan x="68" dy="34">拡張子」。変えてもかまいませんが、拡張子は</tspan><tspan x="68" dy="34">元のままにします。</tspan></text>
+  </g>
+
+  <g id="build-note" data-pptx-bounds="652 504 588 148">
+    <rect x="652" y="504" width="588" height="148" rx="16" fill="#FFFFFF" stroke="#4C9155" stroke-width="2"/>
+    <use data-icon="tabler-filled/circle-check" x="680" y="522" width="28" height="28" fill="#4C9155"/>
+    <text x="718" y="544" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#4C9155">通常 1〜2 秒で終わります</text>
+    <text x="680" y="586" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">書き戻したあと、ツールが自動でブックを読み<tspan x="680" dy="34">直して、意図どおり書き込まれたか検証します。</tspan></text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">18</text>
+  </g>
+</svg>

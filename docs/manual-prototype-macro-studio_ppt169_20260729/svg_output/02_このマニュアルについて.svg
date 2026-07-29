@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96"/>
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">はじめに</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">このマニュアルについて</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1"/>
+  </g>
+
+  <g id="card-audience" data-pptx-bounds="40 152 588 220">
+    <rect x="40" y="152" width="588" height="220" rx="16" fill="#FFFFFF" stroke="#E2E7EC" stroke-width="1"/>
+    <use data-icon="tabler-filled/info-circle" x="68" y="180" width="34" height="34" fill="#2B5C96"/>
+    <text x="114" y="208" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#2B5C96">対象読者</text>
+    <text x="68" y="266" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">VBA や開発に詳しくない方。<tspan x="68" dy="36">VBE を開いたことがなくて</tspan><tspan x="68" dy="36">かまいません。</tspan></text>
+  </g>
+
+  <g id="card-howto" data-pptx-bounds="652 152 588 220">
+    <rect x="652" y="152" width="588" height="220" rx="16" fill="#FFFFFF" stroke="#E2E7EC" stroke-width="1"/>
+    <use data-icon="tabler-filled/eye" x="680" y="180" width="34" height="34" fill="#2B5C96"/>
+    <text x="726" y="208" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#2B5C96">読み方</text>
+    <text x="680" y="266" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">アプリを起動し、手元の画面と<tspan x="680" dy="36">見比べながら 1 ページずつ進めて</tspan><tspan x="680" dy="36">ください。1 ページが 1 画面です。</tspan></text>
+  </g>
+
+  <g id="card-prototype" data-pptx-bounds="40 396 1200 256">
+    <rect x="40" y="396" width="1200" height="256" rx="16" fill="#F2F6FB"/>
+    <rect x="40" y="396" width="8" height="256" rx="4" fill="#A2701C"/>
+    <use data-icon="tabler-filled/alert-triangle" x="76" y="424" width="34" height="34" fill="#A2701C"/>
+    <text x="122" y="452" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#A2701C">これは試作です</text>
+    <text x="76" y="510" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">製品名は「Macro Studio（仮称）」です。アプリ画面・ロゴ・ログの保存先は開発中のため<tspan x="76" dy="36">MacroDesk のままで、これから出てくる画面写真にもそのまま写ります。</tspan></text>
+    <text x="76" y="592" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">画面写真はアプリ同梱のデモ用データを表示したものです。ブック名・行数・日時は<tspan x="76" dy="36">実在の業務データではありません。</tspan></text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">02</text>
+  </g>
+</svg>

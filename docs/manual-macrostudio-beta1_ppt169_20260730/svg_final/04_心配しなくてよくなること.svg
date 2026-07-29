@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="header" data-pptx-bounds="100 44 1080 148">
+    <text x="100" y="84" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">心配しなくてよくなること</text>
+    <text x="100" y="128" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">手間も、事故も、あとの説明も、この道具の側で受け持つ</text>
+    <rect x="100" y="152" width="470" height="40" rx="12" fill="#F1F5F9" />
+    <text x="124" y="179" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#5B6B7C">今までの心配</text>
+    <rect x="650" y="152" width="530" height="40" rx="12" fill="#1F4E79" />
+    <text x="674" y="179" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">このツールでは</text>
+  </g>
+
+  <g id="row-1" data-pptx-bounds="100 202 1080 72">
+    <rect x="100" y="202" width="470" height="72" rx="12" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" />
+    <text x="124" y="246" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">何をどう頼めばいいか分からない</text>
+    <rect x="650" y="202" width="530" height="72" rx="12" fill="#F1F5F9" />
+    
+  <g transform="translate(674, 222) scale(1.08333)" fill="#1F4E79">
+    <path d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm3 14h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m0 -4h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m-5 -4h-1a1 1 0 1 0 0 2h1a1 1 0 0 0 0 -2" />
+    <path d="M19 7h-4l-.001 -4.001z" />
+  </g>
+    <text fill="#1F2933" font-size="20" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="712" y="234">頼みたいことを選べば、</text><text fill="#1F2933" font-size="20" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="712" y="262">AI へ渡す文章はこちらで用意される</text></g>
+
+  <g id="row-2" data-pptx-bounds="100 282 1080 72">
+    <rect x="100" y="282" width="470" height="72" rx="12" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" />
+    <text x="124" y="326" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">コピペを間違えそう</text>
+    <rect x="650" y="282" width="530" height="72" rx="12" fill="#F1F5F9" />
+    
+  <g transform="translate(674, 302) scale(1.08333)" fill="#1F4E79">
+    <path d="M17.997 4.17a3 3 0 0 1 2.003 2.83v12a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 2.003 -2.83a4 4 0 0 0 3.997 3.83h4a4 4 0 0 0 3.98 -3.597zm-3.704 7.123l-3.293 3.292l-1.293 -1.292a1 1 0 1 0 -1.414 1.414l2 2a1 1 0 0 0 1.414 0l4 -4a1 1 0 0 0 -1.414 -1.414m-.293 -9.293a2 2 0 1 1 0 4h-4a2 2 0 1 1 0 -4z" />
+  </g>
+    <text fill="#1F2933" font-size="20" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="712" y="314">貼り付けは 1 回だけ。</text><text fill="#1F2933" font-size="20" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="712" y="342">中身を仕分けて写す作業はない</text></g>
+
+  <g id="row-3" data-pptx-bounds="100 362 1080 72">
+    <rect x="100" y="362" width="470" height="72" rx="12" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" />
+    <text x="124" y="406" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">直った内容が正しいか分からない</text>
+    <rect x="650" y="362" width="530" height="72" rx="12" fill="#F1F5F9" />
+    
+  <g transform="translate(674, 382) scale(1.08333)" fill="#1F4E79">
+    <path d="M12 4c4.29 0 7.863 2.429 10.665 7.154l.22 .379l.045 .1l.03 .083l.014 .055l.014 .082l.011 .1v.11l-.014 .111a.992 .992 0 0 1 -.026 .11l-.039 .108l-.036 .075l-.016 .03c-2.764 4.836 -6.3 7.38 -10.555 7.499l-.313 .004c-4.396 0 -8.037 -2.549 -10.868 -7.504a1 1 0 0 1 0 -.992c2.831 -4.955 6.472 -7.504 10.868 -7.504zm0 5a3 3 0 1 0 0 6a3 3 0 0 0 0 -6" />
+  </g>
+    <text fill="#1F2933" font-size="20" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="712" y="394">変わった場所を見てから、</text><text fill="#1F2933" font-size="20" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="712" y="422">作るかどうかを決められる</text></g>
+
+  <g id="row-4" data-pptx-bounds="100 442 1080 72">
+    <rect x="100" y="442" width="470" height="72" rx="12" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" />
+    <text x="124" y="486" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">元のブックを壊しそう</text>
+    <rect x="650" y="442" width="530" height="72" rx="12" fill="#F1F5F9" />
+    
+  <g transform="translate(674, 462) scale(1.08333)" fill="#E07B39">
+    <path d="M11.998 2l.118 .007l.059 .008l.061 .013l.111 .034a.993 .993 0 0 1 .217 .112l.104 .082l.255 .218a11 11 0 0 0 7.189 2.537l.342 -.01a1 1 0 0 1 1.005 .717a13 13 0 0 1 -9.208 16.25a1 1 0 0 1 -.502 0a13 13 0 0 1 -9.209 -16.25a1 1 0 0 1 1.005 -.717a11 11 0 0 0 7.531 -2.527l.263 -.225l.096 -.075a.993 .993 0 0 1 .217 -.112l.112 -.034a.97 .97 0 0 1 .119 -.021l.115 -.007zm3.71 7.293a1 1 0 0 0 -1.415 0l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.32 1.497l2 2l.094 .083a1 1 0 0 0 1.32 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z" />
+  </g>
+    <text fill="#1F2933" font-size="20" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="712" y="474">元のファイルには触れない。</text><text fill="#1F2933" font-size="20" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="712" y="502">作り直せば何度でもやり直せる</text></g>
+
+  <g id="row-5" data-pptx-bounds="100 522 1080 72">
+    <rect x="100" y="522" width="470" height="72" rx="12" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" />
+    <text x="124" y="566" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">後で誰も説明できない</text>
+    <rect x="650" y="522" width="530" height="72" rx="12" fill="#F1F5F9" />
+    
+  <g transform="translate(674, 542) scale(1.08333)" fill="#1F4E79">
+    <path d="M2 6c0 -.796 .316 -1.558 .879 -2.121c.563 -.563 1.325 -.879 2.121 -.879h4l.099 .005c.229 .023 .444 .124 .608 .288l2.707 2.707h6.586c.796 0 1.558 .316 2.121 .879c.319 .319 .559 .703 .707 1.121l-14.523 0c-.407 0 -.805 .125 -1.14 .356c-.292 .203 -.525 .48 -.674 .801l-.058 .141l-1.379 3.676c-.194 .517 .068 1.093 .585 1.287c.517 .194 1.094 -.068 1.288 -.585l1.134 -3.027c.146 -.39 .519 -.649 .937 -.649h13.002l.217 .012c.216 .024 .426 .082 .624 .173c.054 .025 .107 .053 .159 .083c.199 .115 .377 .263 .525 .439c.188 .222 .325 .482 .403 .762c.077 .28 .092 .573 .045 .859c-.001 .008 -.003 .016 -.005 .024l-.995 5.21c-.131 .686 -.497 1.304 -1.036 1.749c-.47 .389 -1.046 .624 -1.65 .677l-.261 .012h-14.026c-.796 0 -1.558 -.316 -2.121 -.879c-.563 -.563 -.879 -1.325 -.879 -2.121v-11z" />
+  </g>
+    <text fill="#1F2933" font-size="20" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="712" y="554">何を頼み、何が変わったのかが</text><text fill="#1F2933" font-size="20" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="712" y="582">1 か所に残る</text></g>
+
+  <g id="row-6" data-pptx-bounds="100 602 1080 72">
+    <rect x="100" y="602" width="470" height="72" rx="12" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" />
+    <text x="124" y="646" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">部門ごとにやり方が違う</text>
+    <rect x="650" y="602" width="530" height="72" rx="12" fill="#F1F5F9" />
+    
+  <g transform="translate(674, 622) scale(1.08333)" fill="#1F4E79">
+    <path d="M8.207 3.793a1 1 0 0 1 0 1.414l-2.5 2.5a1 1 0 0 1 -1.414 0l-1.5 -1.5a1 1 0 0 1 1.414 -1.414l.793 .793l1.793 -1.793a1 1 0 0 1 1.414 0" />
+    <path d="M8.207 9.793a1 1 0 0 1 0 1.414l-2.5 2.5a1 1 0 0 1 -1.414 0l-1.5 -1.5a1 1 0 0 1 1.414 -1.414l.793 .793l1.793 -1.793a1 1 0 0 1 1.414 0" />
+    <path d="M8.207 15.793a1 1 0 0 1 0 1.414l-2.5 2.5a1 1 0 0 1 -1.414 0l-1.5 -1.5a1 1 0 0 1 1.414 -1.414l.793 .793l1.793 -1.793a1 1 0 0 1 1.414 0" />
+    <path d="M21 6a1 1 0 0 1 -1 1h-9a1 1 0 0 1 0 -2h9a1 1 0 0 1 1 1" />
+    <path d="M21 12a1 1 0 0 1 -1 1h-9a1 1 0 0 1 0 -2h9a1 1 0 0 1 1 1" />
+    <path d="M21 18a1 1 0 0 1 -1 1h-9a1 1 0 0 1 0 -2h9a1 1 0 0 1 1 1" />
+  </g>
+    <text fill="#1F2933" font-size="20" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="712" y="634">よく頼む内容は、</text><text fill="#1F2933" font-size="20" font-family="'Yu Gothic UI','Segoe UI',sans-serif" x="712" y="662">自分たちのひな形として増やせる</text></g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 684 1080 24">
+    <text x="100" y="702" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第一部 サービス説明</text>
+    <text x="1180" y="702" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">4</text>
+  </g>
+</svg>

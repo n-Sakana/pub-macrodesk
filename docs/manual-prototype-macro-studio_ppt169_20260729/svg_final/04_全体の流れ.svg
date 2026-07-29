@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="toc">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96"/>
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">はじめに</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">全体の流れ — 4つの手順・12画面</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1"/>
+  </g>
+
+  <g id="step-1" data-pptx-bounds="40 142 1200 100">
+    <rect x="40" y="142" width="1200" height="100" rx="16" fill="#F2F6FB"/>
+    <!-- icon: tabler-filled/circle-number-1 -->
+  <g transform="translate(68, 168) scale(2)" fill="#2B5C96">
+    <path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10 -10 10s-10 -4.477 -10 -10s4.477 -10 10 -10zm.994 5.886c-.083 -.777 -1.008 -1.16 -1.617 -.67l-.084 .077l-2 2l-.083 .094a1 1 0 0 0 0 1.226l.083 .094l.094 .083a1 1 0 0 0 1.226 0l.094 -.083l.293 -.293v5.586l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-8l-.006 -.114z" />
+  </g>
+    <!-- icon: tabler-filled/file-upload -->
+  <g transform="translate(136, 176) scale(1.33333)" fill="#2B5C96">
+    <path d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm0 9l-.09 .004l-.058 .007l-.118 .025l-.105 .035l-.113 .054l-.111 .071a1 1 0 0 0 -.112 .097l-2.5 2.5a1 1 0 0 0 0 1.414l.094 .083a1 1 0 0 0 1.32 -.083l.793 -.793v3.586a1 1 0 0 0 2 0v-3.585l.793 .792a1 1 0 0 0 1.414 -1.414l-2.5 -2.5l-.082 -.073l-.104 -.074l-.098 -.052l-.11 -.044l-.112 -.03l-.126 -.017z" />
+    <path d="M19 7h-4l-.001 -4.001z" />
+  </g>
+    <text x="182" y="186" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F2A37">ブックを読み込む</text>
+    <text x="182" y="220" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">2 画面</text>
+    <line x1="500" y1="166" x2="500" y2="218" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="532" y="200" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">どのブックを改修するかを決めます</text>
+  </g>
+
+  <g id="step-2" data-pptx-bounds="40 254 1200 100">
+    <rect x="40" y="254" width="1200" height="100" rx="16" fill="#F4F6F8"/>
+    <!-- icon: tabler-filled/circle-number-2 -->
+  <g transform="translate(68, 280) scale(2)" fill="#2B5C96">
+    <path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10 -10 10s-10 -4.477 -10 -10s4.477 -10 10 -10zm1 5h-3l-.117 .007a1 1 0 0 0 0 1.986l.117 .007h3v2h-2l-.15 .005a2 2 0 0 0 -1.844 1.838l-.006 .157v2l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h3l.117 -.007a1 1 0 0 0 0 -1.986l-.117 -.007h-3v-2h2l.15 -.005a2 2 0 0 0 1.844 -1.838l.006 -.157v-2l-.005 -.15a2 2 0 0 0 -1.838 -1.844l-.157 -.006z" />
+  </g>
+    <!-- icon: tabler-filled/message-chatbot -->
+  <g transform="translate(136, 288) scale(1.33333)" fill="#2B5C96">
+    <path d="M18 3a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-4.724l-4.762 2.857a1 1 0 0 1 -1.508 -.743l-.006 -.114v-2h-1a4 4 0 0 1 -3.995 -3.8l-.005 -.2v-8a4 4 0 0 1 4 -4zm-2.8 9.286a1 1 0 0 0 -1.414 .014a2.5 2.5 0 0 1 -3.572 0a1 1 0 0 0 -1.428 1.4a4.5 4.5 0 0 0 6.428 0a1 1 0 0 0 -.014 -1.414m-5.69 -4.286h-.01a1 1 0 1 0 0 2h.01a1 1 0 0 0 0 -2m5 0h-.01a1 1 0 0 0 0 2h.01a1 1 0 0 0 0 -2" />
+  </g>
+    <text x="182" y="298" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F2A37">AIへ依頼する</text>
+    <text x="182" y="332" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">4 画面</text>
+    <line x1="500" y1="278" x2="500" y2="330" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="532" y="312" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">AI に何を依頼するかを決めます</text>
+  </g>
+
+  <g id="step-3" data-pptx-bounds="40 366 1200 100">
+    <rect x="40" y="366" width="1200" height="100" rx="16" fill="#F2F6FB"/>
+    <!-- icon: tabler-filled/circle-number-3 -->
+  <g transform="translate(68, 392) scale(2)" fill="#2B5C96">
+    <path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10 -10 10s-10 -4.477 -10 -10s4.477 -10 10 -10zm1 5h-2l-.15 .005a2 2 0 0 0 -1.85 1.995a1 1 0 0 0 1.974 .23l.02 -.113l.006 -.117h2v2h-2l-.133 .007c-1.111 .12 -1.154 1.73 -.128 1.965l.128 .021l.133 .007h2v2h-2l-.007 -.117a1 1 0 0 0 -1.993 .117a2 2 0 0 0 1.85 1.995l.15 .005h2l.15 -.005a2 2 0 0 0 1.844 -1.838l.006 -.157v-2l-.005 -.15a1.988 1.988 0 0 0 -.17 -.667l-.075 -.152l-.019 -.032l.02 -.03a2.01 2.01 0 0 0 .242 -.795l.007 -.174v-2l-.005 -.15a2 2 0 0 0 -1.838 -1.844l-.157 -.006z" />
+  </g>
+    <!-- icon: tabler-filled/eye -->
+  <g transform="translate(136, 400) scale(1.33333)" fill="#2B5C96">
+    <path d="M12 4c4.29 0 7.863 2.429 10.665 7.154l.22 .379l.045 .1l.03 .083l.014 .055l.014 .082l.011 .1v.11l-.014 .111a.992 .992 0 0 1 -.026 .11l-.039 .108l-.036 .075l-.016 .03c-2.764 4.836 -6.3 7.38 -10.555 7.499l-.313 .004c-4.396 0 -8.037 -2.549 -10.868 -7.504a1 1 0 0 1 0 -.992c2.831 -4.955 6.472 -7.504 10.868 -7.504zm0 5a3 3 0 1 0 0 6a3 3 0 0 0 0 -6" />
+  </g>
+    <text x="182" y="410" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F2A37">返答を取り込む</text>
+    <text x="182" y="444" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">3 画面</text>
+    <line x1="500" y1="390" x2="500" y2="442" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="532" y="424" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">AI の変更を採用するかを決めます</text>
+  </g>
+
+  <g id="step-4" data-pptx-bounds="40 478 1200 100">
+    <rect x="40" y="478" width="1200" height="100" rx="16" fill="#F4F6F8"/>
+    <!-- icon: tabler-filled/circle-number-4 -->
+  <g transform="translate(68, 504) scale(2)" fill="#2B5C96">
+    <path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10 -10 10s-10 -4.477 -10 -10s4.477 -10 10 -10zm2 5a1 1 0 0 0 -.993 .883l-.007 .117v3h-2v-3l-.007 -.117a1 1 0 0 0 -1.986 0l-.007 .117v3l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h2v3l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-8l-.007 -.117a1 1 0 0 0 -.993 -.883z" />
+  </g>
+    <!-- icon: tabler-filled/circle-check -->
+  <g transform="translate(136, 512) scale(1.33333)" fill="#2B5C96">
+    <path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-1.293 5.953a1 1 0 0 0 -1.32 -.083l-.094 .083l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.403 1.403l.083 .094l2 2l.094 .083a1 1 0 0 0 1.226 0l.094 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z" />
+  </g>
+    <text x="182" y="522" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F2A37">ブックを作る</text>
+    <text x="182" y="556" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">3 画面</text>
+    <line x1="500" y1="502" x2="500" y2="554" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="532" y="536" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">出力名を確認してビルドします</text>
+  </g>
+
+  <g id="rule-band" data-pptx-bounds="40 596 1200 56">
+    <rect x="40" y="596" width="1200" height="56" rx="16" fill="#FFFFFF" stroke="#2B5C96" stroke-width="2"/>
+    <text x="68" y="632" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">右下の［次へ］は、その画面ですべきことが終わるまで押せません。押せたら合図です。</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">04</text>
+  </g>
+</svg>

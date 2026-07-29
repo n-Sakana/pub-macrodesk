@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <defs>
+    <clipPath id="shot-clip"><rect x="40" y="148" width="672" height="378" rx="10"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96"/>
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">手順 1 · 1/2</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">改修するExcelブックを読み込みます</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1"/>
+  </g>
+
+  <g id="shot" data-pptx-bounds="36 144 680 386">
+    <rect x="36" y="144" width="680" height="386" rx="14" fill="#F4F6F8"/>
+    <image href="../images/s01-book-drop.png" x="40" y="148" width="672" height="378" preserveAspectRatio="xMidYMid meet" clip-path="url(#shot-clip)"/>
+    <rect x="40" y="148" width="672" height="378" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1"/>
+    <circle cx="179" cy="316" r="17" fill="#2B5C96" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="179" y="323" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <circle cx="376" cy="414" r="17" fill="#2B5C96" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="376" y="421" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <circle cx="664" cy="500" r="17" fill="#2B5C96" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="664" y="507" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3</text>
+  </g>
+
+  <g id="shot-note" data-pptx-bounds="36 550 680 102">
+    <rect x="36" y="550" width="680" height="102" rx="14" fill="#FFFFFF" stroke="#4C9155" stroke-width="2"/>
+    <use data-icon="tabler-filled/circle-check" x="62" y="572" width="28" height="28" fill="#4C9155"/>
+    <text x="100" y="594" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">画面にも出ているとおり、元のブックには<tspan x="100" dy="34">書き込みません。読むのはコードだけです。</tspan></text>
+  </g>
+
+  <g id="steps" data-pptx-bounds="736 144 504 508">
+    <circle cx="760" cy="180" r="17" fill="#2B5C96"/>
+    <text x="760" y="187" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="792" y="188" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">点線の枠へ、改修したい<tspan x="792" dy="34">ブックをドラッグ＆ドロップ</tspan><tspan x="792" dy="34">します。</tspan></text>
+    <circle cx="760" cy="330" r="17" fill="#2B5C96"/>
+    <text x="760" y="337" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="792" y="338" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">枠をクリックすると、ファイル<tspan x="792" dy="34">選択の画面からも選べます。</tspan></text>
+    <circle cx="760" cy="460" r="17" fill="#2B5C96"/>
+    <text x="760" y="467" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3</text>
+    <text x="792" y="468" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">読み込めると枠がファイル名の<tspan x="792" dy="34">表示に変わり、右下の［次へ］</tspan><tspan x="792" dy="34">が押せるようになります。</tspan></text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">06</text>
+  </g>
+</svg>

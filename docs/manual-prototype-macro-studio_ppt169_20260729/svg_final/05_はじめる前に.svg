@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96" />
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">はじめに</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">はじめる前に</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1" />
+  </g>
+
+  <g id="card-prepare" data-pptx-bounds="40 148 588 288">
+    <rect x="40" y="148" width="588" height="288" rx="16" fill="#FFFFFF" stroke="#E2E7EC" stroke-width="1" />
+    <text x="68" y="196" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#2B5C96">用意するもの</text>
+    <circle cx="84" cy="240" r="14" fill="#2B5C96" />
+    <text x="84" y="247" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="110" y="248" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">改修したい Excel ブック</text>
+    <text fill="#5D6B7A" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" x="110" y="280">.xlsm / .xlam / .xlsb / .xls　判定は拡張子ではなく</text><text fill="#5D6B7A" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" x="110" y="306">中身で行うため、中に VBA があれば読み込めます</text><circle cx="84" cy="348" r="14" fill="#2B5C96" />
+    <text x="84" y="355" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="110" y="356" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">チャット AI が使えるブラウザ</text>
+    <text fill="#5D6B7A" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" x="110" y="388">ファイルを添付できるものを使ってください</text><text fill="#5D6B7A" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" x="110" y="414">（Microsoft 365 Copilot Chat など）</text></g>
+
+  <g id="card-requirements" data-pptx-bounds="652 148 588 288">
+    <rect x="652" y="148" width="588" height="288" rx="16" fill="#F2F6FB" />
+    <text x="680" y="196" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#2B5C96">動作要件</text>
+    <line x1="680" y1="216" x2="1212" y2="216" stroke="#E2E7EC" stroke-width="1" />
+    <text x="680" y="252" font-family="'Meiryo','Segoe UI',sans-serif" font-size="20" fill="#5D6B7A">OS</text>
+    <text x="880" y="252" font-family="'Meiryo','Segoe UI',sans-serif" font-size="20" fill="#1F2A37">Windows 10 / 11</text>
+    <line x1="680" y1="270" x2="1212" y2="270" stroke="#E2E7EC" stroke-width="1" />
+    <text x="680" y="306" font-family="'Meiryo','Segoe UI',sans-serif" font-size="20" fill="#5D6B7A">インストール</text>
+    <text x="880" y="306" font-family="'Meiryo','Segoe UI',sans-serif" font-size="20" fill="#1F2A37">不要（フォルダをコピーするだけ）</text>
+    <line x1="680" y1="324" x2="1212" y2="324" stroke="#E2E7EC" stroke-width="1" />
+    <text x="680" y="360" font-family="'Meiryo','Segoe UI',sans-serif" font-size="20" fill="#5D6B7A">Excel</text>
+    <text x="880" y="360" font-family="'Meiryo','Segoe UI',sans-serif" font-size="20" fill="#1F2A37">ツール自体には不要</text>
+    <line x1="680" y1="378" x2="1212" y2="378" stroke="#E2E7EC" stroke-width="1" />
+    <text x="680" y="414" font-family="'Meiryo','Segoe UI',sans-serif" font-size="20" fill="#5D6B7A">ネットワーク</text>
+    <text x="880" y="414" font-family="'Meiryo','Segoe UI',sans-serif" font-size="20" fill="#1F2A37">完全ローカル動作</text>
+  </g>
+
+  <g id="card-launch" data-pptx-bounds="40 456 588 196">
+    <rect x="40" y="456" width="588" height="196" rx="16" fill="#FFFFFF" stroke="#2B5C96" stroke-width="2" />
+    <text x="68" y="504" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#2B5C96">起動のしかた</text>
+    <rect x="68" y="524" width="290" height="44" rx="10" fill="#F4F6F8" />
+    <text x="88" y="554" font-family="Consolas, monospace" font-size="24" fill="#1F2A37">launch.vbs</text>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="68" y="606">をダブルクリックします。</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="68" y="640">黒い画面は出ません。</text></g>
+
+  <g id="card-hint" data-pptx-bounds="652 456 588 196">
+    <rect x="652" y="456" width="588" height="196" rx="16" fill="#F4F6F8" />
+    
+  <g transform="translate(680, 480) scale(1.33333)" fill="#A2701C">
+    <path d="M4 11a1 1 0 0 1 .117 1.993l-.117 .007h-1a1 1 0 0 1 -.117 -1.993l.117 -.007h1z" />
+    <path d="M12 2a1 1 0 0 1 .993 .883l.007 .117v1a1 1 0 0 1 -1.993 .117l-.007 -.117v-1a1 1 0 0 1 1 -1z" />
+    <path d="M21 11a1 1 0 0 1 .117 1.993l-.117 .007h-1a1 1 0 0 1 -.117 -1.993l.117 -.007h1z" />
+    <path d="M4.893 4.893a1 1 0 0 1 1.32 -.083l.094 .083l.7 .7a1 1 0 0 1 -1.32 1.497l-.094 -.083l-.7 -.7a1 1 0 0 1 0 -1.414z" />
+    <path d="M17.693 4.893a1 1 0 0 1 1.497 1.32l-.083 .094l-.7 .7a1 1 0 0 1 -1.497 -1.32l.083 -.094l.7 -.7z" />
+    <path d="M14 18a1 1 0 0 1 1 1a3 3 0 0 1 -6 0a1 1 0 0 1 .883 -.993l.117 -.007h4z" />
+    <path d="M12 6a6 6 0 0 1 3.6 10.8a1 1 0 0 1 -.471 .192l-.129 .008h-6a1 1 0 0 1 -.6 -.2a6 6 0 0 1 3.6 -10.8z" />
+  </g>
+    <text x="724" y="506" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#A2701C">ヒント</text>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="680" y="556">画面右上の月／太陽ボタンで、明るい</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="680" y="590">配色と暗い配色を切り替えられます。</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="680" y="624">選んだ配色は次回起動時も残ります。</text></g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">05</text>
+  </g>
+</svg>

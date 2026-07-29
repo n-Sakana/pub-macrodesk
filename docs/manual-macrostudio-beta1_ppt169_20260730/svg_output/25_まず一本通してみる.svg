@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="ending">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="closing-field" data-pptx-role="decoration" data-pptx-bounds="880 420 300 300">
+    <circle cx="1180" cy="700" r="280" fill="#F1F5F9"/>
+  </g>
+
+  <g id="closing-claim" data-pptx-bounds="100 246 1080 164">
+    <use data-icon="tabler-filled/circle-arrow-right" x="100" y="250" width="40" height="40" fill="#E07B39"/>
+    <text x="100" y="342" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">うまくいかなくても、元のブックは無傷です。</text>
+    <text x="100" y="396" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">気になっているマクロを 1 つ選んで、読み込むところから始めてください。</text>
+  </g>
+
+  <g id="closing-notes" data-pptx-bounds="100 460 1080 150">
+    <rect x="100" y="460" width="6" height="150" rx="3" fill="#CBD5E1"/>
+    <text x="132" y="486" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C"><tspan x="132" dy="0">画面は MacroStudio ベータ版 1.0.0 のものです。ベータ版のため、画面の文言や配置は今後変わることがあります。</tspan><tspan x="132" dy="34">掲載しているスクリーンショットは、サンプルのブック（受注管理.xlsm）を読み込んだ実画面です。</tspan><tspan x="132" dy="34">フォルダのパスや日時は説明用の例です。</tspan><tspan x="132" dy="34">判断は AI が行います。最後に Excel で開いて動作を確認するのは人です。</tspan></text>
+  </g>
+
+  <g id="closing-stamp" data-pptx-bounds="640 646 540 34">
+    <text x="1180" y="670" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">MacroStudio ベータ版 1.0.0 ／ サービス説明と操作マニュアル</text>
+  </g>
+</svg>

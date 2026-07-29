@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="cover">
+  <defs>
+    <clipPath id="cover-shot-clip">
+      <rect x="660" y="292" width="672" height="378" rx="14"/>
+    </clipPath>
+  </defs>
+
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="cover-field" data-pptx-bounds="620 190 660 530">
+    <circle cx="1150" cy="628" r="438" fill="#F2F6FB"/>
+  </g>
+
+  <g id="cover-title" data-pptx-bounds="72 108 660 218">
+    <rect x="72" y="108" width="188" height="38" rx="19" fill="#A2701C"/>
+    <text x="166" y="134" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">試作版 PROTOTYPE</text>
+    <text x="72" y="232" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="72" font-weight="bold" fill="#1F2A37">VBEを開かずに、<tspan x="72" dy="88">マクロを直す。</tspan></text>
+  </g>
+
+  <g id="cover-subtitle-lead" data-pptx-bounds="72 356 570 176">
+    <rect x="72" y="356" width="7" height="42" rx="3.5" fill="#2B5C96"/>
+    <text x="98" y="388" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#2B5C96">Macro Studio（仮称）操作マニュアル</text>
+    <text x="72" y="450" font-family="'Meiryo','Segoe UI',sans-serif" font-size="30" fill="#1F2A37">ブックの取り込みから、AIへの改修依頼、<tspan x="72" dy="46">返答の取り込みと差分確認、</tspan><tspan x="72" dy="46">改修済みブックの出力まで。</tspan></text>
+  </g>
+
+  <g id="cover-shot" data-pptx-bounds="660 242 620 428">
+    <image href="../images/s01-book-drop.png" x="660" y="292" width="672" height="378" preserveAspectRatio="xMidYMid meet" clip-path="url(#cover-shot-clip)"/>
+    <rect x="660" y="292" width="672" height="378" rx="14" fill="none" stroke="#2B5C96" stroke-width="2"/>
+    <rect x="684" y="248" width="222" height="34" rx="17" fill="#FFFFFF" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="795" y="271" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A" text-anchor="middle">画面はデモ用データです</text>
+  </g>
+
+  <g id="cover-footnote" data-pptx-bounds="72 628 560 56">
+    <text x="72" y="648" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">2026-07-29　初回試作<tspan x="72" dy="26">画面上の表示は開発中のため MacroDesk のままです</tspan></text>
+  </g>
+</svg>

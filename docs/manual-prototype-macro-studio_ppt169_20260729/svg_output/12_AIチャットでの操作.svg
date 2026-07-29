@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96"/>
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">手順 2 の続き</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">AIチャットでの操作（この道具の外）</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1"/>
+  </g>
+
+  <g id="no-shot-notice" data-pptx-bounds="40 132 1200 44">
+    <rect x="40" y="132" width="640" height="44" rx="14" fill="#FFFFFF" stroke="#A2701C" stroke-width="2"/>
+    <use data-icon="tabler-filled/alert-triangle" x="60" y="145" width="22" height="22" fill="#A2701C"/>
+    <text x="92" y="161" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#A2701C">画面写真なし（試作）— チャット AI はこの道具の管轄外です</text>
+  </g>
+
+  <g id="chat-steps" data-pptx-bounds="40 192 588 460">
+    <rect x="40" y="192" width="588" height="460" rx="16" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/message-chatbot" x="68" y="220" width="34" height="34" fill="#2B5C96"/>
+    <text x="114" y="248" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#2B5C96">チャットでの操作</text>
+    <circle cx="86" cy="310" r="17" fill="#2B5C96"/>
+    <text x="86" y="317" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="118" y="318" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">チャットの入力欄に依頼文を<tspan x="118" dy="34">貼り付けます（Ctrl+V）。</tspan></text>
+    <circle cx="86" cy="420" r="17" fill="#2B5C96"/>
+    <text x="86" y="427" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="118" y="428" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">同じメッセージに<tspan x="118" dy="34">source-code.md を添付します。</tspan></text>
+    <circle cx="86" cy="530" r="17" fill="#2B5C96"/>
+    <text x="86" y="537" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3</text>
+    <text x="118" y="538" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">送信して、返答を待ちます。</text>
+    <text x="68" y="612" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">うまくいかないときは、前の画面へ戻って依頼を言い直せます。</text>
+  </g>
+
+  <g id="answer-shape" data-pptx-bounds="652 192 588 460">
+    <rect x="652" y="192" width="588" height="460" rx="16" fill="#FFFFFF" stroke="#E2E7EC" stroke-width="1"/>
+    <use data-icon="tabler-filled/info-circle" x="680" y="220" width="34" height="34" fill="#4C9155"/>
+    <text x="726" y="248" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#4C9155">返ってくる形</text>
+    <text x="680" y="292" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">同梱ひな形の出力指示を使った場合</text>
+    <rect x="680" y="312" width="532" height="72" rx="10" fill="#F4F6F8"/>
+    <text x="700" y="344" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F2A37">■ 改修サマリー</text>
+    <text x="700" y="372" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">どのモジュールをどう変えたかの箇条書き</text>
+    <rect x="680" y="396" width="532" height="72" rx="10" fill="#F4F6F8"/>
+    <text x="700" y="428" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F2A37">■ モジュール名</text>
+    <text x="700" y="456" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">改修後コード全文のコードブロック</text>
+    <text x="680" y="512" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">まず「改修サマリー」を読みます。<tspan x="680" dy="34">これが、このあとの取り込み作業の</tspan><tspan x="680" dy="34">指示書を兼ねます。</tspan></text>
+    <text x="680" y="614" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">新しいモジュールは「■ 名前（新規）」。<tspan x="680" dy="26">変更していないモジュールは返りません。</tspan></text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">12</text>
+  </g>
+</svg>

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96" />
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">参考</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">うまくいかないとき</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1" />
+  </g>
+
+  <g id="trouble-left" data-pptx-bounds="40 140 588 448">
+    <rect x="40" y="140" width="588" height="448" rx="16" fill="#F2F6FB" />
+    
+  <g transform="translate(66, 162) scale(1.16667)" fill="#2B5C96">
+    <path d="M12 2c5.523 0 10 4.477 10 10a10 10 0 0 1 -19.995 .324l-.005 -.324l.004 -.28c.148 -5.393 4.566 -9.72 9.996 -9.72zm0 13a1 1 0 0 0 -.993 .883l-.007 .117l.007 .127a1 1 0 0 0 1.986 0l.007 -.117l-.007 -.127a1 1 0 0 0 -.993 -.883zm1.368 -6.673a2.98 2.98 0 0 0 -3.631 .728a1 1 0 0 0 1.44 1.383l.171 -.18a.98 .98 0 0 1 1.11 -.15a1 1 0 0 1 -.34 1.886l-.232 .012a1 1 0 0 0 .111 1.994a3 3 0 0 0 1.371 -5.673z" />
+  </g>
+    <text x="104" y="184" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#2B5C96">起動・読み込み</text>
+    <text x="66" y="228" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="22" font-weight="bold" fill="#1F2A37">起動しない／白い画面のまま</text>
+    <text x="66" y="256" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">WebView2 ランタイム未導入の可能性。起動時の案内に従ってください。</text>
+    <line x1="66" y1="278" x2="602" y2="278" stroke="#E2E7EC" stroke-width="1" />
+    <text x="66" y="312" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="22" font-weight="bold" fill="#1F2A37">「マクロが見つかりません」</text>
+    <text x="66" y="340" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">そのブックにマクロ（VBAプロジェクト）が入っていません。</text>
+    <line x1="66" y1="362" x2="602" y2="362" stroke="#E2E7EC" stroke-width="1" />
+    <text x="66" y="396" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="22" font-weight="bold" fill="#1F2A37">ブックを添付できない</text>
+    <text x="66" y="424" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">対象ブックを Excel で開いたままにしていないか確認してください。</text>
+    <line x1="66" y1="446" x2="602" y2="446" stroke="#E2E7EC" stroke-width="1" />
+    <text x="66" y="480" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="22" font-weight="bold" fill="#1F2A37">ひな形のボタンが出ない</text>
+    <text fill="#5D6B7A" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" x="66" y="508">手順2-2 の画面に理由が出ます。見出し 3 つが揃っているか、</text><text fill="#5D6B7A" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" x="66" y="534">UTF-8 で保存されているかを確認してください。</text><line x1="66" y1="556" x2="602" y2="556" stroke="#E2E7EC" stroke-width="1" />
+  </g>
+
+  <g id="trouble-right" data-pptx-bounds="652 140 588 448">
+    <rect x="652" y="140" width="588" height="448" rx="16" fill="#F4F6F8" />
+    
+  <g transform="translate(678, 162) scale(1.16667)" fill="#2B5C96">
+    <path d="M12 2c5.523 0 10 4.477 10 10a10 10 0 0 1 -19.995 .324l-.005 -.324l.004 -.28c.148 -5.393 4.566 -9.72 9.996 -9.72zm0 13a1 1 0 0 0 -.993 .883l-.007 .117l.007 .127a1 1 0 0 0 1.986 0l.007 -.117l-.007 -.127a1 1 0 0 0 -.993 -.883zm1.368 -6.673a2.98 2.98 0 0 0 -3.631 .728a1 1 0 0 0 1.44 1.383l.171 -.18a.98 .98 0 0 1 1.11 -.15a1 1 0 0 1 -.34 1.886l-.232 .012a1 1 0 0 0 .111 1.994a3 3 0 0 0 1.371 -5.673z" />
+  </g>
+    <text x="716" y="184" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#2B5C96">依頼・取り込み・ビルド</text>
+    <text x="678" y="228" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="22" font-weight="bold" fill="#1F2A37">依頼テンプレートを読み込めない</text>
+    <text x="678" y="256" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">templates\request-template.txt が UTF-8 で保存され、</text>
+    <text x="678" y="282" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">{{REQUEST_TEXT}} を含んでいるか確認してください。</text>
+    <line x1="678" y1="304" x2="1214" y2="304" stroke="#E2E7EC" stroke-width="1" />
+    <text x="678" y="338" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="22" font-weight="bold" fill="#1F2A37">AI の返答が思っていたものと違う</text>
+    <text x="678" y="366" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">手順2-3 へ戻って、依頼を言い直せます。</text>
+    <line x1="678" y1="388" x2="1214" y2="388" stroke="#E2E7EC" stroke-width="1" />
+    <text x="678" y="422" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="22" font-weight="bold" fill="#1F2A37">貼ったコードに余計な行が混ざった</text>
+    <text x="678" y="450" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">手順3-2 の［手動修正］で、その場で直せます。</text>
+    <line x1="678" y1="472" x2="1214" y2="472" stroke="#E2E7EC" stroke-width="1" />
+    <text x="678" y="506" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="22" font-weight="bold" fill="#1F2A37">ビルドに失敗した</text>
+    <text x="678" y="534" font-family="'Meiryo','Segoe UI',sans-serif" font-size="18" fill="#5D6B7A">画面の指示に従ってください。元のファイルは無傷です。</text>
+    <line x1="678" y1="556" x2="1214" y2="556" stroke="#E2E7EC" stroke-width="1" />
+  </g>
+
+  <g id="log-band" data-pptx-bounds="40 604 1200 48">
+    <rect x="40" y="604" width="1200" height="48" rx="14" fill="#FFFFFF" stroke="#2B5C96" stroke-width="2" />
+    <text x="68" y="635" font-family="'Meiryo','Segoe UI',sans-serif" font-size="20" fill="#1F2A37">ログ: %LOCALAPPDATA%\MacroDesk\logs\ に動作ログが残ります。問い合わせのときは添付してください。</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">20</text>
+  </g>
+</svg>

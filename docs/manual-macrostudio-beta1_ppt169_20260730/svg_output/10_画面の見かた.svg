@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="100 44 1080 100">
+    <text x="100" y="84" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F4E79">起動と、画面の見かた</text>
+    <text x="100" y="128" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="30" fill="#5B6B7C">上の帯が進捗、左下が「いま何をすればよいか」</text>
+  </g>
+
+  <g id="screenshot" data-pptx-bounds="100 190 580 344">
+    <rect x="100" y="190" width="580" height="344" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <image href="../images/01-drop.png" x="120" y="210" width="540" height="304" preserveAspectRatio="xMidYMid meet"/>
+    <circle cx="239" cy="228" r="17" fill="#FFFFFF"/>
+    <circle cx="239" cy="228" r="15" fill="#1F4E79"/>
+    <text x="239" y="235" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">1</text>
+    <circle cx="174" cy="496" r="17" fill="#FFFFFF"/>
+    <circle cx="174" cy="496" r="15" fill="#1F4E79"/>
+    <text x="174" y="503" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">2</text>
+    <circle cx="638" cy="228" r="17" fill="#FFFFFF"/>
+    <circle cx="638" cy="228" r="15" fill="#1F4E79"/>
+    <text x="638" y="235" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">3</text>
+    <circle cx="574" cy="228" r="17" fill="#FFFFFF"/>
+    <circle cx="574" cy="228" r="15" fill="#1F4E79"/>
+    <text x="574" y="235" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">4</text>
+  </g>
+
+  <g id="legend-1" data-pptx-bounds="720 190 460 96">
+    <circle cx="736" cy="204" r="14" fill="#1F4E79"/>
+    <text x="736" y="211" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">1</text>
+    <text x="764" y="211" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933"><tspan x="764" dy="0">上部の帯が進捗です。最初は</tspan><tspan x="764" dy="28">「ブックを読み込む」だけが表示され、</tspan><tspan x="764" dy="28">目的を選ぶとその先の手順が現れます。</tspan></text>
+  </g>
+
+  <g id="legend-1-note" data-pptx-bounds="764 296 416 32">
+    <text x="764" y="318" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C">改修なら 4 手順、聞くだけなら 2 手順。</text>
+  </g>
+
+  <g id="legend-2" data-pptx-bounds="720 348 460 40">
+    <circle cx="736" cy="366" r="14" fill="#1F4E79"/>
+    <text x="736" y="373" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">2</text>
+    <text x="764" y="373" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">左下に「いま何をすればよいか」が 1 行で出ます。</text>
+  </g>
+
+  <g id="legend-3" data-pptx-bounds="720 408 460 68">
+    <circle cx="736" cy="426" r="14" fill="#1F4E79"/>
+    <text x="736" y="433" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">3</text>
+    <text x="764" y="433" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933"><tspan x="764" dy="0">右上の月／太陽でライト・ダークを</tspan><tspan x="764" dy="28">切り替え。選択は次回も維持されます。</tspan></text>
+  </g>
+
+  <g id="legend-4" data-pptx-bounds="720 496 460 40">
+    <circle cx="736" cy="514" r="14" fill="#1F4E79"/>
+    <text x="736" y="521" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">4</text>
+    <text x="764" y="521" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">対応形式は .xlsm / .xlam / .xlsb / .xls。</text>
+  </g>
+
+  <g id="launch-note" data-pptx-bounds="100 556 1080 78">
+    <use data-icon="tabler-filled/player-play" x="100" y="558" width="28" height="28" fill="#4A87C4"/>
+    <text x="144" y="582" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933"><tspan x="144" dy="0">起動は </tspan><tspan font-family="Consolas,monospace">launch.vbs</tspan><tspan> をダブルクリック。黒いコマンド画面は出ません。</tspan><tspan x="144" dy="34">小さな読み込み画面のあと本画面になります。</tspan></text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="100 684 1080 24">
+    <text x="100" y="702" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1180" y="702" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">10</text>
+  </g>
+</svg>

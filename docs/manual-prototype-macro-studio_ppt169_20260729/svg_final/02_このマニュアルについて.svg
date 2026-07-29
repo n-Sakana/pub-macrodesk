@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96" />
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">はじめに</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">このマニュアルについて</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1" />
+  </g>
+
+  <g id="card-audience" data-pptx-bounds="40 152 588 220">
+    <rect x="40" y="152" width="588" height="220" rx="16" fill="#FFFFFF" stroke="#E2E7EC" stroke-width="1" />
+    
+  <g transform="translate(68, 180) scale(1.41667)" fill="#2B5C96">
+    <path d="M12 2c5.523 0 10 4.477 10 10a10 10 0 0 1 -19.995 .324l-.005 -.324l.004 -.28c.148 -5.393 4.566 -9.72 9.996 -9.72zm0 9h-1l-.117 .007a1 1 0 0 0 0 1.986l.117 .007v3l.007 .117a1 1 0 0 0 .876 .876l.117 .007h1l.117 -.007a1 1 0 0 0 .876 -.876l.007 -.117l-.007 -.117a1 1 0 0 0 -.764 -.857l-.112 -.02l-.117 -.006v-3l-.007 -.117a1 1 0 0 0 -.876 -.876l-.117 -.007zm.01 -3l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007z" />
+  </g>
+    <text x="114" y="208" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#2B5C96">対象読者</text>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="68" y="266">VBA や開発に詳しくない方。</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="68" y="302">VBE を開いたことがなくて</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="68" y="338">かまいません。</text></g>
+
+  <g id="card-howto" data-pptx-bounds="652 152 588 220">
+    <rect x="652" y="152" width="588" height="220" rx="16" fill="#FFFFFF" stroke="#E2E7EC" stroke-width="1" />
+    
+  <g transform="translate(680, 180) scale(1.41667)" fill="#2B5C96">
+    <path d="M12 4c4.29 0 7.863 2.429 10.665 7.154l.22 .379l.045 .1l.03 .083l.014 .055l.014 .082l.011 .1v.11l-.014 .111a.992 .992 0 0 1 -.026 .11l-.039 .108l-.036 .075l-.016 .03c-2.764 4.836 -6.3 7.38 -10.555 7.499l-.313 .004c-4.396 0 -8.037 -2.549 -10.868 -7.504a1 1 0 0 1 0 -.992c2.831 -4.955 6.472 -7.504 10.868 -7.504zm0 5a3 3 0 1 0 0 6a3 3 0 0 0 0 -6" />
+  </g>
+    <text x="726" y="208" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#2B5C96">読み方</text>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="680" y="266">アプリを起動し、手元の画面と</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="680" y="302">見比べながら 1 ページずつ進めて</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="680" y="338">ください。1 ページが 1 画面です。</text></g>
+
+  <g id="card-prototype" data-pptx-bounds="40 396 1200 256">
+    <rect x="40" y="396" width="1200" height="256" rx="16" fill="#F2F6FB" />
+    <rect x="40" y="396" width="8" height="256" rx="4" fill="#A2701C" />
+    
+  <g transform="translate(76, 424) scale(1.41667)" fill="#A2701C">
+    <path d="M12 1.67c.955 0 1.845 .467 2.39 1.247l.105 .16l8.114 13.548a2.914 2.914 0 0 1 -2.307 4.363l-.195 .008h-16.225a2.914 2.914 0 0 1 -2.582 -4.2l.099 -.185l8.11 -13.538a2.914 2.914 0 0 1 2.491 -1.403zm.01 13.33l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -7a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" />
+  </g>
+    <text x="122" y="452" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#A2701C">これは試作です</text>
+    <text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="76" y="510">製品名は「Macro Studio（仮称）」です。アプリ画面・ロゴ・ログの保存先は開発中のため</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="76" y="546">MacroDesk のままで、これから出てくる画面写真にもそのまま写ります。</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="76" y="592">画面写真はアプリ同梱のデモ用データを表示したものです。ブック名・行数・日時は</text><text fill="#1F2A37" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" x="76" y="628">実在の業務データではありません。</text></g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">02</text>
+  </g>
+</svg>

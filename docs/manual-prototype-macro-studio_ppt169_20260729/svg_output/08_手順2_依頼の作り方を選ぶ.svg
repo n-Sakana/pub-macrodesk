@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <defs>
+    <clipPath id="shot-clip"><rect x="40" y="148" width="672" height="378" rx="10"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#2B5C96"/>
+    <text x="114" y="75" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">手順 2 · 1/4</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2A37">依頼の作り方を選びます</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E7EC" stroke-width="1"/>
+  </g>
+
+  <g id="shot" data-pptx-bounds="36 144 680 386">
+    <rect x="36" y="144" width="680" height="386" rx="14" fill="#F4F6F8"/>
+    <image href="../images/s03-method.png" x="40" y="148" width="672" height="378" preserveAspectRatio="xMidYMid meet" clip-path="url(#shot-clip)"/>
+    <rect x="40" y="148" width="672" height="378" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1"/>
+    <circle cx="184" cy="332" r="17" fill="#2B5C96" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="184" y="339" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <circle cx="184" cy="379" r="17" fill="#2B5C96" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="184" y="386" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+  </g>
+
+  <g id="shot-note" data-pptx-bounds="36 550 680 102">
+    <rect x="36" y="550" width="680" height="102" rx="14" fill="#F2F6FB"/>
+    <text x="66" y="594" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">②を選ぶと、次の「ひな形を選ぶ」画面は飛ばして<tspan x="66" dy="34">依頼文の画面へ進みます。</tspan></text>
+  </g>
+
+  <g id="steps" data-pptx-bounds="736 144 504 508">
+    <circle cx="760" cy="180" r="17" fill="#2B5C96"/>
+    <text x="760" y="187" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="792" y="188" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">用意された改修依頼を選ぶ<tspan x="792" dy="34">目的に近いひな形を選び、必要</tspan><tspan x="792" dy="34">な部分だけ直します。返答のし</tspan><tspan x="792" dy="34">かたを AI に伝える文も自動で</tspan><tspan x="792" dy="34">付きます。</tspan></text>
+    <circle cx="760" cy="380" r="17" fill="#2B5C96"/>
+    <text x="760" y="387" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="792" y="388" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">自分で書く<tspan x="792" dy="34">何をどう直すか、最初から入力</tspan><tspan x="792" dy="34">します。返答のしかたを伝える</tspan><tspan x="792" dy="34">文は付きません。</tspan></text>
+    <rect x="736" y="560" width="504" height="80" rx="14" fill="#F4F6F8"/>
+    <use data-icon="tabler-filled/bulb" x="760" y="580" width="28" height="28" fill="#A2701C"/>
+    <text x="798" y="602" font-family="'Meiryo','Segoe UI',sans-serif" font-size="24" fill="#1F2A37">迷ったら①。文章は次の<tspan x="798" dy="30">画面で書き換えられます。</tspan></text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A">Macro Studio（仮称）操作マニュアル 試作版</text>
+    <text x="1240" y="692" font-family="'Meiryo','Segoe UI',sans-serif" font-size="16" fill="#5D6B7A" text-anchor="end">08</text>
+  </g>
+</svg>
