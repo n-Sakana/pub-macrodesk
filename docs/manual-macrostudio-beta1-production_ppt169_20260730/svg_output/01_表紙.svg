@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="cover" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="heroClip">
+      <rect x="672" y="150" width="864" height="486" rx="12" ry="12"/>
+    </clipPath>
+    <filter id="heroShadow" x="-8%" y="-8%" width="116%" height="116%">
+      <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#1F2A37" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="cover-color-field" data-pptx-role="decoration" data-pptx-bounds="0 396 560 324">
+    <circle cx="30" cy="880" r="520" fill="#F2F6FB"/>
+  </g>
+
+  <g id="cover-hero" data-pptx-bounds="656 134 624 518">
+    <rect x="656" y="134" width="880" height="518" rx="20" fill="#FFFFFF" stroke="#E2E7EC" stroke-width="1.5" filter="url(#heroShadow)"/>
+    <image href="../images/21-done.png" x="672" y="150" width="864" height="486" preserveAspectRatio="xMidYMid meet" clip-path="url(#heroClip)"/>
+    <rect x="672" y="150" width="864" height="486" rx="12" fill="none" stroke="#2B5C96" stroke-width="2"/>
+  </g>
+
+  <g id="cover-title" data-pptx-bounds="64 150 560 260">
+    <text x="64" y="216" font-size="64" font-weight="bold" fill="#1F2A37">コードは、
+      <tspan x="64" dy="88">読めなくていい。</tspan>
+    </text>
+    <rect x="66" y="332" width="96" height="8" rx="4" fill="#C05B21"/>
+  </g>
+
+  <g id="cover-lead" data-pptx-bounds="64 380 540 130">
+    <text x="64" y="404" font-size="26" fill="#1F2A37">ブックを読み込み、AIへ依頼し、
+      <tspan x="64" dy="42">返答を取り込む。改修済みブックは、</tspan>
+      <tspan x="64" dy="42">このアプリが別ファイルとして作ります。</tspan>
+    </text>
+  </g>
+
+  <g id="cover-brand" data-pptx-bounds="64 560 520 100">
+    <text x="64" y="590" font-size="30" font-weight="bold" fill="#24507F">MacroStudio 操作マニュアル</text>
+    <text x="64" y="628" font-size="18" fill="#5D6B7A">beta 1.0.0 対応 ／ 2026-07-30</text>
+  </g>
+</svg>

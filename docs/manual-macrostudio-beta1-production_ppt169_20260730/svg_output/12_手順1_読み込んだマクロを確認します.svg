@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="shotClip12a">
+      <rect x="56" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+    <clipPath id="shotClip12b">
+      <rect x="664" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第2部</text>
+    <rect x="132" y="44" width="92" height="28" rx="14" fill="#FFFFFF" stroke="#24507F" stroke-width="1.5"/>
+    <text x="178" y="63" font-size="14" font-weight="bold" fill="#24507F" text-anchor="middle">手順 1</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">読み込んだマクロを確認します</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="shot-summary" data-pptx-bounds="48 150 576 372">
+    <rect x="48" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/05-read.png" x="56" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip12a)"/>
+    <rect x="56" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="56" y="507" font-size="16" fill="#5D6B7A">「8モジュール・484行を読み込みました」。件数を確かめて［次へ］。</text>
+  </g>
+
+  <g id="shot-detail" data-pptx-bounds="656 150 576 372">
+    <rect x="656" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/06-read-open.png" x="664" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip12b)"/>
+    <rect x="664" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="664" y="507" font-size="16" fill="#5D6B7A">「読み取った内容を見る」を開くと、モジュール名と行数を確かめられます。</text>
+  </g>
+
+  <g id="notice-info" data-pptx-bounds="48 542 580 112">
+    <rect x="48" y="542" width="580" height="112" rx="14" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="72" y="572" font-size="18" font-weight="bold" fill="#1F2A37">「マクロのコードは全モジュール読み取れています。」</text>
+    <text x="72" y="602" font-size="17" fill="#5D6B7A">＝ ブック内部の管理情報が標準と違っていただけです。
+      <tspan x="72" dy="26">コードは全部読めているので、何もしなくて大丈夫です。</tspan>
+    </text>
+  </g>
+
+  <g id="notice-warn" data-pptx-bounds="652 542 580 112">
+    <rect x="652" y="542" width="580" height="112" rx="14" fill="#FFFFFF" stroke="#C05B21" stroke-width="1.5"/>
+    <text x="676" y="572" font-size="18" font-weight="bold" fill="#1F2A37">「一部をバイナリレベルで読み取れませんでした。」</text>
+    <text x="676" y="602" font-size="17" fill="#5D6B7A">＝ 挙げられたモジュールのコードが途中までの可能性。
+      <tspan x="676" dy="26">改修前後のコードを見比べてください。読み込み自体は成功です。</tspan>
+    </text>
+  </g>
+
+  <g id="notice-lead" data-pptx-bounds="48 508 1184 30">
+    <text x="48" y="531" font-size="18" fill="#1F2A37">案内が出ることがあります。意味は 2 通りだけで、どちらでも先へ進めます。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第2部　最初の一件　｜　手順 1 ・ 作業とブックを選ぶ</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">12</text>
+  </g>
+</svg>

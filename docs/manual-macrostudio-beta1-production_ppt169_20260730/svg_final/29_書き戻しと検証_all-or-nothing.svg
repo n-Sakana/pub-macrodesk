@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <marker id="flowArrow29" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <polygon points="0,0 10,5 0,10" fill="#2B5C96" />
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F" />
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第5部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">書き戻しと検証 — all-or-nothing</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5" />
+  </g>
+
+  <g id="build-flow" data-pptx-bounds="48 150 1184 240">
+    <rect x="48" y="170" width="208" height="150" rx="14" fill="#F2F6FB" />
+    <text x="152" y="200" font-size="18" font-weight="bold" fill="#24507F" text-anchor="middle">1　同一性確認</text>
+    <text fill="#1F2A37" text-anchor="middle" font-size="15" x="152" y="230">読み込んだ時点の VBA と
+      </text><text fill="#1F2A37" text-anchor="middle" font-size="15" x="152" y="252"><tspan>ビルド直前の元ブックが</tspan>
+      </text><text fill="#1F2A37" text-anchor="middle" font-size="15" x="152" y="274"><tspan>完全一致か。違えば中止</tspan>
+    </text><line x1="260" y1="245" x2="288" y2="245" stroke="#2B5C96" stroke-width="2.5" marker-end="url(#flowArrow29)" />
+    <rect x="292" y="170" width="208" height="150" rx="14" fill="#F2F6FB" />
+    <text x="396" y="200" font-size="18" font-weight="bold" fill="#24507F" text-anchor="middle">2　別名コピー</text>
+    <text fill="#1F2A37" text-anchor="middle" font-size="15" x="396" y="230">元ブックを出力名で
+      </text><text fill="#1F2A37" text-anchor="middle" font-size="15" x="396" y="252"><tspan>コピー。元ファイルには</tspan>
+      </text><text fill="#1F2A37" text-anchor="middle" font-size="15" x="396" y="274"><tspan>一切書き込まない</tspan>
+    </text><line x1="504" y1="245" x2="532" y2="245" stroke="#2B5C96" stroke-width="2.5" marker-end="url(#flowArrow29)" />
+    <rect x="536" y="170" width="208" height="150" rx="14" fill="#F2F6FB" />
+    <text x="640" y="200" font-size="18" font-weight="bold" fill="#24507F" text-anchor="middle">3　差し替え</text>
+    <text fill="#1F2A37" text-anchor="middle" font-size="15" x="640" y="230">変更モジュールのソース
+      </text><text fill="#1F2A37" text-anchor="middle" font-size="15" x="640" y="252"><tspan>部分と、新規の標準</tspan>
+      </text><text fill="#1F2A37" text-anchor="middle" font-size="15" x="640" y="274"><tspan>モジュールだけを更新</tspan>
+    </text><line x1="748" y1="245" x2="776" y2="245" stroke="#2B5C96" stroke-width="2.5" marker-end="url(#flowArrow29)" />
+    <rect x="780" y="170" width="208" height="150" rx="14" fill="#F2F6FB" />
+    <text x="884" y="200" font-size="18" font-weight="bold" fill="#24507F" text-anchor="middle">4　全面再構築</text>
+    <text fill="#1F2A37" text-anchor="middle" font-size="15" x="884" y="230">コンテナ（OLE2）を
+      </text><text fill="#1F2A37" text-anchor="middle" font-size="15" x="884" y="252"><tspan>毎回まるごと組み直して</tspan>
+      </text><text fill="#1F2A37" text-anchor="middle" font-size="15" x="884" y="274"><tspan>書き戻す</tspan>
+    </text><line x1="992" y1="245" x2="1020" y2="245" stroke="#2B5C96" stroke-width="2.5" marker-end="url(#flowArrow29)" />
+    <rect x="1024" y="170" width="208" height="150" rx="14" fill="#FFFFFF" stroke="#24507F" stroke-width="2" />
+    <text x="1128" y="200" font-size="18" font-weight="bold" fill="#24507F" text-anchor="middle">5　再読検証</text>
+    <text fill="#1F2A37" text-anchor="middle" font-size="15" x="1128" y="230">出力ブックを読み直して
+      </text><text fill="#1F2A37" text-anchor="middle" font-size="15" x="1128" y="252"><tspan>確認。通らなければ</tspan>
+      </text><text fill="#1F2A37" text-anchor="middle" font-size="15" x="1128" y="274"><tspan>出力を削除</tspan>
+    </text></g>
+
+  <g id="verify-detail" data-pptx-bounds="48 410 700 150">
+    <rect x="48" y="410" width="700" height="150" rx="16" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1" />
+    
+  <g transform="translate(72, 432) scale(1.08333)" fill="#24507F">
+    <path d="M11.884 2.007l.114 -.007l.118 .007l.059 .008l.061 .013l.111 .034a.993 .993 0 0 1 .217 .112l.104 .082l.255 .218a11 11 0 0 0 7.189 2.537l.342 -.01a1 1 0 0 1 1.005 .717a13 13 0 0 1 -9.208 16.25a1 1 0 0 1 -.502 0a13 13 0 0 1 -9.209 -16.25a1 1 0 0 1 1.005 -.717a11 11 0 0 0 7.531 -2.527l.263 -.225l.096 -.075a.993 .993 0 0 1 .217 -.112l.112 -.034a.97 .97 0 0 1 .119 -.021z" />
+  </g>
+    <text x="110" y="452" font-size="20" font-weight="bold" fill="#1F2A37">再読検証で確かめる 3 点</text>
+    <text x="72" y="488" font-size="18" fill="#1F2A37">・書き戻した全モジュールのコードが、渡したものと一致すること</text>
+    <text x="72" y="518" font-size="18" fill="#1F2A37">・それ以外の全区画が、バイト単位で元と一致すること</text>
+    <text x="72" y="548" font-size="18" fill="#1F2A37">・区画の構造・名前・種別が維持されていること</text>
+  </g>
+
+  <g id="allornothing" data-pptx-bounds="780 410 452 150">
+    <rect x="780" y="410" width="452" height="150" rx="16" fill="#FFFFFF" stroke="#3A7A47" stroke-width="2" />
+    
+  <g transform="translate(804, 432) scale(1.08333)" fill="#3A7A47">
+    <path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-1.293 5.953a1 1 0 0 0 -1.32 -.083l-.094 .083l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.403 1.403l.083 .094l2 2l.094 .083a1 1 0 0 0 1.226 0l.094 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z" />
+  </g>
+    <text x="842" y="452" font-size="20" font-weight="bold" fill="#1F2A37">all-or-nothing</text>
+    <text fill="#1F2A37" font-size="17" x="804" y="488">1 つでも失敗したら、出力ファイルを削除します。
+      </text><text fill="#1F2A37" font-size="17" x="804" y="514"><tspan>中途半端に直ったブックは残しません。だから、</tspan>
+      </text><text fill="#1F2A37" font-size="17" x="804" y="540"><tspan>出力が在ること自体が、検証合格の証です。</tspan>
+    </text></g>
+
+  <g id="scope-note" data-pptx-bounds="48 584 1184 56">
+    <text x="48" y="610" font-size="17" fill="#5D6B7A">この検証が守るのは、受け渡しと構造の完全性です。改修後のマクロが業務上正しく動くこと（コードの中身の妥当性）は、</text>
+    <text x="48" y="636" font-size="17" fill="#5D6B7A">検証の対象外で、使用者が Excel で確認します（→ P21）。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第5部　技術・運用付録</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">29</text>
+  </g>
+</svg>

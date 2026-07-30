@@ -1,0 +1,28 @@
+{
+  "schema": "ppt-master.source_to_md.profile.v1",
+  "converter": "doc_to_md.py",
+  "conversion_type": "html",
+  "source": {
+    "path": "申請データ検証-diff-report.html",
+    "name": "申請データ検証-diff-report.html",
+    "suffix": ".html",
+    "kind": "file",
+    "exists": true,
+    "size_bytes": 153989
+  },
+  "outputs": {
+    "markdown": "申請データ検証-diff-report.md",
+    "asset_dir": "",
+    "image_manifest": "",
+    "image_count": 0
+  },
+  "markdown": {
+    "line_count": 9,
+    "char_count": 72,
+    "heading_count": 1,
+    "table_count": 0,
+    "image_ref_count": 0,
+    "link_count": 0
+  },
+  "warnings": []
+}

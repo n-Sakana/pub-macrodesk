@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="cover" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="coverShot">
+      <rect x="640" y="204" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="cover-field" data-pptx-role="decoration" data-pptx-bounds="0 470 460 250">
+    <circle cx="-60" cy="840" r="420" fill="#F2F6FB"/>
+  </g>
+
+  <g id="cover-title" data-pptx-bounds="64 200 540 170">
+    <text x="64" y="256" font-size="54" font-weight="bold" fill="#1F2A37">MacroStudio</text>
+    <text x="64" y="330" font-size="54" font-weight="bold" fill="#1F2A37">操作マニュアル</text>
+    <rect x="66" y="356" width="88" height="6" rx="3" fill="#24507F"/>
+  </g>
+
+  <g id="cover-subtitle" data-pptx-bounds="64 390 540 120">
+    <text x="64" y="416" font-size="26" font-weight="bold" fill="#24507F">ベータ版（beta 1.0.0 対応）</text>
+    <text x="64" y="458" font-size="20" fill="#1F2A37">Excel マクロ（VBA）の確認・診断・改修を、
+      <tspan x="64" dy="32">チャット AI と MacroStudio で行うための手順を</tspan>
+      <tspan x="64" dy="32">説明します。</tspan>
+    </text>
+  </g>
+
+  <g id="cover-meta" data-pptx-bounds="64 560 540 40">
+    <text x="64" y="584" font-size="18" fill="#5D6B7A">2026-07-31 版</text>
+  </g>
+
+  <g id="cover-shot" data-pptx-bounds="632 196 576 366">
+    <rect x="632" y="196" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/21-done.png" x="640" y="204" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#coverShot)"/>
+    <rect x="640" y="204" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="640" y="553" font-size="16" fill="#5D6B7A">改修完了時の画面。作成されたファイルの一覧が表示されます。</text>
+  </g>
+</svg>

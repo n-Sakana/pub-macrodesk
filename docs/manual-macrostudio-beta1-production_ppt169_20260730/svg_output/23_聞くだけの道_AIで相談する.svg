@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="shotClip23a">
+      <rect x="56" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+    <clipPath id="shotClip23b">
+      <rect x="664" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#2B5C96"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第3部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">聞くだけの道 — AIで相談する</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="shot-purpose" data-pptx-bounds="48 150 576 372">
+    <rect x="48" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/31-purpose-diagnose.png" x="56" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip23a)"/>
+    <rect x="56" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="56" y="507" font-size="16" fill="#5D6B7A">「AIに何を聞くか選びます」。相談側は 3 つのひな形から選べます。</text>
+  </g>
+
+  <g id="shot-questions" data-pptx-bounds="656 150 576 372">
+    <rect x="656" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/32-questions.png" x="664" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip23b)"/>
+    <rect x="664" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="664" y="507" font-size="16" fill="#5D6B7A">「いくつか教えてください」。1 問ずつ出ます。分かるところだけで進めます。</text>
+  </g>
+
+  <g id="purpose-rows" data-pptx-bounds="48 532 1184 118">
+    <text x="48" y="554" font-size="18" font-weight="bold" fill="#1F2A37">選べる相談（画面に出る名前と説明のまま）</text>
+    <text x="48" y="584" font-size="18" fill="#1F2A37">・新しい端末で動くかを調べてもらう — コードは直さず、新しい端末で困りそうな箇所を洗い出してもらいます。</text>
+    <text x="48" y="612" font-size="18" fill="#1F2A37">・相談用の依頼文を作る（進め方を決めたいとき）— いくつかの質問に答えると、進め方を相談する依頼文ができます。</text>
+    <text x="48" y="640" font-size="18" fill="#1F2A37">・聞きたいことを自分で書く — マクロについて聞きたいことを、この後の画面で自分の言葉で書きます。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第3部　相談する使い方</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">23</text>
+  </g>
+</svg>

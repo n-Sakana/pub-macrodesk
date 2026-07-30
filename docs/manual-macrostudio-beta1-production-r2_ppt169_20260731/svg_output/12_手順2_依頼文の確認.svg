@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="shotClip12a">
+      <rect x="56" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+    <clipPath id="shotClip12b">
+      <rect x="664" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">操作</text>
+    <rect x="132" y="44" width="92" height="28" rx="14" fill="#FFFFFF" stroke="#24507F" stroke-width="1.5"/>
+    <text x="178" y="63" font-size="14" font-weight="bold" fill="#24507F" text-anchor="middle">手順 2</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">AIへ送る依頼文を用意します</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="shot-default" data-pptx-bounds="48 150 576 372">
+    <rect x="48" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/09-request.png" x="56" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip12a)"/>
+    <rect x="56" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="56" y="507" font-size="16" fill="#5D6B7A">依頼文は選択した目的から自動生成されます。この画面の既定状態のまま進められます。</text>
+  </g>
+
+  <g id="shot-open" data-pptx-bounds="656 150 576 372">
+    <rect x="656" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/10-request-open.png" x="664" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip12b)"/>
+    <rect x="664" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="664" y="507" font-size="16" fill="#5D6B7A">「依頼文を確認・編集」を開いた状態。全文の確認と書き足しができます。</text>
+  </g>
+
+  <g id="steps" data-pptx-bounds="48 532 1184 76">
+    <circle cx="65" cy="552" r="15" fill="#24507F"/>
+    <text x="65" y="558" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="94" y="560" font-size="20" fill="#1F2A37">内容を変更しない場合は、そのまま［次へ］を押します。</text>
+    <circle cx="65" cy="592" r="15" fill="#24507F"/>
+    <text x="65" y="598" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="94" y="600" font-size="20" fill="#1F2A37">書き足す場合は「依頼文を確認・編集」を開いて編集します。この依頼文と、返答形式の指示、コード全文ファイルが AI へ渡ります。</text>
+  </g>
+
+  <g id="split-note" data-pptx-bounds="48 622 1184 40">
+    <use data-icon="tabler-filled/file-text" x="48" y="626" width="22" height="22" fill="#5D6B7A"/>
+    <text x="82" y="644" font-size="16" fill="#5D6B7A">返答が途中で切れる場合のみ、［モジュール単位出力（コードが長い時用）］にチェックを付けます。AI は 1 回の返答に 1 モジュールずつ返し、届いた順に取り込みます。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">MacroStudio 操作マニュアル（ベータ版）</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">12</text>
+  </g>
+</svg>

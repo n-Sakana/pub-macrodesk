@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#2B5C96" />
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">参考</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">動作要件と処理の仕組み</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5" />
+  </g>
+
+  <g id="requirements" data-pptx-bounds="48 140 560 380">
+    <rect x="48" y="140" width="560" height="380" rx="16" fill="#F2F6FB" />
+    
+  <g transform="translate(76, 164) scale(1.16667)" fill="#24507F">
+    <path d="M7 21a1 1 0 0 1 0 -2h1v-2h-4a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h16a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-4v2h1a1 1 0 0 1 0 2zm7 -4h-4v2h4z" />
+  </g>
+    <text x="116" y="186" font-size="23" font-weight="bold" fill="#1F2A37">動作要件</text>
+    <text x="76" y="230" font-size="19" fill="#1F2A37">・Windows 10 / 11</text>
+    <text x="76" y="266" font-size="19" fill="#1F2A37">・Windows PowerShell 5.1（OS 標準）</text>
+    <text fill="#1F2A37" font-size="19" x="76" y="302">・WebView2 ランタイム
+      </text><text fill="#1F2A37" font-size="19" x="76" y="330"><tspan>　（Windows 11 は標準搭載）</tspan>
+    </text><text x="76" y="366" font-size="19" fill="#1F2A37">・.NET Framework 4.7.2 以降（OS 標準）</text>
+    <text fill="#1F2A37" font-size="19" x="76" y="402">・Excel はツール自体には不要
+      </text><text fill="#1F2A37" font-size="19" x="76" y="430"><tspan>　（動作確認時に使用）</tspan>
+    </text><text fill="#5D6B7A" font-size="18" x="76" y="478">インストールは不要です。フォルダをコピーして
+      </text><text fill="#5D6B7A" font-size="18" x="76" y="504"><tspan>使用します。</tspan>
+    </text></g>
+
+  <g id="local-processing" data-pptx-bounds="640 140 592 186">
+    <rect x="640" y="140" width="592" height="186" rx="16" fill="#F2F6FB" />
+    
+  <g transform="translate(664, 164) scale(1.16667)" fill="#24507F">
+    <path d="M11.998 2l.118 .007l.059 .008l.061 .013l.111 .034a.993 .993 0 0 1 .217 .112l.104 .082l.255 .218a11 11 0 0 0 7.189 2.537l.342 -.01a1 1 0 0 1 1.005 .717a13 13 0 0 1 -9.208 16.25a1 1 0 0 1 -.502 0a13 13 0 0 1 -9.209 -16.25a1 1 0 0 1 1.005 -.717a11 11 0 0 0 7.531 -2.527l.263 -.225l.096 -.075a.993 .993 0 0 1 .217 -.112l.112 -.034a.97 .97 0 0 1 .119 -.021l.115 -.007zm3.71 7.293a1 1 0 0 0 -1.415 0l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.32 1.497l2 2l.094 .083a1 1 0 0 0 1.32 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z" />
+  </g>
+    <text x="704" y="186" font-size="23" font-weight="bold" fill="#1F2A37">MacroStudioのローカル処理</text>
+    <text fill="#1F2A37" font-size="18" x="664" y="226">MacroStudio 自体は通信機能を持たず、コードの抽出・返答の検証・
+      </text><text fill="#1F2A37" font-size="18" x="664" y="254"><tspan>改修済みブックの作成を端末内で行います。コードが端末の外へ出るのは、</tspan>
+      </text><text fill="#1F2A37" font-size="18" x="664" y="282"><tspan>利用者が依頼文の貼り付けと source-code.md の添付を、チャット AI</tspan>
+      </text><text fill="#1F2A37" font-size="18" x="664" y="310"><tspan>（外部サービス）に対して行ったときだけです。</tspan>
+    </text></g>
+
+  <g id="mechanism" data-pptx-bounds="640 348 592 172">
+    <rect x="640" y="348" width="592" height="172" rx="16" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1" />
+    
+  <g transform="translate(664, 370) scale(1.08333)" fill="#24507F">
+    <path d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm-1.553 11.106a1 1 0 0 0 -1.341 .447l-1 2a1 1 0 0 0 0 .894l1 2a1 1 0 0 0 1.341 .447l.102 -.058a1 1 0 0 0 .345 -1.283l-.776 -1.553l.776 -1.553a1 1 0 0 0 -.447 -1.341m4.447 .447a1 1 0 0 0 -1.341 -.447l-.102 .058a1 1 0 0 0 -.345 1.283l.774 1.553l-.775 1.553a1 1 0 0 0 1.788 .894l1 -2a1 1 0 0 0 0 -.894z" />
+    <path d="M19 7h-4l-.001 -4.001z" />
+  </g>
+    <text x="702" y="390" font-size="23" font-weight="bold" fill="#1F2A37">処理の仕組み</text>
+    <rect x="664" y="408" width="336" height="92" rx="10" fill="#FFFFFF" stroke="#CFD7DE" stroke-width="1.5" />
+    <text x="680" y="434" font-size="16" font-weight="bold" fill="#1F2A37">ブック（.xlsm）</text>
+    <rect x="680" y="444" width="304" height="46" rx="8" fill="#F2F6FB" stroke="#2B5C96" stroke-width="1.5" />
+    <text x="696" y="464" font-size="15" font-family="Consolas,monospace" fill="#1F2A37">xl/vbaProject.bin</text>
+    <text x="696" y="484" font-size="14" fill="#5D6B7A">マクロ全体が公開仕様どおりに格納</text>
+    <text fill="#1F2A37" font-size="15" x="1016" y="440">MacroStudio はこの
+      </text><text fill="#1F2A37" font-size="15" x="1016" y="462"><tspan>ファイルを直接読み取り</tspan>
+      </text><text fill="#1F2A37" font-size="15" x="1016" y="484"><tspan>ます。</tspan>
+    </text></g>
+
+  <g id="mechanism-notes" data-pptx-bounds="48 540 1184 100">
+    <text x="48" y="568" font-size="18" fill="#1F2A37">書き戻しは元のブックのコピーに対して行い、書き戻し後にブックを読み直して、取り込んだコードが書き込まれた</text>
+    <text x="48" y="596" font-size="18" fill="#1F2A37">こと・それ以外が変更されていないことを検証します。シートの値・書式・数式には触れません。</text>
+    <text x="48" y="632" font-size="17" fill="#5D6B7A">マクロの格納形式（OLE2 / MS-OVBA）は Microsoft が公開している文書化された仕様です。読み書きの実装は本体に同梱されています。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">MacroStudio 操作マニュアル（ベータ版）</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">22</text>
+  </g>
+</svg>

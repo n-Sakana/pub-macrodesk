@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第5部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">受け渡しの照合 — 依頼番号と区切り行</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="lead" data-pptx-bounds="48 136 1184 36">
+    <text x="48" y="162" font-size="22" fill="#1F2A37">目的を選ぶたびに依頼番号（UUID）が発行され、依頼文の区切り行に埋め込まれます。返答はそれを書き写して戻ります。</text>
+  </g>
+
+  <g id="package-sample" data-pptx-bounds="48 190 640 300">
+    <rect x="48" y="190" width="640" height="300" rx="16" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="76" y="222" font-size="18" font-weight="bold" fill="#1F2A37">返答パッケージの形（実物の形式）</text>
+    <text x="76" y="258" font-size="16" font-family="Consolas,monospace" fill="#24507F">'@MACROSTUDIO 依頼番号 SUMMARY BEGIN</text>
+    <text x="76" y="286" font-size="16" font-family="Consolas,monospace" fill="#5D6B7A">（何をどう直したかの要約）</text>
+    <text x="76" y="314" font-size="16" font-family="Consolas,monospace" fill="#24507F">'@MACROSTUDIO 依頼番号 SUMMARY END</text>
+    <text x="76" y="342" font-size="16" font-family="Consolas,monospace" fill="#24507F">'@MACROSTUDIO 依頼番号 BEGIN standard WaitUtils</text>
+    <text x="76" y="370" font-size="16" font-family="Consolas,monospace" fill="#5D6B7A">（そのモジュールの全文）</text>
+    <text x="76" y="398" font-size="16" font-family="Consolas,monospace" fill="#24507F">'@MACROSTUDIO 依頼番号 END standard WaitUtils</text>
+    <text x="76" y="426" font-size="16" font-family="Consolas,monospace" fill="#5D6B7A">（… 変更したモジュールの数だけ続く …）</text>
+    <text x="76" y="454" font-size="16" font-family="Consolas,monospace" fill="#24507F">'@MACROSTUDIO 依頼番号 COMPLETE 5</text>
+  </g>
+
+  <g id="package-note" data-pptx-bounds="48 506 640 84">
+    <text x="48" y="530" font-size="17" fill="#5D6B7A">区切り行は ' で始まる VBA のコメントなので、コードとしても無害です。
+      <tspan x="48" dy="26">新しく増やせるのは標準モジュールだけ。既存モジュールの種類は、</tspan>
+      <tspan x="48" dy="26">返答の名乗りではなくブック側が正本です。</tspan>
+    </text>
+  </g>
+
+  <g id="checks" data-pptx-bounds="720 190 512 400">
+    <rect x="720" y="190" width="512" height="400" rx="16" fill="#F2F6FB"/>
+    <text x="748" y="226" font-size="20" font-weight="bold" fill="#1F2A37">取り込み前の機械検査</text>
+    <text x="748" y="264" font-size="18" fill="#1F2A37">・依頼番号が、今回の依頼のものか</text>
+    <text x="748" y="298" font-size="18" fill="#1F2A37">・区切りが対応し、終端まで揃っているか</text>
+    <text x="748" y="332" font-size="18" fill="#1F2A37">・件数が名乗り（COMPLETE）と一致するか</text>
+    <text x="748" y="366" font-size="18" fill="#1F2A37">・同じモジュールが重複していないか</text>
+    <text x="748" y="400" font-size="18" fill="#1F2A37">・種類とモジュール名が正しいか</text>
+    <text x="748" y="434" font-size="18" fill="#1F2A37">・中身が空のモジュールがないか</text>
+    <rect x="748" y="462" width="456" height="100" rx="12" fill="#FFFFFF" stroke="#24507F" stroke-width="1.5"/>
+    <text x="772" y="494" font-size="18" font-weight="bold" fill="#24507F">1 つでも通らなければ、何も取り込みません。</text>
+    <text x="772" y="524" font-size="16" fill="#5D6B7A">部分的な取り込みは起きません。別の依頼への返答や
+      <tspan x="772" dy="24">途中で切れた返答が、静かに混ざることもありません。</tspan>
+    </text>
+  </g>
+
+  <g id="separation-note" data-pptx-bounds="48 606 1184 40">
+    <text x="48" y="632" font-size="17" fill="#5D6B7A">依頼文（request.md）とコード資料（source-code.md）は分離されています。コード資料は全モジュール収録の固定形式で、散文を含みません。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第5部　技術・運用付録</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">28</text>
+  </g>
+</svg>

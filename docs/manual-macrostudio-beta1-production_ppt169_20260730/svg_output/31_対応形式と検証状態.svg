@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第5部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">対応形式と検証状態</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="format-table" data-pptx-replace-with="table" data-pptx-bounds="48 144 1184 292">
+    <metadata type="application/json">
+      {
+        "x": 48, "y": 144, "width": 1184, "height": 292,
+        "name": "p31-format-table",
+        "columns": ["形式", "読み取り", "書き戻し", "検証状態（2026-07-30 時点）"],
+        "column_widths": [1.6, 1.4, 1.4, 5.6],
+        "rows": [
+          [".xlsm", "対応", "対応", "実機確認済み（抽出・書き戻し・Excel での再オープンとマクロ実行）"],
+          [".xlam", "対応", "対応", "合成データでの試験のみ（Excel が実生成したファイルでは未検証）"],
+          [".xlsb", "対応", "対応", "実ファイル未検証（解析できない場合は明示エラーで停止）"],
+          [".xls", "対応", "検証合格時のみ", "限定対応（ファイル全体が OLE2 の旧形式）"],
+          ["拡張子が違う", "中身で判定", "—", "ZIP か OLE2 として読める場合は読み込む"]
+        ],
+        "style": {"font_family": "Yu Gothic UI", "font_size": 18, "band_row": false}
+      }
+    </metadata>
+    <rect x="48" y="144" width="1184" height="42" fill="#24507F"/>
+    <text x="72" y="172" font-size="18" font-weight="bold" fill="#FFFFFF">形式</text>
+    <text x="248" y="172" font-size="18" font-weight="bold" fill="#FFFFFF">読み取り</text>
+    <text x="420" y="172" font-size="18" font-weight="bold" fill="#FFFFFF">書き戻し</text>
+    <text x="620" y="172" font-size="18" font-weight="bold" fill="#FFFFFF">検証状態（2026-07-30 時点）</text>
+    <rect x="48" y="186" width="1184" height="50" fill="#FFFFFF"/>
+    <text x="72" y="218" font-size="18" font-family="Consolas,monospace" fill="#1F2A37">.xlsm</text>
+    <text x="248" y="218" font-size="18" fill="#1F2A37">対応</text>
+    <text x="420" y="218" font-size="18" fill="#1F2A37">対応</text>
+    <text x="620" y="218" font-size="18" fill="#3A7A47">実機確認済み（抽出・書き戻し・Excel での再オープンとマクロ実行）</text>
+    <rect x="48" y="236" width="1184" height="50" fill="#FAFBFC"/>
+    <text x="72" y="268" font-size="18" font-family="Consolas,monospace" fill="#1F2A37">.xlam</text>
+    <text x="248" y="268" font-size="18" fill="#1F2A37">対応</text>
+    <text x="420" y="268" font-size="18" fill="#1F2A37">対応</text>
+    <text x="620" y="268" font-size="18" fill="#1F2A37">合成データでの試験のみ（Excel が実生成したファイルでは未検証）</text>
+    <rect x="48" y="286" width="1184" height="50" fill="#FFFFFF"/>
+    <text x="72" y="318" font-size="18" font-family="Consolas,monospace" fill="#1F2A37">.xlsb</text>
+    <text x="248" y="318" font-size="18" fill="#1F2A37">対応</text>
+    <text x="420" y="318" font-size="18" fill="#1F2A37">対応</text>
+    <text x="620" y="318" font-size="18" fill="#1F2A37">実ファイル未検証（解析できない場合は明示エラーで停止）</text>
+    <rect x="48" y="336" width="1184" height="50" fill="#FAFBFC"/>
+    <text x="72" y="368" font-size="18" font-family="Consolas,monospace" fill="#1F2A37">.xls</text>
+    <text x="248" y="368" font-size="18" fill="#1F2A37">対応</text>
+    <text x="420" y="368" font-size="18" fill="#1F2A37">検証合格時のみ</text>
+    <text x="620" y="368" font-size="18" fill="#1F2A37">限定対応（ファイル全体が OLE2 の旧形式）</text>
+    <rect x="48" y="386" width="1184" height="50" fill="#FFFFFF"/>
+    <text x="72" y="418" font-size="18" fill="#1F2A37">拡張子が違う</text>
+    <text x="248" y="418" font-size="18" fill="#1F2A37">中身で判定</text>
+    <text x="420" y="418" font-size="18" fill="#1F2A37">—</text>
+    <text x="620" y="418" font-size="18" fill="#1F2A37">ZIP か OLE2 として読める場合は読み込む</text>
+    <rect x="48" y="144" width="1184" height="292" rx="8" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="beta-limits" data-pptx-bounds="48 460 1184 150">
+    <rect x="48" y="460" width="1184" height="150" rx="16" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1"/>
+    <use data-icon="tabler-filled/alert-triangle" x="72" y="482" width="26" height="26" fill="#C05B21"/>
+    <text x="110" y="502" font-size="20" font-weight="bold" fill="#1F2A37">ベータ版の主な未確認事項</text>
+    <text x="72" y="538" font-size="17" fill="#1F2A37">・閲覧ロック付き VBA プロジェクトの実ファイル　・120 秒を超える大型ブックのビルド実測</text>
+    <text x="72" y="566" font-size="17" fill="#1F2A37">・モジュール単位出力を、実際のチャット AI がどこまで指示どおりに守るか　・確認レポートの他ブラウザでの表示</text>
+    <text x="72" y="594" font-size="17" fill="#5D6B7A">未検証のファイルが読めた場合も、P21 の最終確認は必ず行ってください。</text>
+  </g>
+
+  <g id="detect-note" data-pptx-bounds="48 626 1184 30">
+    <text x="48" y="648" font-size="17" fill="#5D6B7A">形式の判定は拡張子ではなく中身で行います。マクロが無いブックは、その旨のカードが表示されます。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第5部　技術・運用付録</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">31</text>
+  </g>
+</svg>

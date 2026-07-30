@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="shotClip14a">
+      <rect x="56" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+    <clipPath id="shotClip14b">
+      <rect x="664" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">操作</text>
+    <rect x="132" y="44" width="92" height="28" rx="14" fill="#FFFFFF" stroke="#24507F" stroke-width="1.5"/>
+    <text x="178" y="63" font-size="14" font-weight="bold" fill="#24507F" text-anchor="middle">手順 3</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">AIの返答をまとめて取り込みます</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="shot-before" data-pptx-bounds="48 150 576 372">
+    <rect x="48" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/13-intake.png" x="56" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip14a)"/>
+    <rect x="56" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="56" y="507" font-size="16" fill="#5D6B7A">取り込み前の画面。ボタンは 1 つで、モジュールを個別に選択する操作はありません。</text>
+  </g>
+
+  <g id="shot-after" data-pptx-bounds="656 150 576 372">
+    <rect x="656" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/14-intake-done.png" x="664" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip14b)"/>
+    <rect x="664" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="664" y="507" font-size="16" fill="#5D6B7A">取り込み成功の表示。「AIが書いた改修内容を見る」で説明を開けます。</text>
+  </g>
+
+  <g id="steps" data-pptx-bounds="48 528 700 140">
+    <circle cx="65" cy="546" r="15" fill="#24507F"/>
+    <text x="65" y="552" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="94" y="554" font-size="19" fill="#1F2A37">AI の返答にあるコードブロックを、先頭から末尾まで
+      <tspan x="94" dy="26">全文コピーします。</tspan>
+    </text>
+    <circle cx="65" cy="600" r="15" fill="#24507F"/>
+    <text x="65" y="606" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="94" y="608" font-size="19" fill="#1F2A37">［クリップボードからAIの返答を取り込む］を押します
+      <tspan x="94" dy="26">（Ctrl+V でも同じ動作です）。</tspan>
+    </text>
+    <circle cx="65" cy="652" r="15" fill="#24507F"/>
+    <text x="65" y="658" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3</text>
+    <text x="94" y="660" font-size="19" fill="#1F2A37">件数が表示されたら取り込み完了です。［次へ］で進みます。</text>
+  </g>
+
+  <g id="fail-note" data-pptx-bounds="772 528 460 132">
+    <rect x="772" y="528" width="460" height="132" rx="12" fill="#FFFFFF" stroke="#C05B21" stroke-width="1.5"/>
+    <use data-icon="tabler-filled/alert-triangle" x="792" y="546" width="24" height="24" fill="#C05B21"/>
+    <text x="828" y="564" font-size="16" font-weight="bold" fill="#1F2A37">取り込めない場合</text>
+    <text x="792" y="592" font-size="16" fill="#1F2A37">コピー範囲の不足や別の依頼への返答の場合は
+      <tspan x="792" dy="24">何も取り込まれず、対処が 1 文で表示されます。</tspan>
+      <tspan x="792" dy="24">コードブロック全体をコピーし直して再実行します。</tspan>
+    </text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">MacroStudio 操作マニュアル（ベータ版）</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">14</text>
+  </g>
+</svg>

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第5部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">付録 — IT・管理担当の方へ</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="toc" data-pptx-bounds="48 150 560 414">
+    <rect x="48" y="150" width="560" height="414" rx="16" fill="#F2F6FB"/>
+    <text x="76" y="186" font-size="22" font-weight="bold" fill="#1F2A37">この付録で扱うこと</text>
+    <text x="76" y="230" font-size="19" fill="#1F2A37">P27　Excelを開かずにVBAを読む仕組み</text>
+    <text x="76" y="272" font-size="19" fill="#1F2A37">P28　受け渡しの照合 — 依頼番号と区切り行</text>
+    <text x="76" y="314" font-size="19" fill="#1F2A37">P29　書き戻しと検証 — all-or-nothing</text>
+    <text x="76" y="356" font-size="19" fill="#1F2A37">P30　閲覧ロック・暗号化・署名</text>
+    <text x="76" y="398" font-size="19" fill="#1F2A37">P31　対応形式と検証状態</text>
+    <text x="76" y="440" font-size="19" fill="#1F2A37">P32　EDR / DLP 環境での導入</text>
+    <text x="76" y="482" font-size="19" fill="#1F2A37">P33　運用のヒント</text>
+    <text x="76" y="536" font-size="17" fill="#5D6B7A">仕組み・保証範囲・未検証事項を、導入判断に使える形で示します。</text>
+  </g>
+
+  <g id="requirements" data-pptx-bounds="640 150 592 288">
+    <rect x="640" y="150" width="592" height="288" rx="16" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1"/>
+    <use data-icon="tabler-filled/device-desktop" x="664" y="172" width="26" height="26" fill="#24507F"/>
+    <text x="702" y="192" font-size="22" font-weight="bold" fill="#1F2A37">動作要件</text>
+    <text x="664" y="234" font-size="18" fill="#1F2A37">・Windows 10 / 11</text>
+    <text x="664" y="266" font-size="18" fill="#1F2A37">・Windows PowerShell 5.1（OS 標準）</text>
+    <text x="664" y="298" font-size="18" fill="#1F2A37">・WebView2 ランタイム（Windows 11 は標準搭載）</text>
+    <text x="664" y="330" font-size="18" fill="#1F2A37">・.NET Framework 4.7.2 以降（OS 標準）</text>
+    <text x="664" y="362" font-size="18" fill="#1F2A37">・Excel はツール自体には不要（最終確認時に使用）</text>
+    <text x="664" y="404" font-size="17" fill="#5D6B7A">インストールは不要。フォルダをコピーするだけで動きます。</text>
+  </g>
+
+  <g id="architecture" data-pptx-bounds="640 462 592 102">
+    <rect x="640" y="462" width="592" height="102" rx="16" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1"/>
+    <use data-icon="tabler-filled/shield" x="664" y="482" width="26" height="26" fill="#24507F"/>
+    <text x="702" y="502" font-size="20" font-weight="bold" fill="#1F2A37">完全ローカル動作</text>
+    <text x="664" y="536" font-size="17" fill="#1F2A37">PowerShell + WebView2 のローカルアプリ。ツール自体は一切通信しません
+      <tspan x="664" dy="24">（AI との通信は、使用者が操作するチャット AI 側で行われます）。</tspan>
+    </text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第5部　技術・運用付録</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">26</text>
+  </g>
+</svg>

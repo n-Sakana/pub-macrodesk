@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">操作</text>
+    <rect x="132" y="44" width="92" height="28" rx="14" fill="#FFFFFF" stroke="#24507F" stroke-width="1.5"/>
+    <text x="178" y="63" font-size="14" font-weight="bold" fill="#24507F" text-anchor="middle">手順 4</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">改修後の動作確認</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="boundary" data-pptx-bounds="48 144 1184 90">
+    <text x="48" y="176" font-size="22" fill="#1F2A37">ビルド時の検証で確認されるのは、取り込んだコードがそのまま書き込まれたこと、それ以外の部分が</text>
+    <text x="48" y="210" font-size="22" fill="#1F2A37">変更されていないことです。改修後のマクロが業務要件どおり動作するかは、以下の手順で確認します。</text>
+  </g>
+
+  <g id="check-1" data-pptx-bounds="48 262 1184 80">
+    <circle cx="84" cy="302" r="22" fill="#24507F"/>
+    <text x="84" y="310" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="128" y="294" font-size="23" font-weight="bold" fill="#1F2A37">改修済みブックを Excel で開く</text>
+    <text x="128" y="326" font-size="18" fill="#5D6B7A">開くのは -Modified- が付いたファイルです。元のブックではありません。</text>
+  </g>
+
+  <g id="check-2" data-pptx-bounds="48 352 1184 80">
+    <circle cx="84" cy="392" r="22" fill="#24507F"/>
+    <text x="84" y="400" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="128" y="384" font-size="23" font-weight="bold" fill="#1F2A37">対象のマクロを通常の手順で実行する</text>
+    <text x="128" y="416" font-size="18" fill="#5D6B7A">本書のサンプルでは、申請一覧シートに対して検証マクロを実行します。</text>
+  </g>
+
+  <g id="check-3" data-pptx-bounds="48 442 1184 80">
+    <circle cx="84" cy="482" r="22" fill="#24507F"/>
+    <text x="84" y="490" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3</text>
+    <text x="128" y="474" font-size="23" font-weight="bold" fill="#1F2A37">実行結果が期待どおりであることを確認する</text>
+    <text x="128" y="506" font-size="18" fill="#5D6B7A">出力・集計・保存されるファイルを、改修前の結果と比較して確認します。</text>
+  </g>
+
+  <g id="check-4" data-pptx-bounds="48 532 1184 80">
+    <circle cx="84" cy="572" r="22" fill="#24507F"/>
+    <text x="84" y="580" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">4</text>
+    <text x="128" y="564" font-size="23" font-weight="bold" fill="#1F2A37">問題がある場合は、元のブックで業務を継続する</text>
+    <text x="128" y="596" font-size="18" fill="#5D6B7A">P21 の対処に従って改修をやり直します。動作確認が済むまで、元のブックは削除せずに残します。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">MacroStudio 操作マニュアル（ベータ版）</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">18</text>
+  </g>
+</svg>

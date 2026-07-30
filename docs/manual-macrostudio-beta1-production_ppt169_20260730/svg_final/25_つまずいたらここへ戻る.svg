@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#2B5C96" />
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第4部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">つまずいたら、ここへ戻る</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5" />
+  </g>
+
+  <g id="reassure-line" data-pptx-bounds="48 134 1184 38">
+    
+  <g transform="translate(48, 140)" fill="#3A7A47">
+    <path d="M11.998 2l.118 .007l.059 .008l.061 .013l.111 .034a.993 .993 0 0 1 .217 .112l.104 .082l.255 .218a11 11 0 0 0 7.189 2.537l.342 -.01a1 1 0 0 1 1.005 .717a13 13 0 0 1 -9.208 16.25a1 1 0 0 1 -.502 0a13 13 0 0 1 -9.209 -16.25a1 1 0 0 1 1.005 -.717a11 11 0 0 0 7.531 -2.527l.263 -.225l.096 -.075a.993 .993 0 0 1 .217 -.112l.112 -.034a.97 .97 0 0 1 .119 -.021l.115 -.007zm3.71 7.293a1 1 0 0 0 -1.415 0l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.32 1.497l2 2l.094 .083a1 1 0 0 0 1.32 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z" />
+  </g>
+    <text x="84" y="159" font-size="21" font-weight="bold" fill="#3A7A47">どこで止まっても、元のブックは無事です。起きたことに合った場所へ戻れば、やり直せます。</text>
+  </g>
+
+  <g id="rescue-table" data-pptx-replace-with="table" data-pptx-bounds="48 184 1184 420">
+    <metadata type="application/json">
+      {
+        "x": 48, "y": 184, "width": 1184, "height": 420,
+        "name": "p25-rescue-table",
+        "columns": ["起きたこと", "すること"],
+        "column_widths": [4.2, 5.8],
+        "rows": [
+          ["返答を取り込めない", "コードブロック全体をコピーし直して、もう一度取り込む（→ P16）"],
+          ["取り込んだ内容が意図と違う", "［戻る］で取り込みへ戻り、AI に言い直して取り込み直す。前の取り込みは全部置き換わる"],
+          ["余計な記号など、軽い写し間違い", "確認画面の［手動修正］で直して［修正を反映］（→ P18）"],
+          ["「元のブックのマクロが、読み込んだときから変わっています」", "読み込んだ後に誰かがマクロを保存し直した合図。ブックを読み込み直し、依頼から作り直す（出力は作られていない）"],
+          ["「ビルドできませんでした」", "［もう一度ビルドする］。再発するなら、ログを添えて配布元へ連絡"],
+          ["「時間がかかっています」", "処理は続いている。終わるまで待つ"],
+          ["依頼をやり直したい", "目的を選び直すと依頼番号が新しくなる。依頼文を AI へ送り直してから、新しい返答を取り込む"]
+        ],
+        "style": {"font_family": "Yu Gothic UI", "font_size": 18, "band_row": false}
+      }
+    </metadata>
+    <rect x="48" y="184" width="1184" height="42" fill="#24507F" />
+    <text x="72" y="212" font-size="18" font-weight="bold" fill="#FFFFFF">起きたこと</text>
+    <text x="556" y="212" font-size="18" font-weight="bold" fill="#FFFFFF">すること</text>
+    <rect x="48" y="226" width="1184" height="54" fill="#FFFFFF" />
+    <text x="72" y="260" font-size="18" fill="#1F2A37">返答を取り込めない</text>
+    <text x="556" y="260" font-size="18" fill="#1F2A37">コードブロック全体をコピーし直して、もう一度取り込む（→ P16）</text>
+    <rect x="48" y="280" width="1184" height="54" fill="#FAFBFC" />
+    <text x="72" y="314" font-size="18" fill="#1F2A37">取り込んだ内容が意図と違う</text>
+    <text fill="#1F2A37" font-size="18" x="556" y="304">［戻る］で取り込みへ戻り、AI に言い直して取り込み直す。
+      </text><text fill="#1F2A37" font-size="18" x="556" y="328"><tspan>前の取り込みは全部置き換わる</tspan>
+    </text><rect x="48" y="334" width="1184" height="54" fill="#FFFFFF" />
+    <text x="72" y="368" font-size="18" fill="#1F2A37">余計な記号など、軽い写し間違い</text>
+    <text x="556" y="368" font-size="18" fill="#1F2A37">確認画面の［手動修正］で直して［修正を反映］（→ P18）</text>
+    <rect x="48" y="388" width="1184" height="66" fill="#FAFBFC" />
+    <text fill="#1F2A37" font-size="18" x="72" y="412">「元のブックのマクロが、読み込んだ
+      </text><text fill="#1F2A37" font-size="18" x="72" y="436"><tspan>ときから変わっています」</tspan>
+    </text><text fill="#1F2A37" font-size="18" x="556" y="412">読み込んだ後に誰かがマクロを保存し直した合図。ブックを
+      </text><text fill="#1F2A37" font-size="18" x="556" y="436"><tspan>読み込み直し、依頼から作り直す（出力は作られていない）</tspan>
+    </text><rect x="48" y="454" width="1184" height="50" fill="#FFFFFF" />
+    <text x="72" y="486" font-size="18" fill="#1F2A37">「ビルドできませんでした」</text>
+    <text x="556" y="486" font-size="18" fill="#1F2A37">［もう一度ビルドする］。再発するなら、ログを添えて配布元へ連絡</text>
+    <rect x="48" y="504" width="1184" height="46" fill="#FAFBFC" />
+    <text x="72" y="534" font-size="18" fill="#1F2A37">「時間がかかっています」</text>
+    <text x="556" y="534" font-size="18" fill="#1F2A37">処理は続いている。終わるまで待つ</text>
+    <rect x="48" y="550" width="1184" height="54" fill="#FFFFFF" />
+    <text x="72" y="584" font-size="18" fill="#1F2A37">依頼をやり直したい</text>
+    <text fill="#1F2A37" font-size="18" x="556" y="576">目的を選び直すと依頼番号が新しくなる。依頼文を AI へ
+      </text><text fill="#1F2A37" font-size="18" x="556" y="600"><tspan>送り直してから、新しい返答を取り込む</tspan>
+    </text><rect x="48" y="184" width="1184" height="420" rx="8" fill="none" stroke="#E2E7EC" stroke-width="1.5" />
+    <line x1="540" y1="184" x2="540" y2="604" stroke="#E2E7EC" stroke-width="1" />
+  </g>
+
+  <g id="bottom-note" data-pptx-bounds="48 618 1184 40">
+    
+  <g transform="translate(48, 622) scale(0.916667)" fill="#5D6B7A">
+    <path d="M12 2c5.523 0 10 4.477 10 10a10 10 0 0 1 -19.995 .324l-.005 -.324l.004 -.28c.148 -5.393 4.566 -9.72 9.996 -9.72zm0 13a1 1 0 0 0 -.993 .883l-.007 .117l.007 .127a1 1 0 0 0 1.986 0l.007 -.117l-.007 -.127a1 1 0 0 0 -.993 -.883zm1.368 -6.673a2.98 2.98 0 0 0 -3.631 .728a1 1 0 0 0 1.44 1.383l.171 -.18a.98 .98 0 0 1 1.11 -.15a1 1 0 0 1 -.34 1.886l-.232 .012a1 1 0 0 0 .111 1.994a3 3 0 0 0 1.371 -5.673z" />
+  </g>
+    <text x="82" y="640" font-size="17" fill="#5D6B7A">全部やり直すときは右上の［最初から］。動作の記録は %LOCALAPPDATA%\MacroStudio\logs に残ります（コードの中身は記録されません）。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第4部　困ったとき</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">25</text>
+  </g>
+</svg>

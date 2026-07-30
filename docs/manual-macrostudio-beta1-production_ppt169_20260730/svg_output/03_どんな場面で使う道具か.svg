@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第1部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">どんな場面で使う道具か</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="lead" data-pptx-bounds="48 142 1184 40">
+    <text x="48" y="170" font-size="26" fill="#1F2A37">マクロを直したいのに、VBA に詳しい人が身近にいない。</text>
+  </g>
+
+  <g id="pain-card-1" data-pptx-bounds="48 208 368 220">
+    <rect x="48" y="208" width="368" height="220" rx="16" fill="#F2F6FB"/>
+    <circle cx="100" cy="272" r="26" fill="#FFFFFF"/>
+    <use data-icon="tabler-filled/file-code" x="84" y="256" width="32" height="32" fill="#24507F"/>
+    <text x="80" y="336" font-size="24" font-weight="bold" fill="#1F2A37">新しい端末で動かない</text>
+    <text x="80" y="372" font-size="18" fill="#5D6B7A">パソコンの入れ替えで、今まで
+      <tspan x="80" dy="28">動いていたマクロが止まった。</tspan>
+    </text>
+  </g>
+
+  <g id="pain-card-2" data-pptx-bounds="456 208 368 220">
+    <rect x="456" y="208" width="368" height="220" rx="16" fill="#F2F6FB"/>
+    <circle cx="508" cy="272" r="26" fill="#FFFFFF"/>
+    <use data-icon="tabler-filled/user" x="492" y="256" width="32" height="32" fill="#24507F"/>
+    <text x="488" y="336" font-size="24" font-weight="bold" fill="#1F2A37">作った人がもういない</text>
+    <text x="488" y="372" font-size="18" fill="#5D6B7A">中身が分からないまま、部門の
+      <tspan x="488" dy="28">マクロを預かっている。</tspan>
+    </text>
+  </g>
+
+  <g id="pain-card-3" data-pptx-bounds="864 208 368 220">
+    <rect x="864" y="208" width="368" height="220" rx="16" fill="#F2F6FB"/>
+    <circle cx="916" cy="272" r="26" fill="#FFFFFF"/>
+    <use data-icon="tabler-filled/help-circle" x="900" y="256" width="32" height="32" fill="#24507F"/>
+    <text x="896" y="336" font-size="24" font-weight="bold" fill="#1F2A37">直せる人が近くにいない</text>
+    <text x="896" y="372" font-size="18" fill="#5D6B7A">詳しい人に頼めず、
+      <tspan x="896" dy="28">そのままになっている。</tspan>
+    </text>
+  </g>
+
+  <g id="definition" data-pptx-bounds="48 470 1184 150">
+    <rect x="48" y="470" width="1184" height="150" rx="16" fill="#24507F"/>
+    <text x="112" y="536" font-size="26" font-weight="bold" fill="#FFFFFF">MacroStudio は、Excel のマクロ（VBA）を、開発画面（VBE）を</text>
+    <text x="112" y="578" font-size="26" font-weight="bold" fill="#FFFFFF">一度も開かずに、見て・調べて・直すための道具です。</text>
+    <rect x="66" y="512" width="8" height="80" rx="4" fill="#C05B21"/>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第1部　MacroStudioを知る</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">03</text>
+  </g>
+</svg>

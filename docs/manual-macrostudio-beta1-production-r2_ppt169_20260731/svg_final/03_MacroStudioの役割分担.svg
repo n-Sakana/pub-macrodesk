@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F" />
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">概要</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">MacroStudioの役割分担</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5" />
+  </g>
+
+  <g id="definition" data-pptx-bounds="48 140 1184 76">
+    <text x="48" y="168" font-size="22" fill="#1F2A37">MacroStudio は、Excel マクロ（VBA）を、VBE（開発画面）を開かずに確認・診断・改修するためのツールです。</text>
+    <text x="48" y="202" font-size="22" fill="#1F2A37">改修内容の判断は行わず、チャット AI との受け渡しと検証を担当します。</text>
+  </g>
+
+  <g id="role-ai" data-pptx-bounds="48 240 368 300">
+    <rect x="48" y="240" width="368" height="300" rx="16" fill="#F2F6FB" />
+    
+  <g transform="translate(80, 268) scale(1.33333)" fill="#24507F">
+    <path d="M18 3a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-4.724l-4.762 2.857a1 1 0 0 1 -1.508 -.743l-.006 -.114v-2h-1a4 4 0 0 1 -3.995 -3.8l-.005 -.2v-8a4 4 0 0 1 4 -4zm-2.8 9.286a1 1 0 0 0 -1.414 .014a2.5 2.5 0 0 1 -3.572 0a1 1 0 0 0 -1.428 1.4a4.5 4.5 0 0 0 6.428 0a1 1 0 0 0 -.014 -1.414m-5.69 -4.286h-.01a1 1 0 1 0 0 2h.01a1 1 0 0 0 0 -2m5 0h-.01a1 1 0 0 0 0 2h.01a1 1 0 0 0 0 -2" />
+  </g>
+    <text x="128" y="292" font-size="24" font-weight="bold" fill="#1F2A37">チャットAI</text>
+    <line x1="80" y1="320" x2="384" y2="320" stroke="#CFD7DE" stroke-width="1" />
+    <text x="80" y="356" font-size="19" fill="#1F2A37">・改修箇所と改修方法の判断</text>
+    <text x="80" y="394" font-size="19" fill="#1F2A37">・改修後コードの作成</text>
+    <text x="80" y="432" font-size="19" fill="#1F2A37">・改修内容の説明文の作成</text>
+  </g>
+
+  <g id="role-user" data-pptx-bounds="456 240 368 300">
+    <rect x="456" y="240" width="368" height="300" rx="16" fill="#F2F6FB" />
+    
+  <g transform="translate(488, 268) scale(1.33333)" fill="#24507F">
+    <path d="M12 2a5 5 0 1 1 -5 5l.005 -.217a5 5 0 0 1 4.995 -4.783z" />
+    <path d="M14 14a5 5 0 0 1 5 5v1a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-1a5 5 0 0 1 5 -5h4z" />
+  </g>
+    <text x="536" y="292" font-size="24" font-weight="bold" fill="#1F2A37">利用者</text>
+    <line x1="488" y1="320" x2="792" y2="320" stroke="#CFD7DE" stroke-width="1" />
+    <text x="488" y="356" font-size="19" fill="#1F2A37">・作業と目的の選択</text>
+    <text fill="#1F2A37" font-size="19" x="488" y="394">・依頼文とコードファイルの
+      </text><text fill="#1F2A37" font-size="19" x="488" y="422"><tspan>　受け渡し</tspan>
+    </text><text fill="#1F2A37" font-size="19" x="488" y="460">・差分の確認と、改修後の
+      </text><text fill="#1F2A37" font-size="19" x="488" y="488"><tspan>　動作確認</tspan>
+    </text></g>
+
+  <g id="role-app" data-pptx-bounds="864 240 368 300">
+    <rect x="864" y="240" width="368" height="300" rx="16" fill="#F2F6FB" />
+    
+  <g transform="translate(896, 268) scale(1.33333)" fill="#24507F">
+    <path d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm-1.553 11.106a1 1 0 0 0 -1.341 .447l-1 2a1 1 0 0 0 0 .894l1 2a1 1 0 0 0 1.341 .447l.102 -.058a1 1 0 0 0 .345 -1.283l-.776 -1.553l.776 -1.553a1 1 0 0 0 -.447 -1.341m4.447 .447a1 1 0 0 0 -1.341 -.447l-.102 .058a1 1 0 0 0 -.345 1.283l.774 1.553l-.775 1.553a1 1 0 0 0 1.788 .894l1 -2a1 1 0 0 0 0 -.894z" />
+    <path d="M19 7h-4l-.001 -4.001z" />
+  </g>
+    <text x="944" y="292" font-size="24" font-weight="bold" fill="#1F2A37">MacroStudio</text>
+    <line x1="896" y1="320" x2="1200" y2="320" stroke="#CFD7DE" stroke-width="1" />
+    <text x="896" y="356" font-size="19" fill="#1F2A37">・ブックからのコード抽出</text>
+    <text x="896" y="394" font-size="19" fill="#1F2A37">・返答の機械的な検証</text>
+    <text fill="#1F2A37" font-size="19" x="896" y="432">・別ファイルへの書き戻しと
+      </text><text fill="#1F2A37" font-size="19" x="896" y="460"><tspan>　再読検証</tspan>
+    </text></g>
+
+  <g id="note" data-pptx-bounds="48 574 1184 60">
+    <text x="48" y="602" font-size="19" fill="#5D6B7A">利用者がコードを読み書きする工程はありません。利用者が行うのは、選択・受け渡し・確認の 3 種類の操作です。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">MacroStudio 操作マニュアル（ベータ版）</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">03</text>
+  </g>
+</svg>

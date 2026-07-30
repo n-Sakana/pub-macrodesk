@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="shotClip20a">
+      <rect x="56" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+    <clipPath id="shotClip20b">
+      <rect x="664" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#2B5C96"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">相談</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">AIで相談する</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="shot-purpose" data-pptx-bounds="48 150 576 372">
+    <rect x="48" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/31-purpose-diagnose.png" x="56" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip20a)"/>
+    <rect x="56" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="56" y="507" font-size="16" fill="#5D6B7A">相談の選択画面「AIに何を聞くか選びます」。</text>
+  </g>
+
+  <g id="shot-done" data-pptx-bounds="656 150 576 372">
+    <rect x="656" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/37-handoff-diagnose-done.png" x="664" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip20b)"/>
+    <rect x="664" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="664" y="507" font-size="16" fill="#5D6B7A">受け渡し画面。両方の操作が完了すると右下が［完了］になります。</text>
+  </g>
+
+  <g id="kinds" data-pptx-bounds="48 526 1184 96">
+    <text x="48" y="542" font-size="17" font-weight="bold" fill="#1F2A37">選択できる相談（画面の表示と同一）</text>
+    <text x="48" y="566" font-size="16" fill="#1F2A37">・新しい端末で動くかを調べてもらう — コードは直さず、新しい端末で困りそうな箇所を洗い出してもらいます。</text>
+    <text x="48" y="590" font-size="16" fill="#1F2A37">・相談用の依頼文を作る（進め方を決めたいとき）— 質問に答えると、進め方を相談する依頼文ができます（回答は任意の項目のみで可）。</text>
+    <text x="48" y="614" font-size="16" fill="#1F2A37">・聞きたいことを自分で書く — マクロについて聞きたいことを、この後の画面で自分の言葉で書きます。</text>
+  </g>
+
+  <g id="consult-note" data-pptx-bounds="48 626 1184 40">
+    <text x="48" y="640" font-size="15" fill="#5D6B7A">操作は改修と同様です（依頼文の貼り付けと source-code.md の添付）。作成されるのは request.md と source-code.md の 2 つのみで、ブックは作成しません。</text>
+    <text x="48" y="662" font-size="15" fill="#5D6B7A">返答はチャット上で確認します。改修方針が決まった場合は、「AIで改修する」の「自分で改修内容を書く」に方針を記入して改修を行えます。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">MacroStudio 操作マニュアル（ベータ版）</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">20</text>
+  </g>
+</svg>

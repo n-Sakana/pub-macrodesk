@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="ending" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="closing-field" data-pptx-role="decoration" data-pptx-bounds="880 0 400 400">
+    <circle cx="1300" cy="-40" r="380" fill="#F2F6FB"/>
+  </g>
+
+  <g id="closing-message" data-pptx-bounds="140 208 1000 260">
+    <text x="640" y="262" font-size="44" font-weight="bold" fill="#1F2A37" text-anchor="middle">元のブックは、変わらない。</text>
+    <text x="640" y="352" font-size="44" font-weight="bold" fill="#1F2A37" text-anchor="middle">何度でも、やり直せる。</text>
+    <text x="640" y="442" font-size="44" font-weight="bold" fill="#24507F" text-anchor="middle">最後の確認は、あなたの目で。</text>
+  </g>
+
+  <g id="closing-brand" data-pptx-bounds="440 540 400 80">
+    <line x1="540" y1="548" x2="740" y2="548" stroke="#CFD7DE" stroke-width="1.5"/>
+    <text x="640" y="586" font-size="18" fill="#5D6B7A" text-anchor="middle">MacroStudio 操作マニュアル</text>
+    <text x="640" y="614" font-size="15" fill="#5D6B7A" text-anchor="middle">beta 1.0.0 対応 ／ 2026-07-30 版</text>
+  </g>
+</svg>

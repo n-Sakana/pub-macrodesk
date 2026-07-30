@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="shotClip04">
+      <rect x="56" y="158" width="600" height="337.5" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">概要</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">二つの作業と作成されるファイル</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="screenshot" data-pptx-bounds="48 150 616 394">
+    <rect x="48" y="150" width="616" height="353" rx="14" fill="#F2F6FB"/>
+    <image href="../images/01-mode.png" x="56" y="158" width="600" height="337.5" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip04)"/>
+    <rect x="56" y="158" width="600" height="337.5" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="56" y="529" font-size="16" fill="#5D6B7A">最初の画面「作業を選んでください」。作業はブックの読み込みより先に選択します。</text>
+  </g>
+
+  <g id="work-refactor" data-pptx-bounds="696 150 536 190">
+    <rect x="696" y="150" width="536" height="190" rx="14" fill="#F2F6FB"/>
+    <text x="720" y="182" font-size="22" font-weight="bold" fill="#1F2A37">AIで改修する</text>
+    <text x="720" y="212" font-size="17" fill="#1F2A37">AI の返答を取り込み、改修済みブックを作成します。手順 4 まで進みます。</text>
+    <text x="720" y="244" font-size="16" fill="#5D6B7A">作成されるファイル: request.md（依頼文）／</text>
+    <text x="720" y="270" font-size="16" fill="#5D6B7A">source-code.md（コード全文）／改修済みブック（元の</text>
+    <text x="720" y="296" font-size="16" fill="#5D6B7A">ブックのコピーに変更を書き込んだ別ファイル）／</text>
+    <text x="720" y="322" font-size="16" fill="#5D6B7A">Diff レポート／result.md（改修の概要メモ）</text>
+  </g>
+
+  <g id="work-consult" data-pptx-bounds="696 356 536 148">
+    <rect x="696" y="356" width="536" height="148" rx="14" fill="#F2F6FB"/>
+    <text x="720" y="388" font-size="22" font-weight="bold" fill="#1F2A37">AIで相談する</text>
+    <text x="720" y="418" font-size="17" fill="#1F2A37">診断や質問のための依頼文とコード全文を作成します。手順 2 で完了します。</text>
+    <text x="720" y="450" font-size="16" fill="#5D6B7A">作成されるファイル: request.md と source-code.md の 2 つのみ。</text>
+    <text x="720" y="476" font-size="16" fill="#5D6B7A">ブックは作成しません。</text>
+  </g>
+
+  <g id="common-fact" data-pptx-bounds="48 560 1184 80">
+    <rect x="48" y="560" width="1184" height="80" rx="12" fill="#FFFFFF" stroke="#3A7A47" stroke-width="1.5"/>
+    <use data-icon="tabler-filled/shield-check" x="76" y="586" width="26" height="26" fill="#3A7A47"/>
+    <text x="116" y="596" font-size="19" fill="#1F2A37">元のブックのファイルには、どちらの作業でも書き込みません。</text>
+    <text x="116" y="624" font-size="19" fill="#1F2A37">作成されるファイルはすべて、元のブックとは別の新規ファイルです。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">MacroStudio 操作マニュアル（ベータ版）</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">04</text>
+  </g>
+</svg>

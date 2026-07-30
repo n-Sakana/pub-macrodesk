@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第1部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">守られていること・あなたが確かめること</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="guarded" data-pptx-bounds="48 140 700 396">
+    <rect x="48" y="140" width="700" height="396" rx="16" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/shield-check" x="76" y="164" width="28" height="28" fill="#24507F"/>
+    <text x="116" y="186" font-size="24" font-weight="bold" fill="#1F2A37">アプリが守っていること</text>
+    <text x="76" y="234" font-size="20" fill="#1F2A37">1　元のブックは上書きしない。結果は必ず別ファイル。</text>
+    <text x="76" y="288" font-size="20" fill="#1F2A37">2　コードを AI へ自動送信しない。渡すのはあなた自身。</text>
+    <text x="76" y="342" font-size="20" fill="#1F2A37">3　返答は依頼番号や区切りを機械的に確認してから
+      <tspan x="104" dy="30">取り込む。合わなければ、何も取り込まない。</tspan>
+    </text>
+    <text x="76" y="426" font-size="20" fill="#1F2A37">4　ビルド前に、元のブックが途中で変わっていないか確認。</text>
+    <text x="76" y="480" font-size="20" fill="#1F2A37">5　書き戻したブックを読み直して検証。意図したコードが
+      <tspan x="104" dy="30">入らなければ、出力そのものを残さない。</tspan>
+    </text>
+  </g>
+
+  <g id="not-guaranteed" data-pptx-bounds="780 140 452 396">
+    <rect x="780" y="140" width="452" height="396" rx="16" fill="#FFFFFF" stroke="#C05B21" stroke-width="2"/>
+    <use data-icon="tabler-filled/alert-triangle" x="808" y="164" width="28" height="28" fill="#C05B21"/>
+    <text x="848" y="186" font-size="24" font-weight="bold" fill="#1F2A37">アプリが保証しないこと</text>
+    <text x="808" y="234" font-size="20" fill="#1F2A37">AI の返答の中身が、業務として
+      <tspan x="808" dy="32">正しいかどうかは、アプリには</tspan>
+      <tspan x="808" dy="32">分かりません。</tspan>
+    </text>
+    <line x1="808" y1="348" x2="1204" y2="348" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="808" y="392" font-size="20" font-weight="bold" fill="#1F2A37">だから、あなたが確かめます。</text>
+    <text x="808" y="432" font-size="19" fill="#1F2A37">・変更内容を画面の差分で見る
+      <tspan x="808" dy="30">　（→ P18）</tspan>
+      <tspan x="808" dy="34">・最後に Excel で動作を確認する</tspan>
+      <tspan x="808" dy="30">　（→ P21）</tspan>
+    </text>
+  </g>
+
+  <g id="reassure" data-pptx-bounds="48 560 1184 84">
+    <rect x="48" y="560" width="1184" height="84" rx="16" fill="#FFFFFF" stroke="#3A7A47" stroke-width="1.5"/>
+    <use data-icon="tabler-filled/shield-check" x="76" y="588" width="28" height="28" fill="#3A7A47"/>
+    <text x="120" y="612" font-size="22" fill="#1F2A37">途中でやめても、失敗しても、元のブックは変わっていません。何度でもやり直せます。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第1部　MacroStudioを知る</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">06</text>
+  </g>
+</svg>

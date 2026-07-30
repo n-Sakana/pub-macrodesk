@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="shotClip11a">
+      <rect x="56" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+    <clipPath id="shotClip11b">
+      <rect x="664" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第2部</text>
+    <rect x="132" y="44" width="92" height="28" rx="14" fill="#FFFFFF" stroke="#24507F" stroke-width="1.5"/>
+    <text x="178" y="63" font-size="14" font-weight="bold" fill="#24507F" text-anchor="middle">手順 1</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">Excelブックを読み込みます</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="shot-before" data-pptx-bounds="48 150 576 372">
+    <rect x="48" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/03-book-empty.png" x="56" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip11a)"/>
+    <rect x="56" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="56" y="507" font-size="16" fill="#5D6B7A">読み込む前。点線の枠にドラッグするか、クリックして選びます。</text>
+  </g>
+
+  <g id="shot-after" data-pptx-bounds="656 150 576 372">
+    <rect x="656" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/04-book-loaded.png" x="664" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip11b)"/>
+    <rect x="664" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="664" y="507" font-size="16" fill="#5D6B7A">読み込んだ後。ファイル名とパスのカードが出ます。</text>
+  </g>
+
+  <g id="steps" data-pptx-bounds="48 540 1184 100">
+    <circle cx="65" cy="560" r="15" fill="#24507F"/>
+    <text x="65" y="566" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="94" y="568" font-size="21" fill="#1F2A37">改修したいブックを、点線の枠へドラッグします。クリックしてファイルを選んでもかまいません。</text>
+    <circle cx="65" cy="602" r="15" fill="#24507F"/>
+    <text x="65" y="608" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="94" y="610" font-size="21" fill="#1F2A37">ファイル名が出たら読み込み完了です。［選び直す］でいつでも替えられます。［次へ］で進みます。</text>
+  </g>
+
+  <g id="format-note" data-pptx-bounds="48 630 1184 34">
+    <use data-icon="tabler-filled/file-code" x="48" y="634" width="22" height="22" fill="#5D6B7A"/>
+    <text x="82" y="652" font-size="17" fill="#5D6B7A">対応形式は .xlsm / .xlam / .xlsb / .xls。Excel で開いたままのブックも読み込めます（元のブックは変更されません）。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第2部　最初の一件　｜　手順 1 ・ 作業とブックを選ぶ</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">11</text>
+  </g>
+</svg>

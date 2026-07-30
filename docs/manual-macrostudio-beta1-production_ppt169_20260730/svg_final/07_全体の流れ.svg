@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F" />
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第2部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">全体の流れ</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5" />
+  </g>
+
+  <g id="lead" data-pptx-bounds="48 138 1184 40">
+    <text x="48" y="166" font-size="26" fill="#1F2A37">手順は 4 つ。画面はひとつずつ進み、右下の［次へ］が青くなったら、その画面は終わりです。</text>
+  </g>
+
+  <g id="flow-step-1" data-pptx-bounds="48 200 248 240">
+    <rect x="48" y="200" width="248" height="240" rx="16" fill="#F2F6FB" />
+    <circle cx="90" cy="242" r="20" fill="#24507F" />
+    <text x="90" y="250" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text font-weight="bold" fill="#1F2A37" font-size="22" x="124" y="250">作業とブック
+      </text><text font-weight="bold" fill="#1F2A37" font-size="22" x="124" y="278"><tspan>を選ぶ</tspan>
+    </text><text fill="#5D6B7A" font-size="17" x="76" y="330">・作業を選ぶ
+      </text><text fill="#5D6B7A" font-size="17" x="76" y="358"><tspan>・ブックを読み込む</tspan>
+      </text><text fill="#5D6B7A" font-size="17" x="76" y="386"><tspan>・読み取りを確かめる</tspan>
+    </text></g>
+
+  <g id="flow-step-2" data-pptx-bounds="344 200 248 240">
+    <rect x="344" y="200" width="248" height="240" rx="16" fill="#F2F6FB" />
+    <circle cx="386" cy="242" r="20" fill="#24507F" />
+    <text x="386" y="250" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="420" y="250" font-size="22" font-weight="bold" fill="#1F2A37">AIへ依頼する</text>
+    <text fill="#5D6B7A" font-size="17" x="372" y="330">・目的を選ぶ
+      </text><text fill="#5D6B7A" font-size="17" x="372" y="358"><tspan>・依頼文を確かめる</tspan>
+      </text><text fill="#5D6B7A" font-size="17" x="372" y="386"><tspan>・AIチャットへ渡す</tspan>
+    </text></g>
+
+  <g id="flow-step-3" data-pptx-bounds="640 200 248 240">
+    <rect x="640" y="200" width="248" height="240" rx="16" fill="#F2F6FB" />
+    <circle cx="682" cy="242" r="20" fill="#24507F" />
+    <text x="682" y="250" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3</text>
+    <text font-weight="bold" fill="#1F2A37" font-size="22" x="716" y="250">返答を
+      </text><text font-weight="bold" fill="#1F2A37" font-size="22" x="716" y="278"><tspan>取り込む</tspan>
+    </text><text fill="#5D6B7A" font-size="17" x="668" y="330">・返答を取り込む
+      </text><text fill="#5D6B7A" font-size="17" x="668" y="358"><tspan>・変更を確かめる</tspan>
+    </text></g>
+
+  <g id="flow-step-4" data-pptx-bounds="936 200 248 240">
+    <rect x="936" y="200" width="248" height="240" rx="16" fill="#F2F6FB" />
+    <circle cx="978" cy="242" r="20" fill="#24507F" />
+    <text x="978" y="250" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">4</text>
+    <text x="1012" y="250" font-size="22" font-weight="bold" fill="#1F2A37">ブックを作る</text>
+    <text fill="#5D6B7A" font-size="17" x="964" y="330">・名前を確かめる
+      </text><text fill="#5D6B7A" font-size="17" x="964" y="358"><tspan>・ビルド（自動）</tspan>
+      </text><text fill="#5D6B7A" font-size="17" x="964" y="386"><tspan>・できあがり</tspan>
+    </text></g>
+
+  <g id="flow-arrows" data-pptx-bounds="300 240 628 34">
+    <g id="p07-arrow-300" data-pptx-authoring="preset" data-pptx-object="shape" data-pptx-prst="rightArrow" data-pptx-frame="300 240 36 34" fill="#2B5C96" stroke="none">
+      <path d="M 300 248.5 L 319 248.5 L 319 240 L 336 257 L 319 274 L 319 265.5 L 300 265.5 Z" />
+    </g>
+    <g id="p07-arrow-596" data-pptx-authoring="preset" data-pptx-object="shape" data-pptx-prst="rightArrow" data-pptx-frame="596 240 36 34" fill="#2B5C96" stroke="none">
+      <path d="M 596 248.5 L 615 248.5 L 615 240 L 632 257 L 615 274 L 615 265.5 L 596 265.5 Z" />
+    </g>
+    <g id="p07-arrow-892" data-pptx-authoring="preset" data-pptx-object="shape" data-pptx-prst="rightArrow" data-pptx-frame="892 240 36 34" fill="#2B5C96" stroke="none">
+      <path d="M 892 248.5 L 911 248.5 L 911 240 L 928 257 L 911 274 L 911 265.5 L 892 265.5 Z" />
+    </g>
+  </g>
+
+  <g id="branch-note" data-pptx-bounds="48 476 1184 84">
+    <rect x="48" y="476" width="1184" height="84" rx="16" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1" />
+    
+  <g transform="translate(76, 504) scale(1.16667)" fill="#2B5C96">
+    <path d="M14 3.072a8 8 0 0 1 2.32 11.834l5.387 5.387a1 1 0 0 1 -1.414 1.414l-5.388 -5.387a8 8 0 1 1 -.905 -13.249" />
+  </g>
+    <text x="120" y="528" font-size="20" fill="#1F2A37">「AIで相談する」を選んだときは、手順 2 で完了になります（依頼文とコードを渡して終わり。→ P23）。</text>
+  </g>
+
+  <g id="nav-note" data-pptx-bounds="48 588 1184 52">
+    
+  <g transform="translate(48, 596) scale(1.08333)" fill="#24507F">
+    <path d="M12 2l.324 .005a10 10 0 1 1 -.648 0l.324 -.005zm.613 5.21a1 1 0 0 0 -1.32 1.497l2.291 2.293h-5.584l-.117 .007a1 1 0 0 0 .117 1.993h5.584l-2.291 2.293l-.083 .094a1 1 0 0 0 1.497 1.32l4 -4l.073 -.082l.064 -.089l.062 -.113l.044 -.11l.03 -.112l.017 -.126l.003 -.075l-.007 -.118l-.029 -.148l-.035 -.105l-.054 -.113l-.071 -.111a1.008 1.008 0 0 0 -.097 -.112l-4 -4z" />
+  </g>
+    <text x="86" y="616" font-size="20" fill="#5D6B7A">やり直したいときは［戻る］で通った道を戻れます。ビルド中の画面だけは戻れません。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第2部　最初の一件</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">07</text>
+  </g>
+</svg>

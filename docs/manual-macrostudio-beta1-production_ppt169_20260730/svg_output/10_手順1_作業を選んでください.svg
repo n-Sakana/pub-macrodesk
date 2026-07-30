@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="shotClip10">
+      <rect x="56" y="158" width="704" height="396" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第2部</text>
+    <rect x="132" y="44" width="92" height="28" rx="14" fill="#FFFFFF" stroke="#24507F" stroke-width="1.5"/>
+    <text x="178" y="63" font-size="14" font-weight="bold" fill="#24507F" text-anchor="middle">手順 1</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">作業を選んでください</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="screenshot" data-pptx-bounds="48 150 720 452">
+    <rect x="48" y="150" width="720" height="412" rx="14" fill="#F2F6FB"/>
+    <image href="../images/02-mode-selected.png" x="56" y="158" width="704" height="396" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip10)"/>
+    <rect x="56" y="158" width="704" height="396" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="56" y="588" font-size="16" fill="#5D6B7A">「AIで改修する」を選んだ状態。カードにチェックが付き、右下の［次へ］が青くなります。</text>
+  </g>
+
+  <g id="step-1" data-pptx-bounds="800 170 432 110">
+    <circle cx="817" cy="188" r="15" fill="#24507F"/>
+    <text x="817" y="194" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="846" y="196" font-size="22" font-weight="bold" fill="#1F2A37">［AIで改修する］を押します。</text>
+    <text x="846" y="230" font-size="20" fill="#1F2A37">カードにチェックが付きます。
+      <tspan x="846" dy="32">押しただけでは、まだ進みません。</tspan>
+    </text>
+  </g>
+
+  <g id="step-2" data-pptx-bounds="800 300 432 80">
+    <circle cx="817" cy="318" r="15" fill="#24507F"/>
+    <text x="817" y="324" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="846" y="326" font-size="22" font-weight="bold" fill="#1F2A37">右下の［次へ］を押します。</text>
+  </g>
+
+  <g id="hints" data-pptx-bounds="800 400 432 200">
+    <rect x="800" y="400" width="432" height="200" rx="16" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="824" y="436" font-size="18" font-weight="bold" fill="#1F2A37">補足</text>
+    <text x="824" y="470" font-size="18" fill="#5D6B7A">・聞きたいだけのときは
+      <tspan x="824" dy="28">　［AIで相談する］を選びます（→ P23）。</tspan>
+      <tspan x="824" dy="36">・あとでブックを替えても、ここで</tspan>
+      <tspan x="824" dy="28">　選んだ作業は残ります。</tspan>
+    </text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第2部　最初の一件　｜　手順 1 ・ 作業とブックを選ぶ</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">10</text>
+  </g>
+</svg>

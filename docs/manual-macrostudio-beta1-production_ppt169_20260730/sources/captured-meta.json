@@ -1,0 +1,34 @@
+{
+ "requestId": "a19914fe-3f78-4492-bb89-e434000b2155",
+ "outputName": "申請データ検証-Modified-20260730.xlsm",
+ "diffName": "申請データ検証-Diff-Report-20260730.html",
+ "outputTimestamp": "20260730_213927",
+ "modules": [
+  {
+   "name": "AppController",
+   "isNew": false,
+   "codeLength": 4109
+  },
+  {
+   "name": "SystemInfo",
+   "isNew": false,
+   "codeLength": 6364
+  },
+  {
+   "name": "TimerUtils",
+   "isNew": false,
+   "codeLength": 299
+  },
+  {
+   "name": "WindowUtils",
+   "isNew": false,
+   "codeLength": 9624
+  },
+  {
+   "name": "WaitUtils",
+   "isNew": true,
+   "codeLength": 530
+  }
+ ],
+ "copiedPromptEqualsRequest": true
+}

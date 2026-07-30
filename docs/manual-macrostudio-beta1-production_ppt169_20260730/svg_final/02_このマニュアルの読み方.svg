@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第1部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">このマニュアルの読み方</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="promise" data-pptx-bounds="48 138 1184 44">
+    <!-- icon: tabler-filled/shield-check -->
+  <g transform="translate(48, 146) scale(1.08333)" fill="#3A7A47">
+    <path d="M11.998 2l.118 .007l.059 .008l.061 .013l.111 .034a.993 .993 0 0 1 .217 .112l.104 .082l.255 .218a11 11 0 0 0 7.189 2.537l.342 -.01a1 1 0 0 1 1.005 .717a13 13 0 0 1 -9.208 16.25a1 1 0 0 1 -.502 0a13 13 0 0 1 -9.209 -16.25a1 1 0 0 1 1.005 -.717a11 11 0 0 0 7.531 -2.527l.263 -.225l.096 -.075a.993 .993 0 0 1 .217 -.112l.112 -.034a.97 .97 0 0 1 .119 -.021l.115 -.007zm3.71 7.293a1 1 0 0 0 -1.415 0l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.32 1.497l2 2l.094 .083a1 1 0 0 0 1.32 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z" />
+  </g>
+    <text x="86" y="166" font-size="22" fill="#1F2A37">この本は、初めての一件に付き添う手引きです。第2部は、一つのサンプルブックを最初から最後まで通します。</text>
+  </g>
+
+  <g id="map-part1" data-pptx-bounds="48 196 1184 76">
+    <rect x="48" y="196" width="1184" height="76" rx="12" fill="#F2F6FB"/>
+    <rect x="68" y="216" width="96" height="36" rx="18" fill="#24507F"/>
+    <text x="116" y="240" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第1部</text>
+    <text x="188" y="230" font-size="22" font-weight="bold" fill="#1F2A37">MacroStudioを知る</text>
+    <text x="188" y="258" font-size="18" fill="#5D6B7A">どんな道具か・だれが何を担うか・何が守られるか</text>
+    <text x="1212" y="240" font-size="18" fill="#5D6B7A" text-anchor="end">P03–06</text>
+  </g>
+
+  <g id="map-part2" data-pptx-bounds="48 280 1184 76">
+    <rect x="48" y="280" width="1184" height="76" rx="12" fill="#F2F6FB"/>
+    <rect x="68" y="300" width="96" height="36" rx="18" fill="#24507F"/>
+    <text x="116" y="324" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第2部</text>
+    <text x="188" y="314" font-size="22" font-weight="bold" fill="#1F2A37">最初の一件</text>
+    <text x="188" y="342" font-size="18" fill="#5D6B7A">読み込みから、AIへの依頼、取り込み、ブック作成、最終確認まで</text>
+    <text x="1212" y="324" font-size="18" fill="#5D6B7A" text-anchor="end">P07–22</text>
+    <rect x="924" y="304" width="118" height="26" rx="13" fill="#C05B21"/>
+    <text x="983" y="322" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">ここを通す</text>
+  </g>
+
+  <g id="map-part3" data-pptx-bounds="48 364 1184 62">
+    <rect x="48" y="364" width="1184" height="62" rx="12" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1"/>
+    <rect x="68" y="377" width="96" height="36" rx="18" fill="#2B5C96"/>
+    <text x="116" y="401" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第3部</text>
+    <text x="188" y="402" font-size="22" font-weight="bold" fill="#1F2A37">相談する使い方
+      <tspan font-size="18" font-weight="normal" fill="#5D6B7A">　直す前に、AIに聞くだけの道</tspan>
+    </text>
+    <text x="1212" y="402" font-size="18" fill="#5D6B7A" text-anchor="end">P23–24</text>
+  </g>
+
+  <g id="map-part4" data-pptx-bounds="48 434 1184 62">
+    <rect x="48" y="434" width="1184" height="62" rx="12" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1"/>
+    <rect x="68" y="447" width="96" height="36" rx="18" fill="#2B5C96"/>
+    <text x="116" y="471" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第4部</text>
+    <text x="188" y="472" font-size="22" font-weight="bold" fill="#1F2A37">困ったとき
+      <tspan font-size="18" font-weight="normal" fill="#5D6B7A">　つまずいたら、どこへ戻るか</tspan>
+    </text>
+    <text x="1212" y="472" font-size="18" fill="#5D6B7A" text-anchor="end">P25</text>
+  </g>
+
+  <g id="map-part5" data-pptx-bounds="48 504 1184 62">
+    <rect x="48" y="504" width="1184" height="62" rx="12" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1"/>
+    <rect x="68" y="517" width="96" height="36" rx="18" fill="#2B5C96"/>
+    <text x="116" y="541" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第5部</text>
+    <text x="188" y="542" font-size="22" font-weight="bold" fill="#1F2A37">技術・運用付録
+      <tspan font-size="18" font-weight="normal" fill="#5D6B7A">　IT・管理担当者向け。仕組み・対応範囲・導入判断</tspan>
+    </text>
+    <text x="1212" y="542" font-size="18" fill="#5D6B7A" text-anchor="end">P26–33</text>
+  </g>
+
+  <g id="reader-note" data-pptx-bounds="48 584 1184 56">
+    <text x="48" y="612" font-size="18" fill="#5D6B7A">付録は、仕組みを詳しく知りたくなったときに開いてください。本編を読むのに、付録の知識は要りません。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第1部　MacroStudioを知る</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">02</text>
+  </g>
+</svg>

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="shotClip11">
+      <rect x="56" y="158" width="704" height="396" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">操作</text>
+    <rect x="132" y="44" width="92" height="28" rx="14" fill="#FFFFFF" stroke="#24507F" stroke-width="1.5"/>
+    <text x="178" y="63" font-size="14" font-weight="bold" fill="#24507F" text-anchor="middle">手順 2</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">目的を選んでください</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="screenshot" data-pptx-bounds="48 150 720 452">
+    <rect x="48" y="150" width="720" height="412" rx="14" fill="#F2F6FB"/>
+    <image href="../images/08-purpose-selected.png" x="56" y="158" width="704" height="396" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip11)"/>
+    <rect x="56" y="158" width="704" height="396" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="56" y="588" font-size="16" fill="#5D6B7A">本書のサンプルでは「Win32 API を使わない形へ直す」を選択します。名前の下の 1 行が各目的の説明です。</text>
+  </g>
+
+  <g id="purpose-list" data-pptx-bounds="800 150 432 274">
+    <text x="800" y="172" font-size="18" font-weight="bold" fill="#1F2A37">選択できる改修の目的</text>
+    <rect x="800" y="188" width="432" height="72" rx="12" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="820" y="216" font-size="17" font-weight="bold" fill="#1F2A37">VBAリファクター（動きを変えずに整理・改善する）</text>
+    <text x="820" y="244" font-size="15" fill="#5D6B7A">動作を変えずに、コードを読みやすく直す依頼です。</text>
+    <rect x="800" y="268" width="432" height="72" rx="12" fill="#FFFFFF" stroke="#C05B21" stroke-width="1.5"/>
+    <text x="820" y="296" font-size="17" font-weight="bold" fill="#1F2A37">Win32 API を使わない形へ直す　← 本書の例</text>
+    <text x="820" y="324" font-size="15" fill="#5D6B7A">Win32 API 依存箇所を置き換える依頼です。</text>
+    <rect x="800" y="348" width="432" height="72" rx="12" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="820" y="376" font-size="17" font-weight="bold" fill="#1F2A37">自分で改修内容を書く</text>
+    <text x="820" y="404" font-size="15" fill="#5D6B7A">改修内容を次の画面で自分の言葉で記入します。</text>
+  </g>
+
+  <g id="steps" data-pptx-bounds="800 444 432 130">
+    <circle cx="817" cy="464" r="15" fill="#24507F"/>
+    <text x="817" y="470" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="846" y="472" font-size="19" fill="#1F2A37">目的を 1 つ選択します。該当する
+      <tspan x="846" dy="28">目的がない場合は「自分で改修内容</tspan>
+      <tspan x="846" dy="28">を書く」を選択します。</tspan>
+    </text>
+    <circle cx="817" cy="560" r="15" fill="#24507F"/>
+    <text x="817" y="566" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="846" y="568" font-size="19" fill="#1F2A37">［次へ］を押します。</text>
+  </g>
+
+  <g id="question-note" data-pptx-bounds="48 616 1184 40">
+    <text x="48" y="640" font-size="17" fill="#5D6B7A">ひな形に質問が定義されている場合は、先に質問画面が表示されます（相談での例: P20）。回答は依頼文に挿入されます。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">MacroStudio 操作マニュアル（ベータ版）</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">11</text>
+  </g>
+</svg>

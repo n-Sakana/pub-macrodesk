@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第2部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">この本で使うサンプル</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="book-profile" data-pptx-bounds="48 140 640 424">
+    <rect x="48" y="140" width="640" height="424" rx="16" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/file-code" x="76" y="166" width="30" height="30" fill="#24507F"/>
+    <text x="120" y="190" font-size="24" font-weight="bold" fill="#1F2A37">申請データ検証.xlsm</text>
+    <text x="76" y="234" font-size="19" fill="#1F2A37">申請一覧シートの内容を検証し、結果とログを書き込む
+      <tspan x="76" dy="30">部門マクロ。8 モジュール・484 行。</tspan>
+    </text>
+    <g id="module-table" data-pptx-replace-with="table">
+      <metadata type="application/json">
+        {
+          "x": 76, "y": 300, "width": 584, "height": 236,
+          "name": "p08-module-table",
+          "columns": ["モジュール", "行数", "はたらき"],
+          "rows": [
+            ["AppController", {"text": "103", "align": "r"}, "検証全体の入口と進行"],
+            ["SystemInfo", {"text": "157", "align": "r"}, "シート構成の確認と設定の読み取り"],
+            ["TimerUtils", {"text": "14", "align": "r"}, "待ち時間と経過時間"],
+            ["WindowUtils", {"text": "210", "align": "r"}, "申請 1 行ずつの検証と結果の書き込み"],
+            ["ほか 4 つ", {"text": "0", "align": "r"}, "シート側のモジュール（コードなし）"]
+          ],
+          "style": {"font_family": "Yu Gothic UI", "font_size": 18, "band_row": false}
+        }
+      </metadata>
+      <rect x="76" y="300" width="584" height="40" fill="#24507F"/>
+      <text x="92" y="327" font-size="18" font-weight="bold" fill="#FFFFFF">モジュール</text>
+      <text x="330" y="327" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="end">行数</text>
+      <text x="356" y="327" font-size="18" font-weight="bold" fill="#FFFFFF">はたらき</text>
+      <rect x="76" y="340" width="584" height="39" fill="#FFFFFF"/>
+      <text x="92" y="366" font-size="18" fill="#1F2A37" font-family="Consolas,monospace">AppController</text>
+      <text x="330" y="366" font-size="18" fill="#1F2A37" text-anchor="end">103</text>
+      <text x="356" y="366" font-size="18" fill="#1F2A37">検証全体の入口と進行</text>
+      <rect x="76" y="379" width="584" height="39" fill="#FAFBFC"/>
+      <text x="92" y="405" font-size="18" fill="#1F2A37" font-family="Consolas,monospace">SystemInfo</text>
+      <text x="330" y="405" font-size="18" fill="#1F2A37" text-anchor="end">157</text>
+      <text x="356" y="405" font-size="18" fill="#1F2A37">シート構成の確認と設定の読み取り</text>
+      <rect x="76" y="418" width="584" height="39" fill="#FFFFFF"/>
+      <text x="92" y="444" font-size="18" fill="#1F2A37" font-family="Consolas,monospace">TimerUtils</text>
+      <text x="330" y="444" font-size="18" fill="#1F2A37" text-anchor="end">14</text>
+      <text x="356" y="444" font-size="18" fill="#1F2A37">待ち時間と経過時間</text>
+      <rect x="76" y="457" width="584" height="39" fill="#FAFBFC"/>
+      <text x="92" y="483" font-size="18" fill="#1F2A37" font-family="Consolas,monospace">WindowUtils</text>
+      <text x="330" y="483" font-size="18" fill="#1F2A37" text-anchor="end">210</text>
+      <text x="356" y="483" font-size="18" fill="#1F2A37">申請 1 行ずつの検証と結果の書き込み</text>
+      <rect x="76" y="496" width="584" height="39" fill="#FFFFFF"/>
+      <text x="92" y="522" font-size="18" fill="#5D6B7A">ほか 4 つ</text>
+      <text x="330" y="522" font-size="18" fill="#5D6B7A" text-anchor="end">0</text>
+      <text x="356" y="522" font-size="18" fill="#5D6B7A">シート側のモジュール（コードなし）</text>
+      <rect x="76" y="300" width="584" height="236" rx="8" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <g id="trouble" data-pptx-bounds="720 140 512 200">
+    <rect x="720" y="140" width="512" height="200" rx="16" fill="#FFFFFF" stroke="#C05B21" stroke-width="2"/>
+    <use data-icon="tabler-filled/alert-triangle" x="748" y="164" width="28" height="28" fill="#C05B21"/>
+    <text x="788" y="186" font-size="22" font-weight="bold" fill="#1F2A37">困りごと</text>
+    <text x="748" y="228" font-size="19" fill="#1F2A37">新しい業務端末では、Win32 API という古い
+      <tspan x="748" dy="30">仕組みが使えません。このマクロは待ち時間を</tspan>
+      <tspan x="748" dy="30">作るために、それ（Sleep）を 19 か所で</tspan>
+      <tspan x="748" dy="30">使っています。</tspan>
+    </text>
+  </g>
+
+  <g id="plan" data-pptx-bounds="720 364 512 200">
+    <rect x="720" y="364" width="512" height="200" rx="16" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/circle-check" x="748" y="388" width="28" height="28" fill="#24507F"/>
+    <text x="788" y="410" font-size="22" font-weight="bold" fill="#1F2A37">今回やること</text>
+    <text x="748" y="452" font-size="19" fill="#1F2A37">目的「Win32 API を使わない形へ直す」で
+      <tspan x="748" dy="30">AI に依頼し、改修済みブックを作って、</tspan>
+      <tspan x="748" dy="30">Excel で動作を確かめるところまで通します。</tspan>
+    </text>
+  </g>
+
+  <g id="sample-note" data-pptx-bounds="48 592 1184 44">
+    <text x="48" y="620" font-size="17" fill="#5D6B7A">この先の画面写真は、すべてこのサンプルの実操作です。ブック名やフォルダは架空の例で、実在の業務データは含みません。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第2部　最初の一件</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">08</text>
+  </g>
+</svg>

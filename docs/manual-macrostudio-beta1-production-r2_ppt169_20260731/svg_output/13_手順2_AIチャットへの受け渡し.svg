@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="shotClip13a">
+      <rect x="56" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+    <clipPath id="shotClip13b">
+      <rect x="664" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">操作</text>
+    <rect x="132" y="44" width="92" height="28" rx="14" fill="#FFFFFF" stroke="#24507F" stroke-width="1.5"/>
+    <text x="178" y="63" font-size="14" font-weight="bold" fill="#24507F" text-anchor="middle">手順 2</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">AIチャットへ改修を依頼します</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="shot-before" data-pptx-bounds="48 150 576 372">
+    <rect x="48" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/11-handoff.png" x="56" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip13a)"/>
+    <rect x="56" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="56" y="507" font-size="16" fill="#5D6B7A">受け渡し前。依頼文のコピーと、コード全文ファイルの添付の 2 つを行います。</text>
+  </g>
+
+  <g id="shot-after" data-pptx-bounds="656 150 576 372">
+    <rect x="656" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/12-handoff-done.png" x="664" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip13b)"/>
+    <rect x="664" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="664" y="507" font-size="16" fill="#5D6B7A">完了すると「コピーしました」「フォルダを開きました」になります。</text>
+  </g>
+
+  <g id="steps" data-pptx-bounds="48 528 1184 122">
+    <circle cx="65" cy="548" r="15" fill="#24507F"/>
+    <text x="65" y="554" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="94" y="556" font-size="20" fill="#1F2A37">［依頼文をコピー］を押し、チャット AI の入力欄に貼り付けます（Ctrl+V）。</text>
+    <circle cx="65" cy="588" r="15" fill="#24507F"/>
+    <text x="65" y="594" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="94" y="596" font-size="20" fill="#1F2A37">［ファイルの場所を開く］で開いたフォルダの <tspan font-family="Consolas,monospace" font-size="18">source-code.md</tspan>（コード全文）を、チャットに添付します。</text>
+    <circle cx="65" cy="628" r="15" fill="#24507F"/>
+    <text x="65" y="634" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3</text>
+    <text x="94" y="636" font-size="20" fill="#1F2A37">送信して返答を待ちます。マクロが読み書きする Excel シートやファイルも添付すると、回答の精度が上がります。</text>
+  </g>
+
+  <g id="local-note" data-pptx-bounds="48 646 1184 22">
+    <text x="48" y="662" font-size="16" fill="#5D6B7A">コードの受け渡しはこの操作で行われます。MacroStudio がコードを自動で送信することはありません。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">MacroStudio 操作マニュアル（ベータ版）</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">13</text>
+  </g>
+</svg>

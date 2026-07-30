@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F" />
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第5部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">運用のヒント</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5" />
+  </g>
+
+  <g id="tip-distribute" data-pptx-bounds="48 144 580 236">
+    <rect x="48" y="144" width="580" height="236" rx="16" fill="#F2F6FB" />
+    
+  <g transform="translate(76, 168) scale(1.08333)" fill="#24507F">
+    <path d="M2 6c0 -.796 .316 -1.558 .879 -2.121c.563 -.563 1.325 -.879 2.121 -.879h4l.099 .005c.229 .023 .444 .124 .608 .288l2.707 2.707h6.586c.796 0 1.558 .316 2.121 .879c.319 .319 .559 .703 .707 1.121l-14.523 0c-.407 0 -.805 .125 -1.14 .356c-.292 .203 -.525 .48 -.674 .801l-.058 .141l-1.379 3.676c-.194 .517 .068 1.093 .585 1.287c.517 .194 1.094 -.068 1.288 -.585l1.134 -3.027c.146 -.39 .519 -.649 .937 -.649h13.002l.217 .012c.216 .024 .426 .082 .624 .173c.054 .025 .107 .053 .159 .083c.199 .115 .377 .263 .525 .439c.188 .222 .325 .482 .403 .762c.077 .28 .092 .573 .045 .859c-.001 .008 -.003 .016 -.005 .024l-.995 5.21c-.131 .686 -.497 1.304 -1.036 1.749c-.47 .389 -1.046 .624 -1.65 .677l-.261 .012h-14.026c-.796 0 -1.558 -.316 -2.121 -.879c-.563 -.563 -.879 -1.325 -.879 -2.121v-11z" />
+  </g>
+    <text x="114" y="188" font-size="21" font-weight="bold" fill="#1F2A37">配布</text>
+    <text fill="#1F2A37" font-size="18" x="76" y="228">フォルダ一式をコピーし、使う人には
+      </text><text fill="#1F2A37" font-size="18" x="76" y="256"><tspan>「<tspan font-family="Consolas,monospace" font-size="16">launch.vbs</tspan> をダブルクリック」とだけ案内します。</tspan>
+    </text><text fill="#5D6B7A" font-size="17" x="76" y="310">ZIP で渡す場合、展開前にファイルのプロパティで
+      </text><text fill="#5D6B7A" font-size="17" x="76" y="336"><tspan>［許可する］が必要なことがあります</tspan>
+      </text><text fill="#5D6B7A" font-size="17" x="76" y="362"><tspan>（Mark of the Web の解除）。</tspan>
+    </text></g>
+
+  <g id="tip-presets" data-pptx-bounds="660 144 572 236">
+    <rect x="660" y="144" width="572" height="236" rx="16" fill="#F2F6FB" />
+    
+  <g transform="translate(688, 168) scale(1.08333)" fill="#24507F">
+    <path d="M8.207 3.793a1 1 0 0 1 0 1.414l-2.5 2.5a1 1 0 0 1 -1.414 0l-1.5 -1.5a1 1 0 0 1 1.414 -1.414l.793 .793l1.793 -1.793a1 1 0 0 1 1.414 0" />
+    <path d="M8.207 9.793a1 1 0 0 1 0 1.414l-2.5 2.5a1 1 0 0 1 -1.414 0l-1.5 -1.5a1 1 0 0 1 1.414 -1.414l.793 .793l1.793 -1.793a1 1 0 0 1 1.414 0" />
+    <path d="M8.207 15.793a1 1 0 0 1 0 1.414l-2.5 2.5a1 1 0 0 1 -1.414 0l-1.5 -1.5a1 1 0 0 1 1.414 -1.414l.793 .793l1.793 -1.793a1 1 0 0 1 1.414 0" />
+    <path d="M21 6a1 1 0 0 1 -1 1h-9a1 1 0 0 1 0 -2h9a1 1 0 0 1 1 1" />
+    <path d="M21 12a1 1 0 0 1 -1 1h-9a1 1 0 0 1 0 -2h9a1 1 0 0 1 1 1" />
+    <path d="M21 18a1 1 0 0 1 -1 1h-9a1 1 0 0 1 0 -2h9a1 1 0 0 1 1 1" />
+  </g>
+    <text x="726" y="188" font-size="21" font-weight="bold" fill="#1F2A37">ひな形の追加・差し替え</text>
+    <text fill="#1F2A37" font-size="18" x="688" y="228"><tspan font-family="Consolas,monospace" font-size="16">presets</tspan> フォルダに Markdown を置くだけ。1 ファイルが
+      </text><text fill="#1F2A37" font-size="18" x="688" y="256"><tspan>1 つの目的になり、再起動は不要です。</tspan>
+    </text><text fill="#5D6B7A" font-size="17" x="688" y="310">書式が足りないファイルは「読み込めないひな形」として
+      </text><text fill="#5D6B7A" font-size="17" x="688" y="336"><tspan>理由つきで表示され、選べなくなります。依頼のひな形は</tspan>
+      </text><text fill="#5D6B7A" font-size="17" x="688" y="362"><tspan>道具ではなく文書なので、業務に合わせて育てられます。</tspan>
+    </text></g>
+
+  <g id="tip-template" data-pptx-bounds="48 404 580 236">
+    <rect x="48" y="404" width="580" height="236" rx="16" fill="#F2F6FB" />
+    
+  <g transform="translate(76, 428) scale(1.08333)" fill="#24507F">
+    <path d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm3 14h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m0 -4h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m-5 -4h-1a1 1 0 1 0 0 2h1a1 1 0 0 0 0 -2" />
+    <path d="M19 7h-4l-.001 -4.001z" />
+  </g>
+    <text x="114" y="448" font-size="21" font-weight="bold" fill="#1F2A37">依頼文の枠と、長いコード</text>
+    <text fill="#1F2A37" font-size="18" x="76" y="488">依頼文の組み立て枠は <tspan font-family="Consolas,monospace" font-size="16">templates\request-template.txt</tspan>
+      </text><text fill="#1F2A37" font-size="18" x="76" y="516"><tspan>（UTF-8）で変更できます。生成のたびに読み直されます。</tspan>
+    </text><text fill="#5D6B7A" font-size="17" x="76" y="570">コードが長く返答が途中で切れるときの［モジュール単位
+      </text><text fill="#5D6B7A" font-size="17" x="76" y="596"><tspan>出力］は、ひな形が対応の節を持つときだけ現れます</tspan>
+      </text><text fill="#5D6B7A" font-size="17" x="76" y="622"><tspan>（同梱の改修用 3 つは対応済み）。</tspan>
+    </text></g>
+
+  <g id="tip-logs" data-pptx-bounds="660 404 572 236">
+    <rect x="660" y="404" width="572" height="236" rx="16" fill="#F2F6FB" />
+    
+  <g transform="translate(688, 428) scale(1.08333)" fill="#24507F">
+    <path d="M14.647 4.081a.724 .724 0 0 0 1.08 .448c2.439 -1.485 5.23 1.305 3.745 3.744a.724 .724 0 0 0 .447 1.08c2.775 .673 2.775 4.62 0 5.294a.724 .724 0 0 0 -.448 1.08c1.485 2.439 -1.305 5.23 -3.744 3.745a.724 .724 0 0 0 -1.08 .447c-.673 2.775 -4.62 2.775 -5.294 0a.724 .724 0 0 0 -1.08 -.448c-2.439 1.485 -5.23 -1.305 -3.745 -3.744a.724 .724 0 0 0 -.447 -1.08c-2.775 -.673 -2.775 -4.62 0 -5.294a.724 .724 0 0 0 .448 -1.08c-1.485 -2.439 1.305 -5.23 3.744 -3.745a.722 .722 0 0 0 1.08 -.447c.673 -2.775 4.62 -2.775 5.294 0zm-2.647 4.919a3 3 0 1 0 0 6a3 3 0 0 0 0 -6" />
+  </g>
+    <text x="726" y="448" font-size="21" font-weight="bold" fill="#1F2A37">ログと問い合わせ</text>
+    <text fill="#1F2A37" font-size="18" x="688" y="488">動作記録は <tspan font-family="Consolas,monospace" font-size="16">%LOCALAPPDATA%\MacroStudio\logs</tspan> に
+      </text><text fill="#1F2A37" font-size="18" x="688" y="516"><tspan>残ります。起動に失敗した場合も理由が記録されます。</tspan>
+    </text><text fill="#5D6B7A" font-size="17" x="688" y="570">貼り付けたコードの本文は記録されません。問い合わせを
+      </text><text fill="#5D6B7A" font-size="17" x="688" y="596"><tspan>受けるときは、このログの添付を依頼してください。</tspan>
+    </text></g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第5部　技術・運用付録</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">33</text>
+  </g>
+</svg>

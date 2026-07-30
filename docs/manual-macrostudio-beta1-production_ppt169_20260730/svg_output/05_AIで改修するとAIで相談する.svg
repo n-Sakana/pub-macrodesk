@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="shotClip05">
+      <rect x="56" y="158" width="704" height="396" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第1部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">「AIで改修する」と「AIで相談する」</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="screenshot" data-pptx-bounds="48 150 720 452">
+    <rect x="48" y="150" width="720" height="412" rx="14" fill="#F2F6FB"/>
+    <image href="../images/01-mode.png" x="56" y="158" width="704" height="396" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip05)"/>
+    <rect x="56" y="158" width="704" height="396" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="56" y="588" font-size="16" fill="#5D6B7A">最初の画面「作業を選んでください」。ブックを読み込む前に、まず作業を選びます。</text>
+  </g>
+
+  <g id="choice-refactor" data-pptx-bounds="800 150 432 200">
+    <rect x="800" y="150" width="432" height="200" rx="16" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/circle-check" x="824" y="174" width="28" height="28" fill="#24507F"/>
+    <text x="864" y="196" font-size="24" font-weight="bold" fill="#1F2A37">AIで改修する</text>
+    <text x="824" y="238" font-size="19" fill="#1F2A37">AI の返答を取り込んで、改修済み
+      <tspan x="824" dy="30">ブックをこのアプリで作ります。</tspan>
+    </text>
+    <text x="824" y="310" font-size="17" fill="#5D6B7A">できあがるもの: 改修済みブック・確認
+      <tspan x="824" dy="26">レポート・概要メモ　→ 手順 4 まで</tspan>
+    </text>
+  </g>
+
+  <g id="choice-diagnose" data-pptx-bounds="800 366 432 200">
+    <rect x="800" y="366" width="432" height="200" rx="16" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/search" x="824" y="390" width="28" height="28" fill="#2B5C96"/>
+    <text x="864" y="412" font-size="24" font-weight="bold" fill="#1F2A37">AIで相談する</text>
+    <text x="824" y="454" font-size="19" fill="#1F2A37">診断や質問のための依頼文とコード
+      <tspan x="824" dy="30">全文を作って、AI へ渡します。</tspan>
+    </text>
+    <text x="824" y="526" font-size="17" fill="#5D6B7A">できあがるもの: request.md と
+      <tspan x="824" dy="26">source-code.md　→ 手順 2 で完了</tspan>
+    </text>
+  </g>
+
+  <g id="common-note" data-pptx-bounds="48 616 1184 40">
+    <use data-icon="tabler-filled/shield-check" x="48" y="622" width="24" height="24" fill="#3A7A47"/>
+    <text x="84" y="640" font-size="20" font-weight="bold" fill="#3A7A47">どちらを選んでも、元のブックは変更されません。ブックを作り替えるのは「AIで改修する」だけです。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第1部　MacroStudioを知る</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">05</text>
+  </g>
+</svg>

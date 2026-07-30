@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <polygon points="0,0 10,5 0,10" fill="#2B5C96"/>
+    </marker>
+    <marker id="arrowBlueRev" markerWidth="10" markerHeight="10" refX="1" refY="5" orient="auto">
+      <polygon points="10,0 0,5 10,10" fill="#2B5C96"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第1部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">だれが何を担うのか</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="lead" data-pptx-bounds="48 138 1184 40">
+    <text x="48" y="166" font-size="26" fill="#1F2A37">このアプリは判断をしません。判断は AI、選ぶのはあなた、運んで検証するのがアプリです。</text>
+  </g>
+
+  <g id="role-ai" data-pptx-bounds="48 204 368 264">
+    <rect x="48" y="204" width="368" height="264" rx="16" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/message-chatbot" x="80" y="232" width="34" height="34" fill="#24507F"/>
+    <text x="128" y="258" font-size="24" font-weight="bold" fill="#1F2A37">チャットAI</text>
+    <text x="284" y="258" font-size="16" fill="#5D6B7A">＝ 判断する</text>
+    <text x="80" y="308" font-size="20" fill="#1F2A37">・どこを直すか、どう直すかを
+      <tspan x="80" dy="30">　判断する</tspan>
+      <tspan x="80" dy="38">・コードを書く</tspan>
+      <tspan x="80" dy="38">・改修内容を説明する</tspan>
+    </text>
+  </g>
+
+  <g id="role-you" data-pptx-bounds="456 204 368 264">
+    <rect x="456" y="204" width="368" height="264" rx="16" fill="#FFFFFF" stroke="#C05B21" stroke-width="2"/>
+    <use data-icon="tabler-filled/user" x="488" y="232" width="34" height="34" fill="#C05B21"/>
+    <text x="536" y="258" font-size="24" font-weight="bold" fill="#1F2A37">あなた</text>
+    <text x="692" y="258" font-size="16" fill="#5D6B7A">＝ 選んで確かめる</text>
+    <text x="488" y="300" font-size="20" fill="#1F2A37">・作業と目的を選ぶ
+      <tspan x="488" dy="32">・依頼文とファイルを渡す</tspan>
+      <tspan x="488" dy="32">・返答を取り込み、変更を確認</tspan>
+      <tspan x="488" dy="32">・最後に Excel で動作を確認</tspan>
+    </text>
+  </g>
+
+  <g id="role-app" data-pptx-bounds="864 204 368 264">
+    <rect x="864" y="204" width="368" height="264" rx="16" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/file-code" x="896" y="232" width="34" height="34" fill="#24507F"/>
+    <text x="944" y="258" font-size="24" font-weight="bold" fill="#1F2A37">MacroStudio</text>
+    <text x="1100" y="258" font-size="16" fill="#5D6B7A">＝ 運んで検証</text>
+    <text x="896" y="308" font-size="20" fill="#1F2A37">・コードを取り出して運ぶ
+      <tspan x="896" dy="32">・返答を機械的に検証する</tspan>
+      <tspan x="896" dy="32">・別ファイルへ書き戻し、</tspan>
+      <tspan x="896" dy="30">　読み直して確認する</tspan>
+    </text>
+  </g>
+
+  <g id="role-links" data-pptx-bounds="404 320 472 40">
+    <line x1="420" y1="336" x2="452" y2="336" stroke="#CFD7DE" stroke-width="3"/>
+    <line x1="828" y1="336" x2="860" y2="336" stroke="#CFD7DE" stroke-width="3"/>
+  </g>
+
+  <g id="takeaway" data-pptx-bounds="48 510 1184 120">
+    <rect x="48" y="510" width="1184" height="120" rx="16" fill="#FFFFFF" stroke="#3A7A47" stroke-width="1.5"/>
+    <use data-icon="tabler-filled/circle-check" x="76" y="546" width="28" height="28" fill="#3A7A47"/>
+    <text x="120" y="558" font-size="22" fill="#1F2A37">コードの中身を判断する場面は、あなたには回ってきません。あなたが見るのは、</text>
+    <text x="120" y="594" font-size="22" fill="#1F2A37">「何が変わるか」（画面の差分）と「業務でいつもどおり動くか」（Excel での確認）です。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第1部　MacroStudioを知る</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">04</text>
+  </g>
+</svg>

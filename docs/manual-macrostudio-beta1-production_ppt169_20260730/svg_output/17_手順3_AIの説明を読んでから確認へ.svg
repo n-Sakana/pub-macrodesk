@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="shotClip17a">
+      <rect x="56" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+    <clipPath id="shotClip17b">
+      <rect x="664" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第2部</text>
+    <rect x="132" y="44" width="92" height="28" rx="14" fill="#FFFFFF" stroke="#24507F" stroke-width="1.5"/>
+    <text x="178" y="63" font-size="14" font-weight="bold" fill="#24507F" text-anchor="middle">手順 3</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">AIの説明を読んでから、確認へ</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="shot-summary" data-pptx-bounds="48 150 576 372">
+    <rect x="48" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/15-intake-summary.png" x="56" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip17a)"/>
+    <rect x="56" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="56" y="507" font-size="16" fill="#5D6B7A">「AIが書いた改修内容を見る」。何をどう直したかを、日本語で読めます。</text>
+  </g>
+
+  <g id="shot-review" data-pptx-bounds="656 150 576 372">
+    <rect x="656" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/16-review.png" x="664" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip17b)"/>
+    <rect x="664" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="664" y="507" font-size="16" fill="#5D6B7A">［次へ］で確認画面へ。「5個のモジュールへ変更を取り込みました」。</text>
+  </g>
+
+  <g id="steps" data-pptx-bounds="48 540 1184 112">
+    <circle cx="65" cy="560" r="15" fill="#24507F"/>
+    <text x="65" y="566" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="94" y="568" font-size="21" fill="#1F2A37">まず「AIが書いた改修内容を見る」を開き、AI が「何をしたつもりか」を読みます。今回の例では</text>
+    <text x="94" y="600" font-size="21" fill="#1F2A37">「Sleep の呼び出し（計 19 箇所）を WaitMilliseconds へ置き換えました」などが書かれています。</text>
+    <circle cx="65" cy="632" r="15" fill="#24507F"/>
+    <text x="65" y="638" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="94" y="640" font-size="21" fill="#1F2A37">［次へ］で確認画面へ。次のページで「実際に何が変わるか」を自分の目で確かめます。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第2部　最初の一件　｜　手順 3 ・ 返答を取り込む</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">17</text>
+  </g>
+</svg>

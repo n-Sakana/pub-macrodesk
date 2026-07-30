@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="shotClip19a">
+      <rect x="56" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+    <clipPath id="shotClip19b">
+      <rect x="664" y="158" width="560" height="315" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">操作</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">変更内容の確認レポート</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="shot-light" data-pptx-bounds="48 150 576 372">
+    <rect x="48" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/40-report-light.png" x="56" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip19a)"/>
+    <rect x="56" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="56" y="507" font-size="16" fill="#5D6B7A">レポートをブラウザで開いた状態。アプリの「変更内容を見る」と同一の実装で表示されます。</text>
+  </g>
+
+  <g id="shot-dark" data-pptx-bounds="656 150 576 372">
+    <rect x="656" y="150" width="576" height="331" rx="14" fill="#F2F6FB"/>
+    <image href="../images/41-report-dark.png" x="664" y="158" width="560" height="315" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip19b)"/>
+    <rect x="664" y="158" width="560" height="315" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <text x="664" y="507" font-size="16" fill="#5D6B7A">ツールバー右端のボタンで表示を切り替えた状態。</text>
+  </g>
+
+  <g id="notes" data-pptx-bounds="48 532 1184 110">
+    <circle cx="65" cy="552" r="15" fill="#24507F"/>
+    <text x="65" y="558" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <text x="94" y="560" font-size="20" fill="#1F2A37">出力フォルダの <tspan font-family="Consolas,monospace" font-size="18">sample_win32_sleep-Diff-Report-20260731.html</tspan> をダブルクリックすると、ブラウザで開きます。</text>
+    <circle cx="65" cy="592" r="15" fill="#24507F"/>
+    <text x="65" y="598" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <text x="94" y="600" font-size="20" fill="#1F2A37">左の一覧には、変更しなかったモジュールも含めて全モジュールが収録されます。［前の変更］［次の変更］</text>
+    <text x="94" y="630" font-size="20" fill="#1F2A37">［変更箇所のみ］［折り返し］と、明暗を切り替えるボタンが使用できます。</text>
+  </g>
+
+  <g id="share-note" data-pptx-bounds="48 646 1184 22">
+    <text x="48" y="662" font-size="16" fill="#5D6B7A">このファイルは単体で完結し、外部への通信や編集機能はありません。改修内容の確認を他の担当者へ依頼する場合は、このファイルを渡します。</text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">MacroStudio 操作マニュアル（ベータ版）</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">19</text>
+  </g>
+</svg>

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <defs>
+    <clipPath id="shotClip15">
+      <rect x="64" y="150" width="880" height="495" rx="10" ry="10"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">操作</text>
+    <rect x="132" y="44" width="92" height="28" rx="14" fill="#FFFFFF" stroke="#24507F" stroke-width="1.5"/>
+    <text x="178" y="63" font-size="14" font-weight="bold" fill="#24507F" text-anchor="middle">手順 3</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">取り込んだ変更を確認します</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="screenshot-annotated" data-pptx-bounds="56 142 896 511">
+    <rect x="56" y="142" width="896" height="511" rx="14" fill="#F2F6FB"/>
+    <image href="../images/17-review-diff-timerutils.png" x="64" y="150" width="880" height="495" preserveAspectRatio="xMidYMid meet" clip-path="url(#shotClip15)"/>
+    <rect x="64" y="150" width="880" height="495" rx="10" fill="none" stroke="#E2E7EC" stroke-width="1.5"/>
+    <circle cx="140" cy="410" r="16" fill="#C05B21"/>
+    <text x="140" y="416" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1</text>
+    <circle cx="644" cy="458" r="16" fill="#C05B21"/>
+    <text x="644" y="464" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2</text>
+    <circle cx="656" cy="549" r="16" fill="#C05B21"/>
+    <text x="656" y="555" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3</text>
+    <circle cx="742" cy="368" r="16" fill="#C05B21"/>
+    <text x="742" y="374" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle">4</text>
+  </g>
+
+  <g id="legend" data-pptx-bounds="984 142 248 380">
+    <text x="984" y="172" font-size="18" font-weight="bold" fill="#C05B21">1</text>
+    <text x="1008" y="172" font-size="18" font-weight="bold" fill="#1F2A37">取り込んだモジュール</text>
+    <text x="1008" y="198" font-size="16" fill="#5D6B7A">変更行数付きの一覧。選択
+      <tspan x="1008" dy="24">すると右の差分が切り替わ</tspan>
+      <tspan x="1008" dy="24">ります。</tspan>
+    </text>
+    <text x="984" y="278" font-size="18" font-weight="bold" fill="#C05B21">2</text>
+    <rect x="1008" y="262" width="20" height="20" rx="4" fill="#C25560"/>
+    <text x="1036" y="278" font-size="18" font-weight="bold" fill="#1F2A37">赤 ＝ 削除される行</text>
+    <text x="984" y="330" font-size="18" font-weight="bold" fill="#C05B21">3</text>
+    <rect x="1008" y="314" width="20" height="20" rx="4" fill="#4C9155"/>
+    <text x="1036" y="330" font-size="18" font-weight="bold" fill="#1F2A37">緑 ＝ 追加される行</text>
+    <text x="984" y="382" font-size="18" font-weight="bold" fill="#C05B21">4</text>
+    <text x="1008" y="382" font-size="18" font-weight="bold" fill="#1F2A37">ツールバー</text>
+    <text x="1008" y="408" font-size="16" fill="#5D6B7A">［変更箇所のみ］で変更部分
+      <tspan x="1008" dy="24">に絞り込み。［↑前の変更］</tspan>
+      <tspan x="1008" dy="24">［↓次の変更］で変更箇所を</tspan>
+      <tspan x="1008" dy="24">順に移動します。</tspan>
+    </text>
+  </g>
+
+  <g id="conditions" data-pptx-bounds="984 536 248 122">
+    <rect x="984" y="536" width="248" height="122" rx="12" fill="#FAFBFC" stroke="#E2E7EC" stroke-width="1"/>
+    <text x="1000" y="560" font-size="15" fill="#1F2A37">差分に想定外の変更や不足が
+      <tspan x="1000" dy="23">ある場合は［戻る］で取り込み</tspan>
+      <tspan x="1000" dy="23">直します。軽微な写し崩れは</tspan>
+      <tspan x="1000" dy="23">［手動修正］で修正します</tspan>
+      <tspan x="1000" dy="23">（対処の一覧: P21）。</tspan>
+    </text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">MacroStudio 操作マニュアル（ベータ版）</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">15</text>
+  </g>
+</svg>

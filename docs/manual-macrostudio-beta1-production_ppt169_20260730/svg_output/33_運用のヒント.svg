@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="'Yu Gothic UI','Segoe UI',sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="header" data-pptx-bounds="48 44 1184 76">
+    <rect x="48" y="44" width="76" height="28" rx="14" fill="#24507F"/>
+    <text x="86" y="63" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">第5部</text>
+    <text x="48" y="106" font-size="40" font-weight="bold" fill="#24507F">運用のヒント</text>
+    <line x1="48" y1="120" x2="1232" y2="120" stroke="#E2E7EC" stroke-width="1.5"/>
+  </g>
+
+  <g id="tip-distribute" data-pptx-bounds="48 144 580 236">
+    <rect x="48" y="144" width="580" height="236" rx="16" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/folder-open" x="76" y="168" width="26" height="26" fill="#24507F"/>
+    <text x="114" y="188" font-size="21" font-weight="bold" fill="#1F2A37">配布</text>
+    <text x="76" y="228" font-size="18" fill="#1F2A37">フォルダ一式をコピーし、使う人には
+      <tspan x="76" dy="28">「<tspan font-family="Consolas,monospace" font-size="16">launch.vbs</tspan> をダブルクリック」とだけ案内します。</tspan>
+    </text>
+    <text x="76" y="310" font-size="17" fill="#5D6B7A">ZIP で渡す場合、展開前にファイルのプロパティで
+      <tspan x="76" dy="26">［許可する］が必要なことがあります</tspan>
+      <tspan x="76" dy="26">（Mark of the Web の解除）。</tspan>
+    </text>
+  </g>
+
+  <g id="tip-presets" data-pptx-bounds="660 144 572 236">
+    <rect x="660" y="144" width="572" height="236" rx="16" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/list-check" x="688" y="168" width="26" height="26" fill="#24507F"/>
+    <text x="726" y="188" font-size="21" font-weight="bold" fill="#1F2A37">ひな形の追加・差し替え</text>
+    <text x="688" y="228" font-size="18" fill="#1F2A37"><tspan font-family="Consolas,monospace" font-size="16">presets</tspan> フォルダに Markdown を置くだけ。1 ファイルが
+      <tspan x="688" dy="28">1 つの目的になり、再起動は不要です。</tspan>
+    </text>
+    <text x="688" y="310" font-size="17" fill="#5D6B7A">書式が足りないファイルは「読み込めないひな形」として
+      <tspan x="688" dy="26">理由つきで表示され、選べなくなります。依頼のひな形は</tspan>
+      <tspan x="688" dy="26">道具ではなく文書なので、業務に合わせて育てられます。</tspan>
+    </text>
+  </g>
+
+  <g id="tip-template" data-pptx-bounds="48 404 580 236">
+    <rect x="48" y="404" width="580" height="236" rx="16" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/file-text" x="76" y="428" width="26" height="26" fill="#24507F"/>
+    <text x="114" y="448" font-size="21" font-weight="bold" fill="#1F2A37">依頼文の枠と、長いコード</text>
+    <text x="76" y="488" font-size="18" fill="#1F2A37">依頼文の組み立て枠は <tspan font-family="Consolas,monospace" font-size="16">templates\request-template.txt</tspan>
+      <tspan x="76" dy="28">（UTF-8）で変更できます。生成のたびに読み直されます。</tspan>
+    </text>
+    <text x="76" y="570" font-size="17" fill="#5D6B7A">コードが長く返答が途中で切れるときの［モジュール単位
+      <tspan x="76" dy="26">出力］は、ひな形が対応の節を持つときだけ現れます</tspan>
+      <tspan x="76" dy="26">（同梱の改修用 3 つは対応済み）。</tspan>
+    </text>
+  </g>
+
+  <g id="tip-logs" data-pptx-bounds="660 404 572 236">
+    <rect x="660" y="404" width="572" height="236" rx="16" fill="#F2F6FB"/>
+    <use data-icon="tabler-filled/settings" x="688" y="428" width="26" height="26" fill="#24507F"/>
+    <text x="726" y="448" font-size="21" font-weight="bold" fill="#1F2A37">ログと問い合わせ</text>
+    <text x="688" y="488" font-size="18" fill="#1F2A37">動作記録は <tspan font-family="Consolas,monospace" font-size="16">%LOCALAPPDATA%\MacroStudio\logs</tspan> に
+      <tspan x="688" dy="28">残ります。起動に失敗した場合も理由が記録されます。</tspan>
+    </text>
+    <text x="688" y="570" font-size="17" fill="#5D6B7A">貼り付けたコードの本文は記録されません。問い合わせを
+      <tspan x="688" dy="26">受けるときは、このログの添付を依頼してください。</tspan>
+    </text>
+  </g>
+
+  <g id="footer" data-pptx-role="footer" data-pptx-bounds="48 668 1184 32">
+    <text x="48" y="692" font-size="14" fill="#5D6B7A">第5部　技術・運用付録</text>
+    <text x="1232" y="692" font-size="14" fill="#5D6B7A" text-anchor="end">33</text>
+  </g>
+</svg>
