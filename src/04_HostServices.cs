@@ -45,7 +45,11 @@ namespace MacroStudio
 
         private readonly Window owner;
         private readonly string baseDir;
+        private readonly HashSet<string> runArtifacts;
         private string attachedBookPath;
+        // The VBA as it stood when the request was prepared. The build
+        // refuses to write an answer that was based on older code.
+        private string attachedSourceSignature;
         private string runFolderPath;
 
         public HostServices(Window owner, string baseDir)
@@ -59,7 +63,10 @@ namespace MacroStudio
 
             this.owner = owner;
             this.baseDir = Path.GetFullPath(baseDir);
+            runArtifacts = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
             attachedBookPath = string.Empty;
+            attachedSourceSignature = null;
             runFolderPath = string.Empty;
         }
 
@@ -199,7 +206,10 @@ namespace MacroStudio
             result.Add("warning", project.HasReadWarnings);
 
             attachedBookPath = fullPath;
+            attachedSourceSignature =
+                BookIO.CreateSourceSignature(project);
             runFolderPath = string.Empty;
+            runArtifacts.Clear();
             return result;
         }
 
@@ -329,8 +339,10 @@ namespace MacroStudio
             try
             {
                 // Preparing a request starts a new run, so it never
-                // reuses the folder of the previous one.
+                // reuses the folder of the previous one, and nothing an
+                // earlier run wrote counts as this run's own output.
                 runFolderPath = string.Empty;
+                runArtifacts.Clear();
                 folder = CreateRunFolder(sourcePath, outputTimestamp);
                 requestPath = Path.Combine(folder, "request.md");
                 codePath = Path.Combine(folder, "source-code.md");
@@ -351,6 +363,8 @@ namespace MacroStudio
             }
 
             runFolderPath = folder;
+            runArtifacts.Add(requestPath);
+            runArtifacts.Add(codePath);
             Dictionary<string, object> result =
                 new Dictionary<string, object>();
             result.Add("folderPath", folder);
@@ -519,11 +533,18 @@ namespace MacroStudio
             }
             runFolderPath = folder;
 
+            // Building again after a success is a documented way through
+            // the flow, and the run folder is fixed when the request is
+            // written. So the workbook this run already produced may be
+            // replaced by the next generation, while a file of the same
+            // name that this run did not write is never touched.
             BookBuildResult build = BookIO.BuildCopy(
                 sourcePath,
                 outputPath,
                 moduleChanges,
-                newModules);
+                newModules,
+                attachedSourceSignature,
+                runArtifacts.Contains(outputPath));
             Dictionary<string, object> data =
                 CreateBuildData(build);
             if (!build.Success)
@@ -541,6 +562,7 @@ namespace MacroStudio
                     message,
                     data);
             }
+            runArtifacts.Add(outputPath);
 
             if (createDiffReport)
             {
@@ -774,6 +796,10 @@ namespace MacroStudio
             return WriteRunFile(folder, "diff-report.html", content);
         }
 
+        // A run's own note or report may be rewritten by the next build
+        // of the same run, so the folder never mixes generations. A file
+        // this run did not write is left alone: CreateNew still refuses
+        // to overwrite anything that was already there.
         private string WriteRunFile(
             string folder,
             string fileName,
@@ -782,16 +808,17 @@ namespace MacroStudio
             string outputPath = Path.Combine(
                 folder,
                 fileName);
+            bool replacing = runArtifacts.Contains(outputPath);
             bool created = false;
             try
             {
                 using (FileStream output = new FileStream(
                     outputPath,
-                    FileMode.CreateNew,
+                    replacing ? FileMode.Create : FileMode.CreateNew,
                     FileAccess.Write,
                     FileShare.None))
                 {
-                    created = true;
+                    created = !replacing;
                     using (StreamWriter writer = new StreamWriter(
                         output,
                         new UTF8Encoding(true)))
@@ -814,6 +841,7 @@ namespace MacroStudio
                 }
                 throw;
             }
+            runArtifacts.Add(outputPath);
             return outputPath;
         }
 

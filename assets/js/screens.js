@@ -81,6 +81,37 @@
     return count;
   }
 
+  // An imported package belongs to the request it answered. Once a new
+  // request id has been minted, the old answer is no longer an answer
+  // to anything, so it must not carry the flow forward.
+  function isIntakeCurrent(state) {
+    return Boolean(state) &&
+      Boolean(state.requestId) &&
+      state.intakeRequestId === state.requestId;
+  }
+
+  // The answer arrives one module at a time. Until every declared
+  // module has come in there is nothing to review.
+  function isSplitOutput(state) {
+    return Boolean(state) && state.splitOutput === true;
+  }
+
+  function getIntakeParts(state) {
+    return state && state.intakeParts ? state.intakeParts : null;
+  }
+
+  function countIntakeParts(state) {
+    var parts = getIntakeParts(state);
+
+    return parts && parts.parts ? parts.parts.length : 0;
+  }
+
+  function getIntakePartTotal(state) {
+    var parts = getIntakeParts(state);
+
+    return parts && parts.total ? parts.total : 0;
+  }
+
   function countChanged(state) {
     var count = 0;
 
@@ -304,21 +335,33 @@
     {
       major: 3,
       sub: "1/2",
-      title: function () {
-        return "AIの返答をまとめて取り込みます";
+      title: function (state) {
+        return isSplitOutput(state)
+          ? "AIの返答をモジュールごとに取り込みます"
+          : "AIの返答をまとめて取り込みます";
       },
       meta: function (state) {
-        return countImported(state) > 0
-          ? countImported(state) + "個のモジュールを取り込み済み"
-          : "コードブロックをコピー";
+        if (countImported(state) > 0) {
+          return countImported(state) + "個のモジュールを取り込み済み";
+        }
+        if (isSplitOutput(state) && getIntakePartTotal(state) > 0) {
+          return countIntakeParts(state) + " / " +
+            getIntakePartTotal(state) + "個を受け取り済み";
+        }
+        return "コードブロックをコピー";
       },
       context: function (state) {
-        return countImported(state) > 0
-          ? "右下の「次へ」で、取り込んだ変更を確認します"
-          : "AIの返答のコードブロックをコピーして、ボタンを押します";
+        if (countImported(state) > 0) {
+          return "右下の「次へ」で、取り込んだ変更を確認します";
+        }
+        if (isSplitOutput(state) && getIntakePartTotal(state) > 0) {
+          return "次のモジュールのコードブロックをコピーして、" +
+            "ボタンを押します";
+        }
+        return "AIの返答のコードブロックをコピーして、ボタンを押します";
       },
       ready: function (state) {
-        return countImported(state) > 0;
+        return countImported(state) > 0 && isIntakeCurrent(state);
       }
     },
     {
@@ -336,7 +379,9 @@
           : "内容を確かめたら、右下の「次へ」で作成へ進みます";
       },
       ready: function (state) {
-        return countChanged(state) > 0 && state.pasteEditing !== true;
+        return countChanged(state) > 0 &&
+          isIntakeCurrent(state) &&
+          state.pasteEditing !== true;
       }
     },
     {
@@ -352,7 +397,9 @@
         return "作成するファイルを、今回の改修用フォルダへまとめます";
       },
       ready: function (state) {
-        return countChanged(state) > 0 && isOutputNameValid(state);
+        return countChanged(state) > 0 &&
+          isIntakeCurrent(state) &&
+          isOutputNameValid(state);
       }
     },
     {
@@ -361,11 +408,13 @@
       title: function () {
         return "改修済みブックをビルドしています";
       },
-      meta: function () {
-        return "検証中";
+      meta: function (state) {
+        return state && state.buildSlow === true ? "処理中" : "検証中";
       },
-      context: function () {
-        return "書き戻し後にブックを読み直して確認しています";
+      context: function (state) {
+        return state && state.buildSlow === true
+          ? "時間がかかっています。終わるまでこのままお待ちください"
+          : "書き戻し後にブックを読み直して確認しています";
       },
       ready: function () {
         return false;
@@ -509,6 +558,10 @@
     canGoBack: canGoBack,
     nextIndex: nextIndex,
     isImported: isImported,
+    isIntakeCurrent: isIntakeCurrent,
+    isSplitOutput: isSplitOutput,
+    countIntakeParts: countIntakeParts,
+    getIntakePartTotal: getIntakePartTotal,
     countImported: countImported,
     countChanged: countChanged,
     countAccepted: countAccepted,

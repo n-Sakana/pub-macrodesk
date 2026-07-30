@@ -571,6 +571,200 @@ try {
 Assert-True ($timestampErrorCode -eq 'E-BUILD-01') `
     "Host build timestamp error mismatch: $timestampErrorCode"
 
+# Audit 2026-07-30, P2-2 and P1-2.
+#
+# P2-2: building again after a success is a documented way through the
+# flow, and the run folder is fixed when the request is written. So this
+# run's own workbook, diff report and summary note are replaced as one
+# generation, while a file of the same name that this run did not write
+# is never touched.
+#
+# P1-2: the answer was written against the VBA as it stood when the
+# request was prepared. If the workbook was edited and saved in the
+# meantime, writing that answer would silently drop the edit, so the
+# build refuses instead of producing an output.
+$signatureBase = Join-Path $testdataRoot (
+    'host-signature-' + [Guid]::NewGuid().ToString('N'))
+Assert-InsideDirectory $signatureBase $testdataRoot
+[IO.Directory]::CreateDirectory($signatureBase) | Out-Null
+try {
+    $signatureBook = Join-Path $signatureBase 'signature.xlsm'
+    [IO.File]::Copy($resolvedBookPath, $signatureBook)
+
+    $signatureService = New-Object MacroStudio.HostServices($null, $repoRoot)
+    $signatureModules = @(
+        $signatureService.AttachBook($signatureBook)['modules'])
+    $signatureChanges = New-Object `
+        'System.Collections.Generic.Dictionary[string,string]' `
+        ([StringComparer]::OrdinalIgnoreCase)
+    $signatureChanges.Add(
+        $signatureModules[2]['name'],
+        $signatureModules[2]['attributes'] +
+            $signatureModules[2]['code'])
+    $signatureStamp = [DateTime]::Now.AddSeconds(
+        6).ToString('yyyyMMdd_HHmmss')
+    $signatureName = 'signature_macrostudio.xlsm'
+
+    $firstBuild = $signatureService.BuildBook(
+        $signatureChanges,
+        $noAdditions,
+        $signatureStamp,
+        '<!doctype html><html><body>first</body></html>',
+        $signatureName,
+        "first note`r`n")
+    $signatureOutput = $firstBuild['outputPath']
+    $signatureFolder = [IO.Path]::GetDirectoryName($signatureOutput)
+    Assert-InsideDirectory $signatureOutput $signatureBase
+    Assert-True ([IO.File]::Exists($signatureOutput)) `
+        'The first build of the attached workbook must succeed.'
+    Assert-True (
+        [IO.File]::ReadAllText(
+            (Join-Path $signatureFolder 'result.md'),
+            [Text.Encoding]::UTF8) -ceq "first note`r`n") `
+        'The first summary note was not written.'
+
+    # The same run builds again with the default output name. Before the
+    # fix this failed outright, and a renamed output left the report and
+    # the note behind from the earlier generation.
+    $rebuild = $signatureService.BuildBook(
+        $signatureChanges,
+        $noAdditions,
+        $signatureStamp,
+        '<!doctype html><html><body>second</body></html>',
+        $signatureName,
+        "second note`r`n")
+    Assert-True ($rebuild['outputPath'] -ceq $signatureOutput) `
+        'The rebuild must keep the output name of the same run.'
+    Assert-True ([IO.File]::Exists($signatureOutput)) `
+        'The rebuild must leave a workbook behind.'
+    Assert-True (-not $rebuild.ContainsKey('diffError')) `
+        'The rebuild could not replace its own diff report.'
+    Assert-True (-not $rebuild.ContainsKey('resultError')) `
+        'The rebuild could not replace its own summary note.'
+    Assert-True (
+        [IO.File]::ReadAllText(
+            $rebuild['diffPath'],
+            [Text.Encoding]::UTF8).Contains('second')) `
+        'The diff report is still the one from the earlier build.'
+    Assert-True (
+        [IO.File]::ReadAllText(
+            $rebuild['resultPath'],
+            [Text.Encoding]::UTF8) -ceq "second note`r`n") `
+        'The summary note is still the one from the earlier build.'
+    Assert-True (
+        @([IO.Directory]::GetFiles(
+            $signatureFolder, '*.rebuild')).Count -eq 0 -and
+        @([IO.Directory]::GetFiles(
+            $signatureFolder, '*.previous')).Count -eq 0) `
+        'The rebuild left its workpiece or the old generation behind.'
+
+    # A workbook of the same name that this run did not write stays put.
+    $foreignService = New-Object MacroStudio.HostServices($null, $repoRoot)
+    [void]$foreignService.AttachBook($signatureBook)
+    $foreignPath = Join-Path $signatureFolder 'foreign.xlsm'
+    [IO.File]::WriteAllText(
+        $foreignPath,
+        'not ours',
+        (New-Object Text.UTF8Encoding($false)))
+    $foreignCode = ''
+    try {
+        $foreignService.BuildBook(
+            $signatureChanges,
+            $noAdditions,
+            $signatureStamp,
+            $diffHtml,
+            'foreign.xlsm',
+            "note`r`n")
+    } catch [MacroStudio.HostActionException] {
+        $foreignCode = $_.Exception.ErrorCode
+    }
+    Assert-True ($foreignCode -eq 'E-BUILD-03') `
+        "A foreign output file must not be replaced: $foreignCode"
+    Assert-True (
+        [IO.File]::ReadAllText(
+            $foreignPath,
+            [Text.Encoding]::UTF8) -ceq 'not ours') `
+        'A file this run did not write was overwritten.'
+
+    # The workbook is edited and saved after the request was prepared.
+    $editedPath = Join-Path $signatureBase 'edited.xlsm'
+    $editedChanges = New-Object `
+        'System.Collections.Generic.Dictionary[string,string]' `
+        ([StringComparer]::OrdinalIgnoreCase)
+    $editedChanges.Add(
+        $signatureModules[2]['name'],
+        $signatureModules[2]['attributes'] +
+            $signatureModules[2]['code'] +
+            "' edited in Excel`r`n")
+    $editedBuild = [MacroStudio.BookIO]::BuildCopy(
+        $signatureBook,
+        $editedPath,
+        $editedChanges,
+        $noAdditions)
+    Assert-True $editedBuild.Success `
+        ('Could not produce an edited workbook: ' + $editedBuild.Message)
+    [IO.File]::Copy($editedPath, $signatureBook, $true)
+
+    $staleCode = ''
+    try {
+        $signatureService.BuildBook(
+            $signatureChanges,
+            $noAdditions,
+            $signatureStamp,
+            $diffHtml,
+            $signatureName,
+            "stale note`r`n")
+    } catch [MacroStudio.HostActionException] {
+        $staleCode = $_.Exception.ErrorCode
+    }
+    Assert-True ($staleCode -eq 'E-BUILD-04') `
+        ('A workbook edited after the request must refuse the build: ' +
+            $staleCode)
+    Assert-True (
+        [IO.File]::ReadAllText(
+            $rebuild['resultPath'],
+            [Text.Encoding]::UTF8) -ceq "second note`r`n") `
+        'A refused build replaced the earlier generation anyway.'
+    Assert-True (
+        @([IO.Directory]::GetFiles(
+            $signatureFolder, '*.rebuild')).Count -eq 0 -and
+        @([IO.Directory]::GetFiles(
+            $signatureFolder, '*.previous')).Count -eq 0) `
+        'A refused build left a workpiece or an aside copy behind.'
+    Assert-True (
+        [IO.File]::Exists((Join-Path $signatureFolder $signatureName))) `
+        'A refused build removed the workbook the earlier build made.'
+
+    # The signature is what the attach step read, so attaching the edited
+    # workbook makes it buildable again.
+    $freshService = New-Object MacroStudio.HostServices($null, $repoRoot)
+    $freshModules = @(
+        $freshService.AttachBook($signatureBook)['modules'])
+    $freshChanges = New-Object `
+        'System.Collections.Generic.Dictionary[string,string]' `
+        ([StringComparer]::OrdinalIgnoreCase)
+    $freshChanges.Add(
+        $freshModules[2]['name'],
+        $freshModules[2]['attributes'] + $freshModules[2]['code'])
+    $freshBuild = $freshService.BuildBook(
+        $freshChanges,
+        $noAdditions,
+        [DateTime]::Now.AddSeconds(8).ToString('yyyyMMdd_HHmmss'),
+        $diffHtml,
+        'fresh_macrostudio.xlsm',
+        "fresh note`r`n")
+    Assert-True ([IO.File]::Exists($freshBuild['outputPath'])) `
+        'Re-attaching the edited workbook must make it buildable again.'
+    Assert-True (
+        $freshModules[2]['code'].Contains('edited in Excel')) `
+        'The re-attached workbook must carry the edit.'
+} finally {
+    Assert-InsideDirectory $signatureBase $testdataRoot
+    if ([IO.Directory]::Exists($signatureBase)) {
+        [IO.Directory]::Delete($signatureBase, $true)
+    }
+}
+
 $clipboardService = New-Object MacroStudio.HostServices($null, $repoRoot)
 $originalClipboard = $clipboardService.ReadClipboard()['text']
 try {

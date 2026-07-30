@@ -4,10 +4,15 @@
   var CRLF = "\r\n";
   var INSTRUCTION_TITLE = "改修指示";
   var OUTPUT_TITLE = "出力指示";
+  var SPLIT_OUTPUT_TITLE = "出力指示（モジュール単位）";
   var MODE_TITLE = "用途";
   var QUESTION_TITLE = "質問";
   var SECTION_TITLES = [INSTRUCTION_TITLE, OUTPUT_TITLE];
-  var OPTIONAL_SECTION_TITLES = [MODE_TITLE, QUESTION_TITLE];
+  var OPTIONAL_SECTION_TITLES = [
+    MODE_TITLE,
+    QUESTION_TITLE,
+    SPLIT_OUTPUT_TITLE
+  ];
   // A preset either changes the workbook or only asks about it.
   // Diagnosing covers everything that ends in a conversation, whether
   // that is a check or a consultation. Files that say nothing keep the
@@ -39,7 +44,8 @@
     unknownSection:
       "知らない見出しがあります: ## {title}。使えるのは「## " +
       INSTRUCTION_TITLE + "」「## " + OUTPUT_TITLE + "」「## " +
-      MODE_TITLE + "」「## " + QUESTION_TITLE + "」です。",
+      MODE_TITLE + "」「## " + QUESTION_TITLE + "」「## " +
+      SPLIT_OUTPUT_TITLE + "」です。",
     unknownMode:
       "「## " + MODE_TITLE + "」には「改修」か「診断」と書いてください。",
     emptyQuestions:
@@ -109,6 +115,7 @@
       questions: [],
       instruction: null,
       output: null,
+      splitOutput: null,
       message: message
     };
   }
@@ -238,6 +245,7 @@
       questions: [],
       instruction: null,
       output: null,
+      splitOutput: null,
       message: ""
     };
 
@@ -253,6 +261,20 @@
         return failure(MESSAGES.unknownMode);
       }
       result.mode = MODES[body];
+    }
+    // A second way of answering the same request: one module per reply,
+    // for macros whose code is too long to come back at once. Only a
+    // preset that writes this section can offer that option.
+    if (Object.prototype.hasOwnProperty.call(
+      sections,
+      SPLIT_OUTPUT_TITLE)) {
+      body = joinBody(sections[SPLIT_OUTPUT_TITLE]);
+      if (body === "") {
+        return failure(format(
+          MESSAGES.emptySection,
+          SPLIT_OUTPUT_TITLE));
+      }
+      result.splitOutput = { title: SPLIT_OUTPUT_TITLE, body: body };
     }
 
     for (index = 0; index < SECTION_TITLES.length; index++) {
@@ -300,7 +322,8 @@
         valid: false,
         message: MESSAGES.unreadable,
         instruction: null,
-        output: null
+        output: null,
+        splitOutput: null
       };
     }
 
@@ -313,7 +336,8 @@
       valid: parsed.valid,
       message: parsed.message,
       instruction: parsed.instruction,
-      output: parsed.output
+      output: parsed.output,
+      splitOutput: parsed.splitOutput
     };
   }
 
@@ -338,6 +362,7 @@
   global.MacroStudioPreset = {
     instructionTitle: INSTRUCTION_TITLE,
     outputTitle: OUTPUT_TITLE,
+    splitOutputTitle: SPLIT_OUTPUT_TITLE,
     modeTitle: MODE_TITLE,
     questionTitle: QUESTION_TITLE,
     modes: MODES,

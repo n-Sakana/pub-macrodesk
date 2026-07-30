@@ -74,10 +74,30 @@ macrostudio/
   ホスト（C#）は `presets/*.md` の列挙とテキスト読み出しに徹し、H1 も節も解釈しない。
   改修指示・出力指示の文面を `templates/` や `src/` や `assets/js/` へ複製しないこと
   （`tests\test-preset-migration.js` が門番として検査する）。
+  モジュール単位出力の文面も同じ扱いで、任意の `## 出力指示（モジュール単位）` 節が
+  正本である。持たないひな形では画面に選択肢を出さず、代わりの文面を補わない
+  （`tests\test-module-split.js` が門番として検査する）。
 - **返答パッケージの解釈は `assets/js/response-package.js` だけが持つ**（SPEC §6.5）。
   区切り行の書式・依頼 ID の検証・拒否理由はここにまとめ、`app.js` は結果を
   画面へ出すだけにする。ホスト（C#）はクリップボードの文字列を渡すだけで、
-  区切りを解釈しない。
+  区切りを解釈しない。モジュール単位出力（SPEC §6.6）の `PART` 行、受け取り済みの
+  照合、統合（`addPart` / `mergeParts`）も同じファイルが持つ。`app.js` は
+  「全部そろったら統合結果をワンペーストと同じ経路へ流す」だけにする。
+- **取り込みの単位はパッケージ 1 つで、適用は必ず置き換え**（SPEC §5.3 / §10.2）。
+  `importPackage` は先に `clearImportedModules` で前回分を取り消してから適用する。
+  検証は `getBookModules()`（= ブック由来のモジュール）に対して行い、前回の返答が
+  追加した新規モジュールを既存扱いしない。取り込み済み状態は `intakeRequestId` で
+  依頼 ID に結び付け、`screens.isIntakeCurrent` が古い取り込みで先へ進むのを止める。
+- **ビルドだけは固定の client timeout を持たない**（SPEC §7.5）。
+  `host-bridge.js` の既定 120 秒 reject は他の action のためのもので、`buildBook` は
+  `timeoutMilliseconds: 0` + `onSlow` で送る。処理の正本は host の応答であり、
+  120 秒経過は「まだ続いている」という表示にしかしない。ここへ client 側の
+  失敗確定を戻さないこと（監査 P2-3 の再発になる）。
+- **添付時点の VBA 内容署名をビルド直前に照合する**（SPEC §9.1-0）。
+  `BookIO.CreateSourceSignature` が正本で、`HostServices` が添付時の値を保持し、
+  `BookIO.BuildCopy` が自分で読み直した project と比較する。不一致は E-BUILD-04 で、
+  出力を作らない。署名はハッシュではなく正規化テキストの完全一致で、engine を
+  `System.IO` / `System.Text` / `System.IO.Compression` の範囲に保つ。
 - **既存モジュールの種類はブックが正本**（SPEC §6.5 / §13.3）。返答の `<種類>` で
   既存モジュールの型を変えないこと。新規追加は標準モジュールのみで、これを
   広げる場合は writer・読み直し検証・ひな形の出力指示を同時に直す必要がある。
@@ -111,12 +131,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-bookio.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-build.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-hostservices.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-flow-webview.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-split-webview.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-p9-distribution.ps1
 ```
 
 Node test（UI ロジックの単体検証）:
 
 ```powershell
+node tests\test-audit-fixes.js
 node tests\test-build-payload.js
 node tests\test-diff.js
 node tests\test-file-drop.js
@@ -124,6 +146,7 @@ node tests\test-diff-view.js
 node tests\test-diff-report.js
 node tests\test-host-bridge.js
 node tests\test-flow-state.js
+node tests\test-module-split.js
 node tests\test-p6-state.js
 node tests\test-p7-state.js
 node tests\test-paste-edit.js
@@ -134,10 +157,25 @@ node tests\test-prompt-template.js
 node tests\test-vba-highlight.js
 ```
 
+回帰の見張り番:
+
+- `tests\test-audit-fixes.js` … 2026-07-30 監査の UI 側 4 件（旧パッケージ混入、
+  ［取り込み直す］の到達性、`resultError` の表示、長いビルドの扱い）。
+- `tests\test-module-split.js` … モジュール単位出力（SPEC §6.6）の区切り行・
+  複数回の取り込み・統合・全拒否経路・ひな形が文面を持つこと・既定経路の非回帰。
+- `tests\test-hostservices.ps1` … 添付後に元ブックが変わった場合の E-BUILD-04 と、
+  同一 run の再ビルドが自分の成果物だけを世代交換すること。
+- `tests\test-host-bridge.js` … `buildBook` が client の時計で失敗確定しないこと。
+
 補助 runner:
 
 - `tests\test-flow-webview.ps1` が 12 画面の通し検証（実ブック → 実行フォルダ →
   ビルド → 差分レポート）を担う。旧 P3〜P8 の個別スモークはこの 1 本へ統合した。
+- `tests\test-split-webview.ps1` は同じ WebView2 実動経路で、モジュール単位出力の
+  チェックボックス・書き出された `request.md`・1 モジュールずつの取り込み・
+  取り込み後の［取り込み直す］到達性を検証する。**クリップボードを一切使わない**
+  ので、`Clipboard.SetText` が使えない環境（他プロセスがクリップボードを
+  掴んでいる場合の `CLIPBRD_E_CANT_OPEN` など）でも実動確認ができる。
 - `tests\test-p9-preset.ps1` と `tests\test-flow-webview.ps1` は
   `test-p9-distribution.ps1` からも呼ばれ、配布物のコピーへ同じ検証を回す。
 - `tests\test-excel-macro.ps1` は Excel 実機確認用。`WorkbookPath` と `MacroName` の

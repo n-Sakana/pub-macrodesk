@@ -21,6 +21,7 @@ async function main() {
   const source = fs.readFileSync(sourcePath, "utf8");
   const posted = [];
   const timers = {};
+  const delays = {};
   let nextTimer = 0;
   let timeoutDelay = 0;
   let messageHandler = null;
@@ -45,11 +46,13 @@ async function main() {
       setTimeout: function (callback, delay) {
         nextTimer += 1;
         timers[nextTimer] = callback;
+        delays[nextTimer] = delay;
         timeoutDelay = delay;
         return nextTimer;
       },
       clearTimeout: function (id) {
         delete timers[id];
+        delete delays[id];
       },
       Promise: Promise,
       Error: Error
@@ -151,6 +154,69 @@ async function main() {
   assert(timeoutError, "Timeout did not reject.");
   assert(timeoutError.code === "E-SYS-02", "Timeout code mismatch.");
   assert(timeoutError.action === "attachBook", "Timeout action mismatch.");
+
+  // Audit P2-3. Rebuilding a large workbook can take longer than the
+  // client is willing to wait, and the host keeps working past that
+  // point. Such a request is sent without a reject timer: the wait is
+  // reported, nothing is decided by the clock, and the answer that
+  // arrives late still resolves against the same request id.
+  const slowCalls = [];
+  const longPromise = bridge.request(
+    "buildBook",
+    { outputTimestamp: "20260730_010203", modules: [] },
+    {
+      timeoutMilliseconds: 0,
+      onSlow: function (action) {
+        slowCalls.push(action);
+      }
+    }
+  );
+  const longId = posted[posted.length - 1].id;
+  const armed = Object.keys(timers).map(function (key) {
+    return delays[key];
+  });
+
+  assert(
+    armed.indexOf(120000) >= 0,
+    "The slow notice must still be armed at the client wait.");
+  assert(
+    armed.every(function (delay) {
+      return delay === 120000;
+    }),
+    "A long running request must arm no other timer than the notice.");
+
+  const slowTimerId = Object.keys(timers).filter(function (key) {
+    return delays[key] === 120000;
+  })[0];
+  timers[slowTimerId]();
+  assert(
+    slowCalls.length === 1 && slowCalls[0] === "buildBook",
+    "The slow notice must fire once, naming the action.");
+
+  let settled = false;
+  longPromise.then(
+    function () {
+      settled = true;
+    },
+    function () {
+      settled = true;
+    });
+  await Promise.resolve();
+  assert(
+    !settled,
+    "Passing the client wait must not settle a long running request.");
+
+  messageHandler({
+    data: {
+      id: longId,
+      status: "ok",
+      data: { outputPath: "work\\out.xlsm", results: [] }
+    }
+  });
+  const longResult = await longPromise;
+  assert(
+    longResult.outputPath === "work\\out.xlsm",
+    "The late answer must resolve the request that is still waiting.");
 
   process.stdout.write("test-host-bridge: PASS\n");
 }

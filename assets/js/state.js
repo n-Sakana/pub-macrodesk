@@ -21,8 +21,14 @@
       requestBase: "",
       requestId: null,
       intakeResult: null,
+      // Which request the imported package answered. A package only
+      // counts while it belongs to the request that is on screen.
+      intakeRequestId: null,
       requestText: "",
       outputRules: null,
+      splitOutputRules: null,
+      splitOutput: false,
+      intakeParts: null,
       requestFilePath: null,
       requestPrompt: null,
       runFolder: null,
@@ -31,6 +37,7 @@
       outputName: "",
       buildTimestamp: null,
       buildResult: null,
+      buildSlow: false,
       lastError: null,
       busyAction: null
     };
@@ -196,8 +203,12 @@
     state.answers = {};
     state.requestId = null;
     state.intakeResult = null;
+    state.intakeRequestId = null;
+    state.intakeParts = null;
     state.requestText = "";
     state.outputRules = null;
+    state.splitOutputRules = null;
+    state.splitOutput = false;
     state.requestFilePath = null;
     state.requestPrompt = null;
     state.runFolder = null;
@@ -206,6 +217,7 @@
     state.outputName = getDefaultOutputName(book);
     state.buildTimestamp = null;
     state.buildResult = null;
+    state.buildSlow = false;
     state.lastError = null;
     notify();
   }
@@ -220,6 +232,51 @@
       return module.status === "changed" ||
         module.status === "unchanged";
     });
+  }
+
+  // The modules the workbook itself has. A module a previous answer
+  // added is not one of them, so a replacement package is always
+  // measured against the workbook and never against an earlier answer.
+  function getBookModules() {
+    return state.modules.filter(function (module) {
+      return module.isNew !== true;
+    });
+  }
+
+  // Takes the whole imported package back out. Used both by the
+  // explicit discard and by every path that replaces one package with
+  // another, so nothing from the previous answer can survive into the
+  // build. Callers notify once they are done.
+  function clearImportedModules() {
+    var kept = [];
+    var discarded = 0;
+
+    state.modules.forEach(function (module) {
+      if (module.isNew === true &&
+          (module.status === "changed" ||
+           module.status === "unchanged")) {
+        discarded += 1;
+        return;
+      }
+      if (module.status === "changed" || module.status === "unchanged") {
+        discarded += 1;
+        module.status = "pending";
+        module.changedLineCount = 0;
+        module.pastedCode = null;
+        module.accepted = false;
+        module.written = false;
+        module.showChangesOnly = module.lineCount > 200;
+        module.wrapDiff = true;
+      }
+      kept.push(module);
+    });
+    state.modules = kept;
+    state.selectedModuleName = null;
+    state.pasteEditing = false;
+    state.intakeResult = null;
+    state.intakeRequestId = null;
+    state.intakeParts = null;
+    return discarded;
   }
 
   function selectModule(moduleName) {
@@ -354,6 +411,36 @@
     notify();
   }
 
+  // The same preset file may also carry rules for answering one module
+  // per reply. Only a preset that carries them can offer the option.
+  function setSplitOutputRules(outputRules) {
+    state.splitOutputRules = outputRules || null;
+    if (!state.splitOutputRules) {
+      state.splitOutput = false;
+    }
+    notify();
+  }
+
+  // The optional way of answering: one module per reply, for macros
+  // whose code is too long to come back in a single answer.
+  function setSplitOutput(enabled) {
+    var next = enabled === true && Boolean(state.splitOutputRules);
+
+    if (next === state.splitOutput) {
+      return false;
+    }
+    state.splitOutput = next;
+    clearImportedModules();
+    notify();
+    return true;
+  }
+
+  // What has arrived so far when the answer comes one module at a time.
+  function setIntakeParts(parts) {
+    state.intakeParts = parts || null;
+    notify();
+  }
+
   function setRequestFilePath(requestFilePath) {
     state.requestFilePath = requestFilePath || null;
     notify();
@@ -365,7 +452,8 @@
   }
 
   // Refactor or diagnose. Changing the answer drops the preset that
-  // belonged to the previous one.
+  // belonged to the previous one, and with it the request id an
+  // imported package would have answered.
   function setMode(mode) {
     var next = mode === "diagnose" ? "diagnose" : "refactor";
 
@@ -382,17 +470,27 @@
     state.requestId = null;
     state.requestText = "";
     state.outputRules = null;
-    state.intakeResult = null;
+    state.splitOutputRules = null;
+    state.splitOutput = false;
+    clearImportedModules();
     notify();
     return true;
   }
 
   // One purpose, one preset file, one request id. The questions the
   // preset asks come with it, and switching preset drops old answers.
+  // A new request id also drops whatever the previous request had
+  // already taken in: that answer belongs to a request that is gone.
   function setPurpose(file, name, requestId, questions) {
+    var nextId = requestId || null;
+
+    if (nextId !== state.requestId) {
+      clearImportedModules();
+      state.splitOutput = false;
+    }
     state.presetFile = file || null;
     state.presetName = name || "";
-    state.requestId = requestId || null;
+    state.requestId = nextId;
     state.questions = Array.isArray(questions) ? questions : [];
     state.answers = {};
     state.questionIndex = 0;
@@ -461,9 +559,15 @@
     return true;
   }
 
+  // One package at a time. Whatever a previous answer put in is taken
+  // back out first, so a replacement package leaves nothing of the old
+  // one behind: what the build writes is exactly what came in last.
+  // Callers apply this only after the whole new package has passed its
+  // checks, so a refused answer never disturbs what is already there.
   function importPackage(items) {
     var applied = [];
 
+    clearImportedModules();
     (items || []).forEach(function (item) {
       var module = findModule(item.name);
 
@@ -502,6 +606,7 @@
       ? applied[0].name
       : state.selectedModuleName;
     state.pasteEditing = false;
+    state.intakeRequestId = state.requestId;
     notify();
     return applied.length;
   }
@@ -514,32 +619,8 @@
   // Taking the whole answer back out again, so a wrong package leaves
   // nothing behind.
   function discardImportedModules() {
-    var kept = [];
-    var discarded = 0;
+    var discarded = clearImportedModules();
 
-    state.modules.forEach(function (module) {
-      if (module.isNew === true &&
-          (module.status === "changed" ||
-           module.status === "unchanged")) {
-        discarded += 1;
-        return;
-      }
-      if (module.status === "changed" || module.status === "unchanged") {
-        discarded += 1;
-        module.status = "pending";
-        module.changedLineCount = 0;
-        module.pastedCode = null;
-        module.accepted = false;
-        module.written = false;
-        module.showChangesOnly = module.lineCount > 200;
-        module.wrapDiff = true;
-      }
-      kept.push(module);
-    });
-    state.modules = kept;
-    state.selectedModuleName = null;
-    state.pasteEditing = false;
-    state.intakeResult = null;
     notify();
     return discarded;
   }
@@ -552,8 +633,22 @@
   function setBuildConfirmation(timestamp) {
     state.buildTimestamp = timestamp || null;
     state.buildResult = null;
+    state.buildSlow = false;
     state.lastError = null;
     notify();
+  }
+
+  // A build that runs long is still running. Saying so is not a result:
+  // only the host's answer ends the build, however long it takes.
+  function setBuildSlow(slow) {
+    var next = slow === true;
+
+    if (next === state.buildSlow) {
+      return false;
+    }
+    state.buildSlow = next;
+    notify();
+    return true;
   }
 
   function markModulesWritten(results) {
@@ -730,6 +825,7 @@
       }
     ];
     state.intakeResult = { total: 3, existing: 2, added: 1 };
+    state.intakeRequestId = state.requestId;
     state.selectedModuleName = "Main";
     notify();
   }
@@ -747,6 +843,7 @@
     setBook: setBook,
     setAppInfo: setAppInfo,
     hasImportedModules: hasImportedModules,
+    getBookModules: getBookModules,
     selectModule: selectModule,
     findModule: findModule,
     acceptModuleCode: acceptModuleCode,
@@ -767,12 +864,16 @@
     acceptModuleChange: acceptModuleChange,
     importPackage: importPackage,
     setIntakeResult: setIntakeResult,
+    setIntakeParts: setIntakeParts,
     discardImportedModules: discardImportedModules,
     setOutputRules: setOutputRules,
+    setSplitOutputRules: setSplitOutputRules,
+    setSplitOutput: setSplitOutput,
     setRequestFilePath: setRequestFilePath,
     setRequestPrompt: setRequestPrompt,
     setBuildResult: setBuildResult,
     setBuildConfirmation: setBuildConfirmation,
+    setBuildSlow: setBuildSlow,
     markModulesWritten: markModulesWritten,
     setLastError: setLastError,
     setBusyAction: setBusyAction,

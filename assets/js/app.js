@@ -51,11 +51,20 @@
     "E-BUILD-02":
       "読み直し検証で一致しなかったため、出力ファイルを破棄しました。もう一度ビルドしてください。",
     "E-BUILD-03":
-      "出力ファイルを書き込めませんでした。同名ファイルを開いていないか、保存先の権限を確認してください。"
+      "出力ファイルを書き込めませんでした。同名ファイルを開いていないか、保存先の権限を確認してください。",
+    "E-BUILD-04":
+      "元のブックのマクロが、読み込んだときから変わっています。出力は作成していません。ブックを読み込み直して、依頼を作り直してください。"
   };
 
   var diffReportErrorMessage =
     "差分 HTML ファイルを作成できませんでした。改修版ブックは正常に作成されています。";
+
+  var resultNoteErrorMessage =
+    "改修の概要メモ（result.md）を作成できませんでした。改修版ブックは正常に作成されています。";
+
+  var buildSlowMessage =
+    "ビルドに時間がかかっています。処理は続いているので、" +
+    "終わるまでこのままお待ちください。";
 
   var buildResultLabels = {
     written: "書き戻し・検証 OK",
@@ -206,6 +215,9 @@
   }
 
   function announce(message) {
+    if (!elements || !elements.statusAnnouncer) {
+      return;
+    }
     elements.statusAnnouncer.textContent = "";
     global.setTimeout(function () {
       elements.statusAnnouncer.textContent = message;
@@ -656,6 +668,37 @@
     return wrap;
   }
 
+  // An optional way of answering, offered only when the chosen preset
+  // writes the rules for it. Long macros do not always come back in one
+  // reply, so the same request can ask for one module at a time.
+  function createSplitOutputOption(state) {
+    var row = createElement("div", "option-row");
+    var label = createElement("label", "option-label");
+    var input = createElement("input", "option-checkbox");
+
+    input.type = "checkbox";
+    input.id = "split-output";
+    input.checked = state.splitOutput === true;
+    input.disabled = state.busyAction !== null;
+    label.setAttribute("for", "split-output");
+    label.appendChild(input);
+    label.appendChild(createElement(
+      "span",
+      "option-text",
+      "モジュール単位出力（コードが長い時用）"));
+    row.appendChild(label);
+    row.appendChild(createElement(
+      "p",
+      "option-help",
+      state.splitOutput
+        ? "AIは変更するモジュールを1回の返答に1つだけ出し、" +
+          "次を出してよいか聞いてきます。届いた順に取り込むと、" +
+          "MacroStudioが1つの変更へまとめます。"
+        : "コードが長くて返答が途中で切れるときに使います。" +
+          "ふだんは付けなくてかまいません。"));
+    return row;
+  }
+
   function createScreen3(state) {
     var task = createTask("task--wide");
     var headline = createElement("div", "headline-card");
@@ -680,6 +723,9 @@
       "headline-preview",
       preview.length > 92 ? preview.slice(0, 92) + "…" : preview));
     task.appendChild(headline);
+    if (state.splitOutputRules) {
+      task.appendChild(createSplitOutputOption(state));
+    }
     task.appendChild(createDisclosure(
       "request-editor",
       "依頼文を確認・編集",
@@ -1592,41 +1638,94 @@
   }
 
 
+  // What has arrived so far when the answer comes one module at a time,
+  // and what is still outstanding.
+  function createPartProgress(state) {
+    var api = global.MacroStudioResponse;
+    var parts = state.intakeParts;
+    var total = parts && parts.total ? parts.total : 0;
+    var box = createElement("div", "intake-parts");
+    var list = createElement("div", "intake-part-list");
+    var missing = api.describeMissingParts(parts);
+
+    box.appendChild(createElement(
+      "div",
+      "intake-part-count",
+      total > 0
+        ? parts.parts.length + " / " + total + "個を受け取りました"
+        : "まだ受け取っていません"));
+    (parts && parts.parts ? parts.parts : []).forEach(function (entry) {
+      var row = createElement("div", "intake-part-row");
+
+      row.appendChild(createIcon("check", "flow-icon--small"));
+      row.appendChild(createElement(
+        "span",
+        "intake-part-number",
+        api.formatPartNumber(entry.index)));
+      row.appendChild(createElement("span", "", entry.name));
+      list.appendChild(row);
+    });
+    box.appendChild(list);
+    if (missing) {
+      box.appendChild(createElement("p", "intake-part-missing", missing));
+    }
+    return box;
+  }
+
   function createScreen5(state) {
+    var api = global.MacroStudioScreens;
     var task = createTask("task--wide");
-    var imported = global.MacroStudioScreens.countImported(state);
+    var imported = api.countImported(state);
+    var split = api.isSplitOutput(state);
+    var started = split && api.getIntakePartTotal(state) > 0;
     var target = createElement("div", "paste-target");
     var guide = createElement("div", "intake-guide");
-    var steps = [
-      ["1", "AIの返答の", "コードブロック", "をコピーする"],
-      ["2", "下のボタンで", "まとめて取り込む", ""],
-      ["3", "次の画面で", "内容を確認", "する"]
-    ];
+    var actions = createElement("div", "inline-actions");
+    var steps = split
+      ? [
+        ["1", "AIの返答の", "コードブロック", "をコピーする"],
+        ["2", "下のボタンで", "そのモジュールを取り込む", ""],
+        ["3", "AIへ", "次のモジュールを出すよう返事", "する"]
+      ]
+      : [
+        ["1", "AIの返答の", "コードブロック", "をコピーする"],
+        ["2", "下のボタンで", "まとめて取り込む", ""],
+        ["3", "次の画面で", "内容を確認", "する"]
+      ];
 
-    task.appendChild(createTaskIntro(imported > 0
-      ? "取り込みました。右下の「次へ」で内容を確認します。"
-      : "AIの返答にあるコードブロックをコピーして、ボタンを押してください。"));
+    task.appendChild(createTaskIntro(
+      imported > 0
+        ? "取り込みました。右下の「次へ」で内容を確認します。"
+        : split
+          ? "モジュールごとに返ってくるコードブロックを、" +
+            "届いた順に取り込んでください。"
+          : "AIの返答にあるコードブロックをコピーして、" +
+            "ボタンを押してください。"));
 
+    // Even after a package has come in, the way to take a corrected
+    // answer instead stays on this screen.
     if (imported > 0) {
       task.appendChild(createIntakeResult(state));
-      return task;
-    }
+    } else {
+      steps.forEach(function (item) {
+        var step = createElement("div", "intake-step");
+        var text = createElement("span", "intake-step-text");
 
-    steps.forEach(function (item) {
-      var step = createElement("div", "intake-step");
-      var text = createElement("span", "intake-step-text");
-
-      step.appendChild(
-        createElement("span", "intake-step-number", item[0]));
-      text.appendChild(createElement("span", "", item[1]));
-      text.appendChild(createElement("strong", "", item[2]));
-      if (item[3]) {
-        text.appendChild(createElement("span", "", item[3]));
+        step.appendChild(
+          createElement("span", "intake-step-number", item[0]));
+        text.appendChild(createElement("span", "", item[1]));
+        text.appendChild(createElement("strong", "", item[2]));
+        if (item[3]) {
+          text.appendChild(createElement("span", "", item[3]));
+        }
+        step.appendChild(text);
+        guide.appendChild(step);
+      });
+      task.appendChild(guide);
+      if (started) {
+        task.appendChild(createPartProgress(state));
       }
-      step.appendChild(text);
-      guide.appendChild(step);
-    });
-    task.appendChild(guide);
+    }
 
     target.appendChild(createIcon(
       imported > 0 ? "check" : "code",
@@ -1636,25 +1735,46 @@
       "",
       imported > 0
         ? imported + "個のモジュールを取り込みました"
-        : "AIの返答をここへ取り込みます"));
+        : split
+          ? "モジュールを1つずつ取り込みます"
+          : "AIの返答をここへ取り込みます"));
     target.appendChild(createElement(
       "p",
       "",
       imported > 0
         ? "取り込み直すときは、もう一度コピーしてからボタンを押します。"
         : "コードブロック全体をコピーしてから、ボタンを押してください。"));
-    target.appendChild(createFlowButton(
-      state.busyAction === "readClipboard"
-        ? "読み取っています"
-        : imported > 0
-          ? "取り込み直す"
-          : "クリップボードからAIの返答を取り込む",
-      "import-response",
-      {
-        kind: imported > 0 ? "" : "primary",
-        icon: "copy",
-        disabled: state.busyAction !== null
-      }));
+    // Taking a different answer instead always stays available. With
+    // one paste that means pasting again; with one module per answer the
+    // collection is emptied first, then filled from module 00 again.
+    if (imported > 0 && split) {
+      actions.appendChild(createFlowButton(
+        "最初から取り込み直す",
+        "restart-intake",
+        { icon: "copy", disabled: state.busyAction !== null }));
+    } else {
+      actions.appendChild(createFlowButton(
+        state.busyAction === "readClipboard"
+          ? "読み取っています"
+          : imported > 0
+            ? "取り込み直す"
+            : started
+              ? "次のモジュールを取り込む"
+              : "クリップボードからAIの返答を取り込む",
+        "import-response",
+        {
+          kind: imported > 0 ? "" : "primary",
+          icon: "copy",
+          disabled: state.busyAction !== null
+        }));
+      if (started) {
+        actions.appendChild(createFlowButton(
+          "最初から取り込み直す",
+          "restart-intake",
+          { disabled: state.busyAction !== null }));
+      }
+    }
+    target.appendChild(actions);
     task.appendChild(target);
     return task;
   }
@@ -1986,6 +2106,14 @@
         "result-note",
         diffReportErrorMessage));
     }
+    // The summary note is reported the same way the diff report is: a
+    // file this run could not write must not be read as this run's.
+    if (result && result.resultError) {
+      panel.appendChild(createElement(
+        "p",
+        "result-note",
+        resultNoteErrorMessage));
+    }
     task.appendChild(panel);
     return task;
   }
@@ -2313,6 +2441,7 @@
       message: message,
       path: ""
     });
+    global.MacroStudioState.setBuildSlow(false);
     global.MacroStudioState.setBusyAction(null);
     clearToast();
     announce("ビルドに失敗しました。" + message);
@@ -2369,12 +2498,23 @@
       recordClientError(diffGenerationError, "");
     }
 
+    // The host finishing is what ends a build. A long build is reported
+    // as long, never as failed: the client clock decides nothing here,
+    // and the late answer still arrives against this request id.
     return global.hostBridge.request("buildBook", {
       outputTimestamp: timestamp,
       outputName: state.outputName,
       modules: modules,
       diffHtml: diffHtml,
       resultMarkdown: createResultMarkdown(state, timestamp)
+    }, {
+      timeoutMilliseconds: 0,
+      onSlow: function () {
+        global.MacroStudioState.setBuildSlow(true);
+        showToast(buildSlowMessage, "warning");
+        announce(buildSlowMessage);
+        recordInfo("build still running after the client wait");
+      }
     }).then(function (result) {
       var viewResult = {
         status: "success",
@@ -2388,6 +2528,7 @@
       };
 
       global.MacroStudioState.setLastError(null);
+      global.MacroStudioState.setBuildSlow(false);
       global.MacroStudioState.setBuildResult(viewResult);
       global.MacroStudioState.markModulesWritten(viewResult.results);
       global.MacroStudioState.setBusyAction(null);
@@ -2397,6 +2538,11 @@
         announce(
           "改修版ブックを作成しました。" +
           "差分 HTML ファイルは作成できませんでした。");
+      } else if (viewResult.resultError) {
+        showToast(resultNoteErrorMessage, "error");
+        announce(
+          "改修版ブックを作成しました。" +
+          "改修の概要メモは作成できませんでした。");
       } else {
         announce("改修版ブックと差分 HTML ファイルを作成しました。");
       }
@@ -2553,6 +2699,24 @@
     return true;
   }
 
+  // Turning the option on changes which rules the request carries, so
+  // anything already taken in under the other shape is dropped.
+  function setSplitOutput(enabled) {
+    var state = global.MacroStudioState.getState();
+
+    if (state.busyAction || !state.splitOutputRules) {
+      return false;
+    }
+    if (!global.MacroStudioState.setSplitOutput(enabled)) {
+      return false;
+    }
+    clearToast();
+    announce(enabled
+      ? "モジュール単位出力を使います。AIは1回の返答に1つのモジュールだけ出します。"
+      : "モジュール単位出力をやめました。AIは1回の返答にまとめて出します。");
+    return true;
+  }
+
   function selectPurpose(file) {
     var state = global.MacroStudioState.getState();
 
@@ -2601,6 +2765,16 @@
         title: parsed.output.title,
         body: fillRequestId(parsed.output.body, requestId)
       });
+      // Only a preset that writes the one-module-per-reply rules can
+      // offer that option; nothing here supplies a substitute wording.
+      global.MacroStudioState.setSplitOutputRules(parsed.splitOutput
+        ? {
+          presetFile: file,
+          presetName: parsed.name,
+          title: parsed.splitOutput.title,
+          body: fillRequestId(parsed.splitOutput.body, requestId)
+        }
+        : null);
       global.MacroStudioState.setBusyAction(null);
       clearToast();
       announce(parsed.name + " を選びました。");
@@ -2628,13 +2802,18 @@
     ).then(function (templateResult) {
       var codeContent;
       var prompt;
+      // Whichever way of answering the user chose, the wording comes
+      // from the same preset file.
+      var outputRules = state.splitOutput && state.splitOutputRules
+        ? state.splitOutputRules
+        : state.outputRules;
 
       try {
         prompt = fillRequestId(
           global.MacroStudioPrompt.buildRequestPrompt({
             template: templateResult.content,
             requestText: state.requestText,
-            outputRules: state.outputRules,
+            outputRules: outputRules,
             requestId: state.requestId,
             book: state.book,
             modules: state.modules,
@@ -2727,27 +2906,31 @@
     return false;
   }
 
-  // One answer, one press: the package is parsed, checked against the
-  // request id, and every module in it is applied together.
-  function applyResponsePackage(text) {
-    var state = global.MacroStudioState.getState();
-    var parsed = global.MacroStudioResponse.parse(text, state.requestId);
-    var described;
+  // A whole package - one paste, or the parts merged back together - is
+  // applied against the workbook's own modules. A module an earlier
+  // answer added is not one of them, so a replacement package is never
+  // measured against the answer it replaces.
+  function applyWholePackage(state, parsed) {
+    var bookModules = global.MacroStudioState.getBookModules();
+    var described = global.MacroStudioResponse.describe(
+      parsed,
+      bookModules);
     var items = [];
     var nameError = "";
     var kindWarning;
 
-    if (!parsed.ok) {
-      return showIntakeError(parsed.message);
-    }
-    described = global.MacroStudioResponse.describe(
-      parsed,
-      state.modules);
     described.modules.forEach(function (item) {
       var normalized = normalizePastedText(item.code);
-      var existing = global.MacroStudioState.findModule(item.name);
+      var existing = null;
       var rows;
 
+      bookModules.some(function (module) {
+        if (module.name.toLowerCase() === item.name.toLowerCase()) {
+          existing = module;
+          return true;
+        }
+        return false;
+      });
       if (normalized.length === 0) {
         nameError = global.MacroStudioResponse.messages.emptyModule;
         return;
@@ -2763,7 +2946,7 @@
           return;
         }
         nameError = nameError ||
-          getNewModuleNameError(state, item.name);
+          getNewModuleNameError({ modules: bookModules }, item.name);
         if (nameError) {
           return;
         }
@@ -2815,6 +2998,83 @@
       "success");
     announce(items.length + "個のモジュールを取り込みました。");
     recordInfo("package imported: " + items.length + " modules");
+    return true;
+  }
+
+  // One module per answer. Each part is collected and checked against
+  // the ones already in; only when every declared module has arrived is
+  // the whole thing applied, as one package.
+  function applySplitPart(state, parsed) {
+    var api = global.MacroStudioResponse;
+    var added = api.addPart(state.intakeParts, parsed);
+    var message;
+    var received;
+
+    if (!added.ok) {
+      return showIntakeError(added.message);
+    }
+    global.MacroStudioState.setIntakeParts(added.collection);
+    global.MacroStudioState.setLastError(null);
+    clearToast();
+    if (!added.complete) {
+      received = parsed.modules[0];
+      message = (added.added
+        ? "モジュール" + api.formatPartNumber(parsed.part.index) +
+          "（" + received.name + "）を受け取りました。"
+        : "そのモジュールはすでに受け取っています。") +
+        api.describeMissingParts(added.collection);
+      showToast(message, "success");
+      announce(message);
+      recordInfo(
+        "split part received: " +
+        api.formatPartNumber(parsed.part.index) + "/" +
+        api.formatPartNumber(parsed.part.total) +
+        " (" + added.collection.parts.length + " collected)");
+      return true;
+    }
+    recordInfo(
+      "split parts complete: " +
+      added.collection.parts.length + " modules");
+    return applyWholePackage(
+      global.MacroStudioState.getState(),
+      api.mergeParts(added.collection));
+  }
+
+  // One answer, one press: the package is parsed, checked against the
+  // request id, and every module in it is applied together. With the
+  // module-by-module option the same press takes in one part.
+  function applyResponsePackage(text) {
+    var state = global.MacroStudioState.getState();
+    var parsed = global.MacroStudioResponse.parse(text, state.requestId);
+
+    if (!parsed.ok) {
+      return showIntakeError(parsed.message);
+    }
+    if (global.MacroStudioScreens.isSplitOutput(state)) {
+      return applySplitPart(state, parsed);
+    }
+    // A part on its own is not the whole answer, so it is refused
+    // instead of being taken in as if it were.
+    if (parsed.part) {
+      return showIntakeError(
+        global.MacroStudioResponse.messages.partUnexpected);
+    }
+    return applyWholePackage(state, parsed);
+  }
+
+  // Emptying the intake, so a contradicting or muddled set of parts can
+  // be collected again from the beginning.
+  function restartIntake() {
+    var state = global.MacroStudioState.getState();
+
+    if (state.busyAction) {
+      return false;
+    }
+    global.MacroStudioState.discardImportedModules();
+    global.MacroStudioState.setLastError(null);
+    clearToast();
+    announce("取り込んだ内容を空にしました。もう一度取り込めます。");
+    recordInfo("intake restarted");
     return true;
   }
 
@@ -3252,6 +3512,8 @@
       openRunFolder();
     } else if (action === "import-response") {
       importResponsePackage();
+    } else if (action === "restart-intake") {
+      restartIntake();
     } else if (action === "select-module") {
       selectModuleFromPane(button.getAttribute("data-module-name"));
     } else if (action === "edit-paste") {
@@ -3287,6 +3549,10 @@
     }
     if (event.target.id === "output-name") {
       global.MacroStudioState.setOutputName(event.target.value);
+      return;
+    }
+    if (event.target.id === "split-output") {
+      setSplitOutput(event.target.checked === true);
       return;
     }
     if (event.target.id !== "request-text") {
@@ -3551,6 +3817,8 @@
     joinFinalCode: joinFinalCode,
     createBuildModules: createBuildModules,
     createResultMarkdown: createResultMarkdown,
+    createIntakeScreen: createScreen5,
+    createDoneScreen: createScreenDone,
     buildBook: buildBook,
     retryBuild: retryBuild,
     finishFlow: finishFlow,
@@ -3561,6 +3829,8 @@
     isEditDraftDirty: isEditDraftDirty,
     applyResponsePackage: applyResponsePackage,
     importResponsePackage: importResponsePackage,
+    restartIntake: restartIntake,
+    setSplitOutput: setSplitOutput,
     toggleDisclosure: toggleDisclosure,
     selectMode: selectMode,
     answerQuestion: answerQuestion,

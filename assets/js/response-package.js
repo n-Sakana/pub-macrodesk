@@ -16,6 +16,14 @@
   // The marker starts with an apostrophe so each sentinel is also a
   // valid VBA comment, and carries the random id so it cannot collide
   // with anything already in the workbook.
+  //
+  // When the code is too long for one answer, the same block carries one
+  // module per answer and says which one it is:
+  //
+  //   '@MACROSTUDIO <request id> PART 00 OF 03
+  //
+  // The parts are collected here and merged back into one package, so
+  // everything after the intake sees a single answer either way.
   var MARKER = "'@MACROSTUDIO";
   var KINDS = ["standard", "class", "form", "document"];
   var NAME_PATTERN = /^[A-Za-zÀ-￿][\wÀ-￿]{0,30}$/;
@@ -47,7 +55,28 @@
       "AIの返答をコピーし直して、もう一度お試しください。",
     emptyModule:
       "中身のないモジュールが含まれていました。AIへ、変更したモジュールの" +
-      "全文を返すよう伝えてください。"
+      "全文を返すよう伝えてください。",
+    partShape:
+      "何番目のモジュールかを示す行が読み取れませんでした。" +
+      "コードブロック全体をコピーし直して、もう一度お試しください。",
+    partMissing:
+      "何番目のモジュールかを示す行がありません。AIへ、モジュール番号の" +
+      "行を付けて返すよう伝えてください。",
+    partUnexpected:
+      "モジュールを1つずつ返す形の返答でした。依頼文の画面で" +
+      "「モジュール単位出力」を選んでから、取り込み直してください。",
+    partMultipleModules:
+      "1回の返答に複数のモジュールが入っていました。AIへ、1回につき" +
+      "1つのモジュールだけ返すよう伝えてください。",
+    partTotalMismatch:
+      "返答に書かれているモジュールの合計数が、前の返答と違っています。" +
+      "いまの依頼文をコピーし直して、AIへもう一度送ってください。",
+    partConflict:
+      "同じ番号のモジュールが、前と違う内容で届きました。" +
+      "［最初から取り込み直す］を押してから、もう一度取り込んでください。",
+    partDuplicateModule:
+      "同じモジュールが別の番号でも届きました。AIへ、モジュールごとに" +
+      "1回だけ返すよう伝えてください。"
   };
 
   function createRequestId() {
@@ -103,6 +132,19 @@
     return MARKER + " " + requestId + " COMPLETE " + String(count);
   }
 
+  // Module numbers are written 00, 01, 02 ... so the reader can tell at
+  // a glance which one is missing.
+  function formatPartNumber(value) {
+    var text = String(Math.max(0, Number(value) || 0));
+
+    return text.length >= 2 ? text : "0" + text;
+  }
+
+  function partLine(requestId, index, total) {
+    return MARKER + " " + requestId + " PART " +
+      formatPartNumber(index) + " OF " + formatPartNumber(total);
+  }
+
   function failure(reason) {
     return {
       ok: false,
@@ -110,6 +152,15 @@
       message: MESSAGES[reason] || MESSAGES.noSentinel,
       modules: []
     };
+  }
+
+  function readCount(text) {
+    var value = String(text === undefined ? "" : text);
+
+    if (!/^\d{1,4}$/.test(value)) {
+      return -1;
+    }
+    return Number(value);
   }
 
   function splitLines(text) {
@@ -166,10 +217,13 @@
     var sawMarker = false;
     var summary = [];
     var inSummary = false;
+    var part = null;
     var index;
     var sentinel;
     var kind;
     var name;
+    var partIndex;
+    var partTotal;
 
     if (!isRequestId(requestId)) {
       return failure("otherRequest");
@@ -223,6 +277,26 @@
       }
       if (inSummary) {
         return failure("mismatch");
+      }
+      // Which module of the whole change this answer carries. It says
+      // so itself; nothing here guesses the order.
+      if (sentinel.directive === "PART") {
+        if (open !== null || part !== null) {
+          return failure("mismatch");
+        }
+        if (sentinel.parts.length !== 5 ||
+            sentinel.parts[3].toUpperCase() !== "OF") {
+          return failure("partShape");
+        }
+        partIndex = readCount(sentinel.parts[2]);
+        partTotal = readCount(sentinel.parts[4]);
+        if (partIndex < 0 ||
+            partTotal < 1 ||
+            partIndex >= partTotal) {
+          return failure("partShape");
+        }
+        part = { index: partIndex, total: partTotal };
+        continue;
       }
       if (sentinel.directive === "BEGIN") {
         if (open !== null) {
@@ -302,8 +376,172 @@
       reason: "",
       message: "",
       summary: trimBlankEdges(summary).join("\r\n"),
+      part: part,
       modules: modules
     };
+  }
+
+  // ---- one module per answer ----
+  //
+  // The parts are only collected and checked here. Nothing is read out
+  // of the code itself: each answer says which module it is and how many
+  // there will be, and those two statements have to keep agreeing.
+
+  function createPartCollection() {
+    return { total: 0, parts: [] };
+  }
+
+  function listMissingParts(collection) {
+    var missing = [];
+    var seen = {};
+    var index;
+
+    if (!collection || !collection.total) {
+      return missing;
+    }
+    collection.parts.forEach(function (entry) {
+      seen[entry.index] = true;
+    });
+    for (index = 0; index < collection.total; index += 1) {
+      if (!seen[index]) {
+        missing.push(index);
+      }
+    }
+    return missing;
+  }
+
+  function isPartCollectionComplete(collection) {
+    return Boolean(collection) &&
+      collection.total > 0 &&
+      collection.parts.length === collection.total &&
+      listMissingParts(collection).length === 0;
+  }
+
+  function partResult(collection, added) {
+    return {
+      ok: true,
+      reason: "",
+      message: "",
+      modules: [],
+      collection: collection,
+      added: added === true,
+      complete: isPartCollectionComplete(collection),
+      missing: listMissingParts(collection)
+    };
+  }
+
+  function partFailure(reason, collection) {
+    var result = failure(reason);
+
+    result.collection = collection || createPartCollection();
+    result.added = false;
+    result.complete = isPartCollectionComplete(result.collection);
+    result.missing = listMissingParts(result.collection);
+    return result;
+  }
+
+  function addPart(collection, parsed) {
+    var current = collection || createPartCollection();
+    var module;
+    var existing = null;
+    var clash = false;
+    var next;
+
+    if (!parsed || !parsed.ok) {
+      return partFailure(
+        parsed && parsed.reason ? parsed.reason : "noSentinel",
+        current);
+    }
+    if (!parsed.part) {
+      return partFailure("partMissing", current);
+    }
+    if (parsed.modules.length !== 1) {
+      return partFailure("partMultipleModules", current);
+    }
+    if (current.total > 0 && parsed.part.total !== current.total) {
+      return partFailure("partTotalMismatch", current);
+    }
+
+    module = parsed.modules[0];
+    current.parts.forEach(function (entry) {
+      if (entry.index === parsed.part.index) {
+        existing = entry;
+        return;
+      }
+      if (entry.name.toLowerCase() === module.name.toLowerCase()) {
+        clash = true;
+      }
+    });
+    if (existing !== null) {
+      // The same number arriving again is only accepted when it says
+      // exactly the same thing. A different content under a number that
+      // is already in is a contradiction, not a correction.
+      if (existing.name.toLowerCase() === module.name.toLowerCase() &&
+          existing.kind === module.kind &&
+          existing.code === module.code) {
+        return partResult(current, false);
+      }
+      return partFailure("partConflict", current);
+    }
+    if (clash) {
+      return partFailure("partDuplicateModule", current);
+    }
+
+    next = {
+      total: parsed.part.total,
+      parts: current.parts.concat([{
+        index: parsed.part.index,
+        name: module.name,
+        kind: module.kind,
+        code: module.code,
+        summary: parsed.summary || ""
+      }])
+    };
+    next.parts.sort(function (left, right) {
+      return left.index - right.index;
+    });
+    return partResult(next, true);
+  }
+
+  // The collected parts, read back as the one package the rest of the
+  // flow already knows how to handle.
+  function mergeParts(collection) {
+    var summaries = [];
+
+    if (!isPartCollectionComplete(collection)) {
+      return failure("truncated");
+    }
+    collection.parts.forEach(function (entry) {
+      if (entry.summary) {
+        summaries.push(entry.summary);
+      }
+    });
+    return {
+      ok: true,
+      reason: "",
+      message: "",
+      summary: summaries.join("\r\n\r\n"),
+      part: null,
+      modules: collection.parts.map(function (entry) {
+        return {
+          name: entry.name,
+          kind: entry.kind,
+          code: entry.code
+        };
+      })
+    };
+  }
+
+  // What is still outstanding, in the words the intake screen uses.
+  function describeMissingParts(collection) {
+    var missing = listMissingParts(collection);
+
+    if (!collection || !collection.total || missing.length === 0) {
+      return "";
+    }
+    return "あと" + missing.length + "個です（" +
+      missing.map(formatPartNumber).join("、") +
+      " が届いていません）。";
   }
 
   // What the parsed package means for this workbook: which modules it
@@ -391,9 +629,17 @@
     beginLine: beginLine,
     endLine: endLine,
     completeLine: completeLine,
+    partLine: partLine,
+    formatPartNumber: formatPartNumber,
     summaryBeginLine: summaryBeginLine,
     summaryEndLine: summaryEndLine,
     parse: parse,
+    createPartCollection: createPartCollection,
+    addPart: addPart,
+    mergeParts: mergeParts,
+    listMissingParts: listMissingParts,
+    isPartCollectionComplete: isPartCollectionComplete,
+    describeMissingParts: describeMissingParts,
     describe: describe,
     describeKindWarning: describeKindWarning
   };

@@ -546,6 +546,45 @@ namespace MacroStudio
             return -1;
         }
 
+        // The VBA the attach step read, written out as one text. The
+        // build compares it against the project it reads for itself, so
+        // a workbook that was edited and saved in the meantime cannot be
+        // overwritten by an answer that was based on the older code.
+        public static string CreateSourceSignature(VbaProjectData project)
+        {
+            if (project == null)
+            {
+                throw new ArgumentNullException("project");
+            }
+
+            // Separators that cannot appear in a module name or in VBA
+            // source. Each field is written with its length as well, so
+            // the boundaries stay unambiguous whatever the code holds.
+            StringBuilder text = new StringBuilder();
+            int index;
+
+            text.Append(project.Modules.Count);
+            text.Append('\u0001');
+            for (index = 0; index < project.Modules.Count; index++)
+            {
+                VbaModule module = project.Modules[index];
+                string code = module.Code == null
+                    ? string.Empty
+                    : module.Code;
+                text.Append(module.Name == null
+                    ? string.Empty
+                    : module.Name);
+                text.Append('\u0000');
+                text.Append((int)module.Kind);
+                text.Append('\u0000');
+                text.Append(code.Length);
+                text.Append('\u0000');
+                text.Append(code);
+                text.Append('\u0001');
+            }
+            return text.ToString();
+        }
+
         public static BookBuildResult BuildCopy(
             string sourcePath,
             string outputPath,
@@ -564,9 +603,33 @@ namespace MacroStudio
             IDictionary<string, string> moduleChanges,
             IList<VbaModuleAddition> newModules)
         {
+            return BuildCopy(
+                sourcePath,
+                outputPath,
+                moduleChanges,
+                newModules,
+                null,
+                false);
+        }
+
+        // expectedSourceSignature: what the VBA looked like when the
+        // request was made, or null to skip the comparison.
+        // replaceExisting: the output already exists and was made by this
+        // same run, so this build may take its place. The new workbook is
+        // assembled and verified beside it and only swapped in on
+        // success, so a failed rebuild never destroys the earlier one.
+        public static BookBuildResult BuildCopy(
+            string sourcePath,
+            string outputPath,
+            IDictionary<string, string> moduleChanges,
+            IList<VbaModuleAddition> newModules,
+            string expectedSourceSignature,
+            bool replaceExisting)
+        {
             BookBuildResult result = new BookBuildResult();
             DateTime started = DateTime.UtcNow;
-            bool outputCreated = false;
+            string createdPath = null;
+            string asidePath = null;
 
             try
             {
@@ -587,6 +650,17 @@ namespace MacroStudio
                         "The workbook structure could not be parsed " +
                         "for build.");
                 }
+                if (expectedSourceSignature != null &&
+                    !string.Equals(
+                        expectedSourceSignature,
+                        CreateSourceSignature(sourceProject),
+                        StringComparison.Ordinal))
+                {
+                    throw new MacroStudioException(
+                        "E-BUILD-04",
+                        "The source workbook macros changed after the " +
+                        "request was prepared.");
+                }
 
                 string fullOutputPath = GetBuildOutputPath(outputPath);
                 result.OutputPath = fullOutputPath;
@@ -599,6 +673,12 @@ namespace MacroStudio
                         "The build output path is the source workbook.");
                 }
 
+                bool replacing = replaceExisting &&
+                    File.Exists(fullOutputPath);
+                string workPath = replacing
+                    ? fullOutputPath + ".rebuild"
+                    : fullOutputPath;
+
                 Dictionary<string, string> changedModules =
                     PrepareBuildChanges(
                         sourceProject,
@@ -610,11 +690,15 @@ namespace MacroStudio
                         newModules,
                         result.Results);
 
+                if (replacing && File.Exists(workPath))
+                {
+                    File.Delete(workPath);
+                }
                 File.Copy(
                     sourceProject.FilePath,
-                    fullOutputPath,
+                    workPath,
                     false);
-                outputCreated = true;
+                createdPath = workPath;
 
                 byte[] rebuiltProject =
                     VbaProjectWriter.RebuildProject(
@@ -622,15 +706,41 @@ namespace MacroStudio
                         changedModules,
                         additions);
                 WriteZipVbaProject(
-                    fullOutputPath,
+                    workPath,
                     rebuiltProject,
                     sourceProject.IsZip,
                     sourceProject.VbaEntryName);
                 VerifyBuild(
                     sourceProject,
-                    fullOutputPath,
+                    workPath,
                     changedModules,
                     additions);
+
+                // The earlier workbook is moved aside rather than
+                // deleted, so there is no moment where neither
+                // generation exists. It is dropped once the new one is
+                // in place, and put back if anything here fails.
+                if (replacing)
+                {
+                    asidePath = fullOutputPath + ".previous";
+                    if (File.Exists(asidePath))
+                    {
+                        File.Delete(asidePath);
+                    }
+                    File.Move(fullOutputPath, asidePath);
+                    File.Move(workPath, fullOutputPath);
+                    createdPath = fullOutputPath;
+                    try
+                    {
+                        File.Delete(asidePath);
+                    }
+                    catch (Exception)
+                    {
+                        // Keeping the old copy is untidy, never a
+                        // failure: the new workbook is already in place.
+                    }
+                    asidePath = null;
+                }
 
                 SetPendingResults(
                     result.Results,
@@ -672,13 +782,16 @@ namespace MacroStudio
                 result.Message = ex.Message;
             }
 
-            if (outputCreated)
+            // Only what this build made is removed. When a rebuild fails
+            // that is the workpiece beside the earlier output, so the
+            // workbook the previous build produced stays where it is.
+            if (createdPath != null)
             {
                 try
                 {
-                    if (File.Exists(result.OutputPath))
+                    if (File.Exists(createdPath))
                     {
-                        File.Delete(result.OutputPath);
+                        File.Delete(createdPath);
                     }
                 }
                 catch (Exception cleanupException)
@@ -688,6 +801,32 @@ namespace MacroStudio
                         result.Message +
                         " Output cleanup failed: " +
                         cleanupException.Message;
+                }
+            }
+            // A rebuild that failed after moving the earlier workbook
+            // aside puts it back, so the run folder keeps the generation
+            // it had before this attempt.
+            if (asidePath != null)
+            {
+                try
+                {
+                    if (File.Exists(asidePath))
+                    {
+                        if (File.Exists(result.OutputPath))
+                        {
+                            File.Delete(result.OutputPath);
+                        }
+                        File.Move(asidePath, result.OutputPath);
+                    }
+                }
+                catch (Exception restoreException)
+                {
+                    result.ErrorCode = "E-BUILD-03";
+                    result.Message =
+                        result.Message +
+                        " The earlier output is still at " +
+                        asidePath + ": " +
+                        restoreException.Message;
                 }
             }
 

@@ -17,6 +17,17 @@
     return error;
   }
 
+  function clearTimers(entry) {
+    if (entry.timer !== null) {
+      global.clearTimeout(entry.timer);
+      entry.timer = null;
+    }
+    if (entry.slowTimer !== null) {
+      global.clearTimeout(entry.slowTimer);
+      entry.slowTimer = null;
+    }
+  }
+
   function removePending(id) {
     var entry = pending[id];
     if (!entry) {
@@ -24,7 +35,7 @@
     }
 
     delete pending[id];
-    global.clearTimeout(entry.timer);
+    clearTimers(entry);
     return entry;
   }
 
@@ -71,7 +82,16 @@
     webview.addEventListener("message", handleMessage);
   }
 
-  function send(action, params, additionalObjects) {
+  // Most host actions answer quickly, so a fixed clock is a fair way to
+  // give up on them. Some actions - rebuilding a large workbook is the
+  // one - keep working long past that clock, and the host's answer is
+  // the only thing that says whether they finished. Those are sent with
+  // `timeoutMilliseconds: 0` and an `onSlow` callback: nothing is
+  // decided by the clock, the wait is only reported, and the late answer
+  // still resolves against the same request id.
+  function send(action, params, additionalObjects, options) {
+    var settings = options || {};
+
     return new Promise(function (resolve, reject) {
       if (!webview) {
         reject(makeError(
@@ -105,23 +125,47 @@
       nextId += 1;
       var id = nextId;
       var key = String(id);
-      var timer = global.setTimeout(function () {
-        var entry = removePending(key);
-        if (entry) {
-          entry.reject(makeError(
-            "E-SYS-02",
-            "Host request timed out: " + action,
-            null,
-            action
-          ));
-        }
-      }, timeoutMilliseconds);
+      var limit = settings.timeoutMilliseconds === undefined
+        ? timeoutMilliseconds
+        : Number(settings.timeoutMilliseconds);
+      var slowAfter = settings.slowAfterMilliseconds === undefined
+        ? timeoutMilliseconds
+        : Number(settings.slowAfterMilliseconds);
+      var timer = limit > 0
+        ? global.setTimeout(function () {
+          var entry = removePending(key);
+          if (entry) {
+            entry.reject(makeError(
+              "E-SYS-02",
+              "Host request timed out: " + action,
+              null,
+              action
+            ));
+          }
+        }, limit)
+        : null;
+      var slowTimer = typeof settings.onSlow === "function" &&
+        slowAfter > 0
+        ? global.setTimeout(function () {
+          var entry = pending[key];
+          if (!entry) {
+            return;
+          }
+          entry.slowTimer = null;
+          try {
+            settings.onSlow(action);
+          } catch (error) {
+            global.console.error("Host slow handler failed:", error);
+          }
+        }, slowAfter)
+        : null;
 
       pending[key] = {
         action: action,
         resolve: resolve,
         reject: reject,
-        timer: timer
+        timer: timer,
+        slowTimer: slowTimer
       };
 
       var message = {
@@ -150,14 +194,15 @@
     });
   }
 
-  function request(action, params) {
-    return send(action, params, null);
+  function request(action, params, options) {
+    return send(action, params, null, options);
   }
 
   function resolveDroppedFiles(files) {
-    return send("resolveDroppedFiles", {}, files).then(function (result) {
-      return result && result.paths ? result.paths : [];
-    });
+    return send("resolveDroppedFiles", {}, files, null).then(
+      function (result) {
+        return result && result.paths ? result.paths : [];
+      });
   }
 
   function canResolveDroppedFiles() {
