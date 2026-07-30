@@ -56,7 +56,7 @@ Public Function ExecuteClipboardOutputCase( _
 
     Set bufferSheet = ThisWorkbook.Worksheets(CLIPBOARD_SHEET_NAME)
     Set target = bufferSheet.Range("B2")
-    target.Value2 = sourceText
+    target.value2 = sourceText
     detailText = _
         "fixture=" & fixtureId & _
         "; characters=" & CStr(Len(sourceText)) & _
@@ -147,7 +147,7 @@ Public Function ExecuteClipboardInputCase( _
     outputBook.Worksheets(1).Activate
     target.Select
     target.PasteSpecial Paste:=xlPasteValues
-    pastedText = CStr(target.Value2)
+    pastedText = CStr(target.value2)
 
     outputBook.SaveAs _
         Filename:=outputPath, _

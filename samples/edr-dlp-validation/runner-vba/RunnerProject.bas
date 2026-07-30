@@ -149,7 +149,7 @@ Public Function ExecuteProjectWriteCase( _
 
     Set outputBook = Application.Workbooks.Add(xlWBATWorksheet)
     outputBook.Worksheets(1).Name = "Output"
-    outputBook.Worksheets(1).Range("A1").Value2 = _
+    outputBook.Worksheets(1).Range("A1").value2 = _
         "Generated validation output"
     outputBook.SaveAs _
         Filename:=outputPath, _

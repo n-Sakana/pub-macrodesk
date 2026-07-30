@@ -180,16 +180,16 @@ Public Sub RecordCaseResult( _
     End If
 
     logSheet.Cells(nextRow, 1).NumberFormat = "@"
-    logSheet.Cells(nextRow, 1).Value2 = _
+    logSheet.Cells(nextRow, 1).value2 = _
         Format$(startedAt, "yyyy-mm-dd hh:nn:ss")
     logSheet.Cells(nextRow, 2).NumberFormat = "@"
-    logSheet.Cells(nextRow, 2).Value2 = _
+    logSheet.Cells(nextRow, 2).value2 = _
         Format$(Now, "yyyy-mm-dd hh:nn:ss")
-    logSheet.Cells(nextRow, 3).Value = caseId
-    logSheet.Cells(nextRow, 4).Value = statusText
-    logSheet.Cells(nextRow, 5).Value = OneLine(inputText)
-    logSheet.Cells(nextRow, 6).Value = OneLine(outputText)
-    logSheet.Cells(nextRow, 7).Value = OneLine(detailText)
+    logSheet.Cells(nextRow, 3).value = caseId
+    logSheet.Cells(nextRow, 4).value = statusText
+    logSheet.Cells(nextRow, 5).value = OneLine(inputText)
+    logSheet.Cells(nextRow, 6).value = OneLine(outputText)
+    logSheet.Cells(nextRow, 7).value = OneLine(detailText)
     logSheet.Columns("A:H").AutoFit
 End Sub
 

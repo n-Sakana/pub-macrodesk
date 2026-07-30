@@ -6,3 +6,4 @@
 .gitkeep text eol=lf
 *.xlsm binary
 *.xlsx binary
+*.dat binary
