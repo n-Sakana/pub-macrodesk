@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <defs>
+    <clipPath id="p09-clip"><rect x="40" y="148" width="672" height="378" rx="10"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#1F4E79"/>
+    <text x="114" y="75" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">手順 2 · 3/3</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2933">AIチャットへ改修を依頼します</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E8F0" stroke-width="1"/>
+  </g>
+
+  <g id="shot" data-pptx-bounds="36 144 680 386">
+    <rect x="36" y="144" width="680" height="386" rx="14" fill="#F4F6F8"/>
+    <image href="../images/05-handoff.png" x="40" y="148" width="672" height="378" preserveAspectRatio="xMidYMid meet" clip-path="url(#p09-clip)"/>
+    <rect x="40" y="148" width="672" height="378" rx="10" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+  </g>
+
+  <g id="attach-note" data-pptx-bounds="36 550 680 102">
+    <rect x="36" y="550" width="680" height="102" rx="14" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="66" y="592" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">マクロが読み書きするExcelシートやファイルがあれば、<tspan x="66" dy="30">それも添付すると回答が正確になります。</tspan></text>
+  </g>
+
+  <g id="steps" data-pptx-bounds="736 144 504 508">
+    <use data-icon="tabler-filled/message-chatbot" x="736" y="152" width="28" height="28" fill="#1F4E79"/>
+    <circle cx="760" cy="230" r="19" fill="#1F4E79"/>
+    <text x="760" y="238" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">1</text>
+    <text x="796" y="238" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">［依頼文をコピー］を押し、<tspan x="796" dy="34">チャットの入力欄に</tspan><tspan x="796" dy="34">貼り付けます（Ctrl+V）。</tspan></text>
+
+    <circle cx="760" cy="384" r="19" fill="#1F4E79"/>
+    <text x="760" y="392" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">2</text>
+    <text x="796" y="392" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">［ファイルの場所を開く］を<tspan x="796" dy="34">押し、source-code.md を</tspan><tspan x="796" dy="34">チャットへ添付します。</tspan></text>
+
+    <circle cx="760" cy="538" r="19" fill="#1F4E79"/>
+    <text x="760" y="546" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">3</text>
+    <text x="796" y="546" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">送信して返答を待ちます。</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1240" y="692" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">09</text>
+  </g>
+</svg>

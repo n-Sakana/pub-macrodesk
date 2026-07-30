@@ -1,0 +1,493 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--surface-canvas);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--type-body-size);
+  font-weight: var(--type-body-weight);
+  line-height: var(--type-body-line);
+}
+
+button,
+textarea,
+input {
+  color: inherit;
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button,
+input,
+textarea,
+summary,
+a {
+  transition: outline-color var(--transition-fast);
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+a:focus-visible {
+  outline: var(--space-half) solid var(--focus-color);
+  outline-offset: var(--space-half);
+}
+
+.skip-link {
+  position: absolute;
+  z-index: 40;
+  top: var(--space-2);
+  left: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--accent-text);
+  font-size: var(--type-meta-size);
+  transform: translateY(calc(-1 * var(--space-8) - var(--space-6)));
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.status-announcer,
+.visually-hidden {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* One screen at a time: progress on top, the work in the middle, the
+   fixed back / next pair at the bottom right. */
+.app-shell {
+  display: grid;
+  width: 100%;
+  height: 100vh;
+  grid-template-rows:
+    var(--topbar-h)
+    var(--progress-track-h)
+    minmax(0, 1fr)
+    var(--actionbar-h);
+  background: var(--surface-canvas);
+}
+
+.topbar {
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface);
+  grid-template-columns:
+    var(--brand-w)
+    minmax(0, 1fr)
+    var(--brand-w);
+}
+
+.brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  font-size: var(--type-label-size);
+  font-weight: var(--weight-bold);
+  gap: var(--space-2);
+}
+
+.brand-mark {
+  display: grid;
+  width: var(--brand-mark-size);
+  height: var(--brand-mark-size);
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: var(--type-micro-size);
+  font-weight: var(--weight-bold);
+}
+
+/* The build is a beta, and the shell says so quietly: a line under the
+   name, not a badge shouting next to it. */
+.brand-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.15;
+}
+
+.brand-beta {
+  color: var(--text-muted);
+  font-size: var(--type-micro-size);
+  font-weight: var(--weight-regular);
+  letter-spacing: .06em;
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+
+.progress-nav {
+  min-width: 0;
+  height: 100%;
+}
+
+/* The step list changes width when the run's purpose becomes known.
+   Growing is fine; it must not look like a glitch. */
+.progress-list {
+  display: grid;
+  transition: grid-template-columns var(--transition-slow);
+  height: 100%;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  gap: var(--space-1);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+}
+
+.progress-step {
+  display: flex;
+  width: 100%;
+  height: var(--progress-step-h);
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: var(--type-meta-size);
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.progress-number {
+  display: grid;
+  width: var(--progress-mark-size);
+  height: var(--progress-mark-size);
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: var(--type-micro-size);
+  font-weight: var(--weight-bold);
+}
+
+.progress-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progress-step.is-done {
+  color: var(--text-sub);
+}
+
+.progress-step.is-done .progress-number {
+  border-color: var(--success);
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+
+.progress-step.is-active {
+  background: var(--surface-selected);
+  color: var(--accent-text);
+  font-weight: var(--weight-bold);
+}
+
+.progress-step.is-active .progress-number {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+}
+
+.icon-button {
+  display: inline-flex;
+  height: var(--theme-button-size);
+  align-items: center;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--type-meta-size);
+  gap: var(--space-1);
+}
+
+.icon-button--square {
+  width: var(--theme-button-size);
+  justify-content: center;
+  padding: 0;
+}
+
+.icon-button:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.topbar-icon,
+.theme-icon {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.progress-track {
+  position: relative;
+  background: var(--surface-sunken);
+}
+
+.progress-fill {
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+  transition: width var(--transition-normal);
+}
+
+.main-region {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.main-region:focus {
+  outline: none;
+}
+
+.actionbar {
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  padding: 0 var(--space-6);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.action-context {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--type-meta-size);
+  gap: var(--space-2);
+}
+
+.context-dot {
+  width: var(--context-dot-size);
+  height: var(--context-dot-size);
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+
+.action-context span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* Back and next never move and never change size. */
+.nav-actions {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(2, var(--nav-button-w));
+}
+
+.nav-actions .button {
+  width: var(--nav-button-w);
+  transition:
+    color var(--transition-normal),
+    border-color var(--transition-normal),
+    background-color var(--transition-normal);
+}
+
+.progress-step.is-new {
+  animation: progress-step-in var(--transition-slow) both;
+}
+
+@keyframes progress-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--space-3)));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+
+.flow-modal {
+  width: min(var(--content-modal-w), calc(100% - var(--space-8)));
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+  color: var(--text);
+}
+
+.flow-modal::backdrop {
+  background: var(--overlay);
+}
+
+.flow-modal-content {
+  padding: var(--space-5);
+}
+
+.flow-modal h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--type-title-size);
+  line-height: var(--type-title-line);
+}
+
+.flow-modal p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--type-meta-size);
+  line-height: var(--type-body-line);
+}
+
+.flow-modal .actions {
+  margin-top: var(--space-5);
+}
+
+.toast-region {
+  position: fixed;
+  z-index: 30;
+  bottom: calc(var(--actionbar-h) + var(--space-3));
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  transform: translateX(-50%);
+}
+
+.toast {
+  display: flex;
+  max-width: var(--toast-w);
+  align-items: baseline;
+  animation: toast-in var(--transition-slow) both;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  color: var(--text-sub);
+  font-size: var(--type-meta-size);
+  gap: var(--space-2);
+}
+
+.toast.is-leaving {
+  animation: toast-out var(--transition-normal) both;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-3)) scale(.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(var(--space-2)) scale(.98);
+  }
+}
+
+.toast--error {
+  border-color: var(--danger);
+}
+
+.toast--warning {
+  border-color: var(--caution);
+}
+
+.toast--success {
+  border-color: var(--success);
+}
+
+.toast-label {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  font-size: var(--type-micro-size);
+  font-weight: var(--weight-semibold);
+}
+
+.toast--error .toast-label {
+  color: var(--danger-text);
+}
+
+.toast--success .toast-label {
+  color: var(--success-text);
+}
+
+body.is-file-drag .drop-zone {
+  border-color: var(--accent);
+  background: var(--surface-selected);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+
+}

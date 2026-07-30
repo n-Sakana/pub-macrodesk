@@ -19,11 +19,7 @@ function assertEqual(actual, expected, message) {
   }
 }
 
-var windowObject = {
-  MacroStudioState: {
-    loadDemoState: function () {}
-  }
-};
+var windowObject = {};
 var context = vm.createContext({
   window: windowObject,
   document: {
@@ -32,13 +28,25 @@ var context = vm.createContext({
   Promise: Promise
 });
 
-vm.runInContext(
-  fs.readFileSync(
-    path.join(__dirname, "..", "assets", "js", "app.js"),
-    "utf8"),
-  context);
+// The build payload and the summary memo lean on the diff engine and on
+// the state's naming rules, so the real modules are loaded rather than
+// stubbed: the names in the memo have to be the names the run produces.
+[
+  "diff.js",
+  "screens.js",
+  "state.js",
+  "app.js"
+].forEach(function (file) {
+  vm.runInContext(
+    fs.readFileSync(
+      path.join(__dirname, "..", "assets", "js", file),
+      "utf8"),
+    context,
+    { filename: file });
+});
 
 var app = windowObject.MacroStudioApp;
+var stateApi = windowObject.MacroStudioState;
 var attributes = "Attribute VB_Name = \"Module1\"\r\n";
 var normalized =
   "Option Explicit\r\n" +
@@ -198,5 +206,92 @@ try {
   threw = true;
 }
 assert(threw, "Missing accepted code must produce an explicit error.");
+
+// ---- the names the run's files carry, and the summary memo ----
+
+assertEqual(
+  stateApi.formatDateStamp(new Date(2026, 6, 8, 1, 2, 3)),
+  "20260708",
+  "The date stamp must be a fixed width local date.");
+assertEqual(
+  stateApi.getDefaultOutputName(
+    { name: "SalesTool.xlsm", ext: ".xlsm" },
+    "20260730"),
+  "SalesTool-Modified-20260730.xlsm",
+  "The rebuilt workbook name mismatch.");
+assertEqual(
+  stateApi.getDiffReportName(
+    { name: "SalesTool.xlsm", ext: ".xlsm" },
+    "20260730"),
+  "SalesTool-Diff-Report-20260730.html",
+  "The report name mismatch.");
+assertEqual(
+  stateApi.getDefaultOutputName(
+    { name: "SALESTOOL.XLSM", ext: ".xlsm" },
+    "20260730"),
+  "SALESTOOL-Modified-20260730.xlsm",
+  "Extension removal must be case-insensitive.");
+assert(
+  stateApi.getDefaultOutputName(null, "20260730") === "" &&
+    stateApi.getDiffReportName(null, "20260730") === "",
+  "Without a workbook there is no name to produce.");
+assert(
+  stateApi.getDefaultOutputName(
+    { name: "SalesTool.xlsm", ext: ".xlsm" },
+    "20260730").indexOf("macrostudio") < 0,
+  "The old suffix must not come back in the workbook name.");
+
+// The summary memo names the same files and keeps its headings short.
+var memo = app.createResultMarkdown(
+  {
+    book: { name: "SalesTool.xlsm", ext: ".xlsm" },
+    outputName: "SalesTool-Modified-20260730.xlsm",
+    outputDateStamp: "20260730",
+    presetName: "ひな形",
+    requestId: "3f1c9c7a-2b64-4a1e-9f52-0b5a4d2e77c1",
+    intakeResult: { summary: "Module1 を直しました。" },
+    modules: [
+      {
+        name: "Module1",
+        type: "standard",
+        typeLabel: "標準モジュール",
+        status: "changed",
+        accepted: true,
+        code: "Option Explicit\r\n",
+        pastedCode: "Option Explicit\r\nSub A(): End Sub\r\n"
+      },
+      {
+        name: "Module2",
+        type: "standard",
+        typeLabel: "標準モジュール",
+        status: "pending",
+        code: "Option Explicit\r\n",
+        pastedCode: null
+      }
+    ]
+  },
+  "20260730_010203");
+
+assert(
+  memo.indexOf("## 改修内容") >= 0,
+  "The summary memo heading must be the short one.");
+assert(
+  memo.indexOf("AIが書いた改修内容") < 0,
+  "The long heading must not come back.");
+assert(
+  memo.indexOf("Module1 を直しました。") >= 0,
+  "The summary the answer carried must reach the memo.");
+assert(
+  memo.indexOf("SalesTool-Modified-20260730.xlsm") >= 0 &&
+    memo.indexOf("SalesTool-Diff-Report-20260730.html") >= 0,
+  "The memo must name the files this run produced: " + memo);
+assert(
+  memo.indexOf("diff-report.html") < 0,
+  "The memo must not name the old fixed report name.");
+assert(
+  memo.indexOf("- request.md") >= 0 &&
+    memo.indexOf("- source-code.md") >= 0 &&
+    memo.indexOf("- result.md") >= 0,
+  "The memo must still name the files that keep their fixed names.");
 
 console.log("test-build-payload: PASS");

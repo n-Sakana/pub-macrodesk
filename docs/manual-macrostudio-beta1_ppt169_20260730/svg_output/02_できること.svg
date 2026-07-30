@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#1F4E79"/>
+    <text x="114" y="75" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">第一部</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2933">このアプリでできること</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E8F0" stroke-width="1"/>
+  </g>
+
+  <g id="card-ai" data-pptx-bounds="40 180 384 300">
+    <rect x="40" y="180" width="384" height="300" rx="16" fill="#F1F5F9"/>
+    <use data-icon="tabler-filled/message-chatbot" x="72" y="216" width="44" height="44" fill="#1F4E79"/>
+    <text x="72" y="316" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F4E79">AIに任せる</text>
+    <text x="72" y="372" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">どこをどう直すかは<tspan x="72" dy="36">AIが決めます。</tspan></text>
+  </g>
+
+  <g id="card-no-dev" data-pptx-bounds="448 180 384 300">
+    <rect x="448" y="180" width="384" height="300" rx="16" fill="#F1F5F9"/>
+    <use data-icon="tabler-filled/file-code" x="480" y="216" width="44" height="44" fill="#1F4E79"/>
+    <text x="480" y="316" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F4E79">開発画面は開かない</text>
+    <text x="480" y="372" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">画面の選択肢を選び、<tspan x="480" dy="36">［次へ］で進みます。</tspan></text>
+  </g>
+
+  <g id="card-safe" data-pptx-bounds="856 180 384 300">
+    <rect x="856" y="180" width="384" height="300" rx="16" fill="#F1F5F9"/>
+    <use data-icon="tabler-filled/shield-check" x="888" y="216" width="44" height="44" fill="#2E7D5B"/>
+    <text x="888" y="316" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#2E7D5B">元のブックはそのまま</text>
+    <text x="888" y="372" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">改修済みブックは別の<tspan x="888" dy="36">ファイルになります。</tspan></text>
+  </g>
+
+  <g id="core-band" data-pptx-bounds="40 520 1200 64">
+    <rect x="40" y="520" width="1200" height="64" rx="16" fill="#FFFFFF" stroke="#1F4E79" stroke-width="2"/>
+    <use data-icon="tabler-filled/circle-check" x="72" y="536" width="32" height="32" fill="#1F4E79"/>
+    <text x="118" y="561" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">選んで押すだけで、改修済みのブックが別ファイルとして手に入ります。</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第一部 サービス説明</text>
+    <text x="1240" y="692" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">02</text>
+  </g>
+</svg>

@@ -159,6 +159,19 @@ namespace MacroStudio.Tests
                 {
                     await WaitFor(
                         "MacroStudioState.getState().appInfo !== null");
+                    // The work is chosen first (screen 0), because the
+                    // purpose list on screen 3 belongs to one mode.
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"select-mode\"]" +
+                        "[data-mode=\"refactor\"]').click();");
+                    await WaitFor(
+                        "MacroStudioState.getState().mode === 'refactor'");
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"go-next\"]').click();");
+                    await WaitFor(
+                        "MacroStudioState.getState().screen === 1");
                     Dictionary<string, object> eventData =
                         new Dictionary<string, object>();
                     eventData.Add("path", bookPath);
@@ -166,24 +179,13 @@ namespace MacroStudio.Tests
                     await WaitFor(
                         "MacroStudioState.getState().book !== null && " +
                         "MacroStudioState.getState().busyAction === null");
-                    // 0 -> 1 -> 2: the purpose screen lists the folder.
-                    await Execute(
-                        "document.querySelector(" +
-                        "'[data-action=\"go-next\"]').click();");
-                    await WaitFor(
-                        "MacroStudioState.getState().screen === 1");
+                    // 1 -> 2 -> 3: the workbook, what was read, then the
+                    // list of purposes.
                     await Execute(
                         "document.querySelector(" +
                         "'[data-action=\"go-next\"]').click();");
                     await WaitFor(
                         "MacroStudioState.getState().screen === 2");
-                    // The list on the next screen belongs to one mode.
-                    await Execute(
-                        "document.querySelector(" +
-                        "'[data-action=\"select-mode\"]" +
-                        "[data-mode=\"refactor\"]').click();");
-                    await WaitFor(
-                        "MacroStudioState.getState().mode === 'refactor'");
                     await Execute(
                         "document.querySelector(" +
                         "'[data-action=\"go-next\"]').click();");

@@ -121,6 +121,10 @@ try {
     $last = $result.afterLastPart | ConvertFrom-Json
     $whole = $result.afterWholeAnswer | ConvertFrom-Json
 
+    # ---- the work is chosen before the workbook, and survives it ----
+    Assert-True ($result.modeKept -eq $true) `
+        'Reading a workbook dropped the work that was already chosen.'
+
     # ---- the option is on the request screen and starts off ----
     Assert-True ($result.presetFile.Length -gt 0) `
         'No shipped preset offered the module-by-module rules.'

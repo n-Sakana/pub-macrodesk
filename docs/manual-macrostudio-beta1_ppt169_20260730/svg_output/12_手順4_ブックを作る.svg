@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <defs>
+    <clipPath id="p12-clip-a"><rect x="40" y="148" width="580" height="326" rx="10"/></clipPath>
+    <clipPath id="p12-clip-b"><rect x="660" y="148" width="580" height="326" rx="10"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#1F4E79"/>
+    <text x="114" y="75" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">手順 4</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2933">改修済みブックを作ります</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E8F0" stroke-width="1"/>
+  </g>
+
+  <g id="shot-name" data-pptx-bounds="40 148 580 326">
+    <image href="../images/08-output-name.png" x="40" y="148" width="580" height="326" preserveAspectRatio="xMidYMid meet" clip-path="url(#p12-clip-a)"/>
+    <rect x="40" y="148" width="580" height="326" rx="10" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+  </g>
+
+  <g id="shot-done" data-pptx-bounds="660 148 580 326">
+    <image href="../images/09-done.png" x="660" y="148" width="580" height="326" preserveAspectRatio="xMidYMid meet" clip-path="url(#p12-clip-b)"/>
+    <rect x="660" y="148" width="580" height="326" rx="10" fill="none" stroke="#2E7D5B" stroke-width="2"/>
+  </g>
+
+  <g id="steps" data-pptx-bounds="40 486 580 166">
+    <circle cx="58" cy="500" r="14" fill="#1F4E79"/>
+    <text x="58" y="506" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF">1</text>
+    <text x="86" y="508" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">出力ファイル名を確認して［次へ］。<tspan x="86" dy="30">数秒で作成が終わります。</tspan></text>
+    <circle cx="58" cy="562" r="14" fill="#1F4E79"/>
+    <text x="58" y="568" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF">2</text>
+    <text x="86" y="570" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">［出力フォルダをエクスプローラーで開く］<tspan x="86" dy="30">で場所を開きます。</tspan></text>
+    <circle cx="58" cy="624" r="14" fill="#1F4E79"/>
+    <text x="58" y="630" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF">3</text>
+    <text x="86" y="632" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">最後にExcelで開いて動作を確認します。</text>
+  </g>
+
+  <g id="files" data-pptx-bounds="660 486 580 166">
+    <rect x="660" y="486" width="580" height="166" rx="16" fill="#F1F5F9"/>
+    <use data-icon="tabler-filled/folder-open" x="684" y="504" width="26" height="26" fill="#1F4E79"/>
+    <text x="720" y="518" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F4E79">できるファイル</text>
+    <text x="684" y="552" font-family="Consolas,monospace" font-size="20" fill="#1F2933">request.md</text>
+    <text x="900" y="552" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">AIへ渡した依頼文</text>
+    <text x="684" y="580" font-family="Consolas,monospace" font-size="20" fill="#1F2933">source-code.md</text>
+    <text x="900" y="580" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">元マクロのコード全文</text>
+    <text x="684" y="608" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#1F2933">改修済みブック</text>
+    <text x="900" y="608" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">Excelで開いて確認</text>
+    <text x="684" y="636" font-family="Consolas,monospace" font-size="20" fill="#1F2933">diff-report.html</text>
+    <text x="900" y="636" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" fill="#5B6B7C">変更内容の確認レポート</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1240" y="692" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">12</text>
+  </g>
+</svg>

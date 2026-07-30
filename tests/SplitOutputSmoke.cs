@@ -185,13 +185,27 @@ namespace MacroStudio.Tests
                 }
             }
 
-            // Read the workbook, choose refactoring, and press the first
-            // preset that carries the module-by-module rules.
+            // Choose the work, read the workbook, and press the first
+            // preset that carries the module-by-module rules. The work
+            // comes first: that is the order of the flow.
             private async Task OpenRequestScreen(
                 Dictionary<string, object> report)
             {
                 await WaitFor(
                     "MacroStudioState.getState().appInfo !== null");
+                await WaitFor(
+                    "MacroStudioState.getState().screen === " +
+                    "MacroStudioScreens.modeScreen");
+                await Execute(
+                    "document.querySelector('[data-action=\"select-mode\"]" +
+                    "[data-mode=\"refactor\"]').click();");
+                await WaitFor(
+                    "MacroStudioState.getState().mode === 'refactor'");
+                await ClickNext(-1);
+                await WaitFor(
+                    "MacroStudioState.getState().screen === " +
+                    "MacroStudioScreens.bookScreen");
+
                 Dictionary<string, object> eventData =
                     new Dictionary<string, object>();
                 eventData.Add("path", bookPath);
@@ -199,13 +213,14 @@ namespace MacroStudio.Tests
                 await WaitFor(
                     "MacroStudioState.getState().book !== null && " +
                     "MacroStudioState.getState().busyAction === null");
-                await ClickNext(1);
+                // Reading a workbook must not drop the chosen work.
+                report.Add(
+                    "modeKept",
+                    await ReadBool(
+                        "MacroStudioState.getState().mode === 'refactor' " +
+                        "&& MacroStudioState.getState().screen === " +
+                        "MacroStudioScreens.bookScreen"));
                 await ClickNext(2);
-                await Execute(
-                    "document.querySelector('[data-action=\"select-mode\"]" +
-                    "[data-mode=\"refactor\"]').click();");
-                await WaitFor(
-                    "MacroStudioState.getState().mode === 'refactor'");
                 await ClickNext(3);
 
                 string presetFile = await ReadJson(

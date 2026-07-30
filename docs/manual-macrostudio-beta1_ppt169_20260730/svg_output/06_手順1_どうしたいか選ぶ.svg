@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <defs>
+    <clipPath id="p06-clip"><rect x="40" y="148" width="672" height="378" rx="10"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#1F4E79"/>
+    <text x="114" y="75" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">手順 1 · 3/3</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2933">このマクロをどうしたいか選びます</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E8F0" stroke-width="1"/>
+  </g>
+
+  <g id="shot" data-pptx-bounds="36 144 680 386">
+    <rect x="36" y="144" width="680" height="386" rx="14" fill="#F4F6F8"/>
+    <image href="../images/02-mode.png" x="40" y="148" width="672" height="378" preserveAspectRatio="xMidYMid meet" clip-path="url(#p06-clip)"/>
+    <rect x="40" y="148" width="672" height="378" rx="10" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+  </g>
+
+  <g id="choice-refactor" data-pptx-bounds="736 148 504 180">
+    <rect x="736" y="148" width="504" height="180" rx="16" fill="#F1F5F9"/>
+    <text x="768" y="196" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#1F4E79">マクロを改修する</text>
+    <text x="768" y="242" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">AIの返答を取り込んで、<tspan x="768" dy="34">改修済みブックをこの</tspan><tspan x="768" dy="34">アプリで作ります。</tspan></text>
+  </g>
+
+  <g id="choice-diagnose" data-pptx-bounds="736 348 504 180">
+    <rect x="736" y="348" width="504" height="180" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <use data-icon="tabler-filled/search" x="768" y="370" width="28" height="28" fill="#4A87C4"/>
+    <text x="806" y="392" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#4A87C4">マクロについてAIに聞く</text>
+    <text x="768" y="440" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">AIへ渡す依頼文とコードを<tspan x="768" dy="34">作ります。</tspan><tspan x="768" dy="34">手順2で終わります。</tspan></text>
+  </g>
+
+  <g id="pick-note" data-pptx-bounds="736 556 504 64">
+    <rect x="736" y="556" width="504" height="64" rx="16" fill="#FFFFFF" stroke="#1F4E79" stroke-width="2"/>
+    <text x="768" y="597" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">ひとつ選ぶと［次へ］が使えます。</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1240" y="692" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">06</text>
+  </g>
+</svg>

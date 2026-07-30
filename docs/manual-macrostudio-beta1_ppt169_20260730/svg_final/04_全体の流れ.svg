@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="toc">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#1F4E79" />
+    <text x="114" y="75" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">第二部</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2933">全体の流れ</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E8F0" stroke-width="1" />
+  </g>
+
+  <g id="step-1" data-pptx-bounds="40 180 264 140">
+    <rect x="40" y="180" width="264" height="140" rx="16" fill="#F1F5F9" />
+    <circle cx="80" cy="220" r="20" fill="#1F4E79" />
+    <text x="80" y="228" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF">1</text>
+    <text font-weight="bold" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="72" y="284">ブックを</text><text font-weight="bold" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="72" y="316">読み込む</text></g>
+
+  <g id="flow-arrow-1" data-pptx-bounds="304 230 48 40">
+    <g id="p04-arrow-304" data-pptx-authoring="preset" data-pptx-object="shape" data-pptx-prst="rightArrow" data-pptx-frame="304 230 48 40" fill="#4A87C4" stroke="none">
+      <path d="M 304 240 L 332 240 L 332 230 L 352 250 L 332 270 L 332 260 L 304 260 Z" />
+    </g>
+  </g>
+
+  <g id="step-2" data-pptx-bounds="352 180 264 140">
+    <rect x="352" y="180" width="264" height="140" rx="16" fill="#F1F5F9" />
+    <circle cx="392" cy="220" r="20" fill="#1F4E79" />
+    <text x="392" y="228" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF">2</text>
+    <text font-weight="bold" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="384" y="284">AIへ</text><text font-weight="bold" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="384" y="316">依頼する</text></g>
+
+  <g id="flow-arrow-2" data-pptx-bounds="616 230 48 40">
+    <g id="p04-arrow-616" data-pptx-authoring="preset" data-pptx-object="shape" data-pptx-prst="rightArrow" data-pptx-frame="616 230 48 40" fill="#4A87C4" stroke="none">
+      <path d="M 616 240 L 644 240 L 644 230 L 664 250 L 644 270 L 644 260 L 616 260 Z" />
+    </g>
+  </g>
+
+  <g id="step-3" data-pptx-bounds="664 180 264 140">
+    <rect x="664" y="180" width="264" height="140" rx="16" fill="#F1F5F9" />
+    <circle cx="704" cy="220" r="20" fill="#1F4E79" />
+    <text x="704" y="228" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF">3</text>
+    <text font-weight="bold" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="696" y="284">返答を</text><text font-weight="bold" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="696" y="316">取り込む</text></g>
+
+  <g id="flow-arrow-3" data-pptx-bounds="928 230 48 40">
+    <g id="p04-arrow-928" data-pptx-authoring="preset" data-pptx-object="shape" data-pptx-prst="rightArrow" data-pptx-frame="928 230 48 40" fill="#4A87C4" stroke="none">
+      <path d="M 928 240 L 956 240 L 956 230 L 976 250 L 956 270 L 956 260 L 928 260 Z" />
+    </g>
+  </g>
+
+  <g id="step-4" data-pptx-bounds="976 180 264 140">
+    <rect x="976" y="180" width="264" height="140" rx="16" fill="#F1F5F9" />
+    <circle cx="1016" cy="220" r="20" fill="#1F4E79" />
+    <text x="1016" y="228" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF">4</text>
+    <text font-weight="bold" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="1008" y="284">ブックを</text><text font-weight="bold" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="1008" y="316">作る</text></g>
+
+  <g id="next-rule" data-pptx-bounds="40 380 1200 64">
+    <rect x="40" y="380" width="1200" height="64" rx="16" fill="#FFFFFF" stroke="#1F4E79" stroke-width="2" />
+    
+  <g transform="translate(72, 396) scale(1.33333)" fill="#1F4E79">
+    <path d="M12 2l.324 .005a10 10 0 1 1 -.648 0l.324 -.005zm.613 5.21a1 1 0 0 0 -1.32 1.497l2.291 2.293h-5.584l-.117 .007a1 1 0 0 0 .117 1.993h5.584l-2.291 2.293l-.083 .094a1 1 0 0 0 1.497 1.32l4 -4l.073 -.082l.064 -.089l.062 -.113l.044 -.11l.03 -.112l.017 -.126l.003 -.075l-.007 -.118l-.029 -.148l-.035 -.105l-.054 -.113l-.071 -.111a1.008 1.008 0 0 0 -.097 -.112l-4 -4z" />
+  </g>
+    <text x="118" y="421" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">右下の［次へ］が押せるようになったら、その画面は終わっています。</text>
+  </g>
+
+  <g id="branch" data-pptx-bounds="40 484 1200 128">
+    <rect x="40" y="484" width="1200" height="128" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" />
+    
+  <g transform="translate(72, 516) scale(1.33333)" fill="#4A87C4">
+    <path d="M14 3.072a8 8 0 0 1 2.32 11.834l5.387 5.387a1 1 0 0 1 -1.414 1.414l-5.388 -5.387a8 8 0 1 1 -.905 -13.249" />
+  </g>
+    <text x="118" y="541" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#4A87C4">聞くだけで終わる道</text>
+    <text x="72" y="592" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">手順1で「マクロについてAIに聞く」を選んだときは、手順2で終わります。</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1240" y="692" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">04</text>
+  </g>
+</svg>

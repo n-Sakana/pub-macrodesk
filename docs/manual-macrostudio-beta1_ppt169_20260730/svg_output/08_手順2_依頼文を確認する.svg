@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <defs>
+    <clipPath id="p08-clip"><rect x="40" y="148" width="672" height="378" rx="10"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#1F4E79"/>
+    <text x="114" y="75" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">手順 2 · 2/3</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2933">AIへ送る依頼文を用意しました</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E8F0" stroke-width="1"/>
+  </g>
+
+  <g id="shot" data-pptx-bounds="36 144 680 386">
+    <rect x="36" y="144" width="680" height="386" rx="14" fill="#F4F6F8"/>
+    <image href="../images/04-request.png" x="40" y="148" width="672" height="378" preserveAspectRatio="xMidYMid meet" clip-path="url(#p08-clip)"/>
+    <rect x="40" y="148" width="672" height="378" rx="10" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+  </g>
+
+  <g id="key-note" data-pptx-bounds="36 550 680 102">
+    <rect x="36" y="550" width="680" height="102" rx="14" fill="#FFFFFF" stroke="#1F4E79" stroke-width="2"/>
+    <use data-icon="tabler-filled/file-text" x="62" y="572" width="28" height="28" fill="#1F4E79"/>
+    <text x="100" y="594" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">直すところが無ければ、依頼文は開かずに<tspan x="100" dy="34">そのまま進めます。</tspan></text>
+  </g>
+
+  <g id="steps" data-pptx-bounds="736 144 504 508">
+    <circle cx="760" cy="200" r="19" fill="#1F4E79"/>
+    <text x="760" y="208" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">1</text>
+    <text x="796" y="208" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">そのままでよければ<tspan x="796" dy="34">［次へ］。</tspan></text>
+
+    <circle cx="760" cy="330" r="19" fill="#1F4E79"/>
+    <text x="760" y="338" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">2</text>
+    <text x="796" y="338" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">書き換えるときは「依頼文を<tspan x="796" dy="34">確認・編集」を開きます。</tspan></text>
+
+    <circle cx="760" cy="460" r="19" fill="#1F4E79"/>
+    <text x="760" y="468" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">3</text>
+    <text x="796" y="468" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">コードが長くて返答が途中で<tspan x="796" dy="34">切れるときは「モジュール</tspan><tspan x="796" dy="34">単位出力」に印を付けます。</tspan></text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1240" y="692" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">08</text>
+  </g>
+</svg>

@@ -180,44 +180,23 @@ namespace MacroStudio.Tests
                         "MacroStudioState.getState().appInfo !== null");
                     result.Add("start", await ReadShell());
 
-                    Dictionary<string, object> eventData =
-                        new Dictionary<string, object>();
-                    eventData.Add("path", bookPath);
-                    router.PushEvent("bookDropped", eventData);
-                    await WaitFor(
-                        "MacroStudioState.getState().book !== null && " +
-                        "MacroStudioState.getState().busyAction === null");
-                    result.Add("attached", await ReadJson(
+                    // The work is the first decision, before any workbook.
+                    // The whole screen's text is read as well: nothing on
+                    // it may point at a workbook that has not been read.
+                    result.Add("mode", await ReadJson(
                         "({" +
                         "screen:MacroStudioState.getState().screen," +
-                        "modules:MacroStudioState.getState()" +
-                        ".modules.length," +
+                        "title:document.querySelector(" +
+                        "'.screen-title').textContent," +
+                        "text:document.querySelector('#main-content')" +
+                        ".textContent," +
+                        "cards:Array.prototype.map.call(" +
+                        "document.querySelectorAll('.choice-title')," +
+                        "function(node){return node.textContent;})," +
                         "nextReady:!document.querySelector(" +
                         "'[data-action=\"go-next\"]').disabled," +
                         "backDisabled:document.querySelector(" +
                         "'[data-action=\"go-back\"]').disabled" +
-                        "})"));
-
-                    await Next();
-                    await WaitForScreen(1);
-                    result.Add("book", await ReadJson(
-                        "({" +
-                        "screen:MacroStudioState.getState().screen," +
-                        "stats:Array.prototype.map.call(" +
-                        "document.querySelectorAll('.stat-value')," +
-                        "function(node){return node.textContent;})," +
-                        "chips:document.querySelectorAll(" +
-                        "'.module-chip').length" +
-                        "})"));
-
-                    await Next();
-                    await WaitForScreen(2);
-                    result.Add("mode", await ReadJson(
-                        "({" +
-                        "cards:document.querySelectorAll(" +
-                        "'[data-action=\"select-mode\"]').length," +
-                        "nextReady:!document.querySelector(" +
-                        "'[data-action=\"go-next\"]').disabled" +
                         "})"));
                     await Execute(
                         "document.querySelector(" +
@@ -235,11 +214,113 @@ namespace MacroStudio.Tests
                         "})"));
 
                     await Next();
+                    await WaitForScreen(1);
+                    result.Add("dropScreen", await ReadJson(
+                        "({" +
+                        "screen:MacroStudioState.getState().screen," +
+                        "title:document.querySelector(" +
+                        "'.screen-title').textContent," +
+                        "nextReady:!document.querySelector(" +
+                        "'[data-action=\"go-next\"]').disabled," +
+                        "backDisabled:document.querySelector(" +
+                        "'[data-action=\"go-back\"]').disabled" +
+                        "})"));
+
+                    Dictionary<string, object> eventData =
+                        new Dictionary<string, object>();
+                    eventData.Add("path", bookPath);
+                    router.PushEvent("bookDropped", eventData);
+                    await WaitFor(
+                        "MacroStudioState.getState().book !== null && " +
+                        "MacroStudioState.getState().busyAction === null");
+                    result.Add("attached", await ReadJson(
+                        "({" +
+                        "screen:MacroStudioState.getState().screen," +
+                        "mode:MacroStudioState.getState().mode," +
+                        "modules:MacroStudioState.getState()" +
+                        ".modules.length," +
+                        "nextReady:!document.querySelector(" +
+                        "'[data-action=\"go-next\"]').disabled," +
+                        "backDisabled:document.querySelector(" +
+                        "'[data-action=\"go-back\"]').disabled" +
+                        "})"));
+
+                    await Next();
+                    await WaitForScreen(2);
+                    result.Add("book", await ReadJson(
+                        "({" +
+                        "screen:MacroStudioState.getState().screen," +
+                        "stats:Array.prototype.map.call(" +
+                        "document.querySelectorAll('.stat-value')," +
+                        "function(node){return node.textContent;})," +
+                        "chips:document.querySelectorAll(" +
+                        "'.module-chip').length" +
+                        "})"));
+
+                    // Back from the read result returns to the workbook,
+                    // and from there to the work choice.
+                    await Back();
+                    await WaitForScreen(1);
+                    await Back();
+                    await WaitForScreen(0);
+                    result.Add("backToStart", await ReadJson(
+                        "({" +
+                        "screen:MacroStudioState.getState().screen," +
+                        "mode:MacroStudioState.getState().mode," +
+                        "book:MacroStudioState.getState().book !== null" +
+                        "})"));
+
+                    // The other route's purpose screen is rendered by the
+                    // same card builder, so its declared lines are read
+                    // here before the run goes on as a refactoring.
+                    await Execute(
+                        "document.querySelector('[data-action=\"select-mode\"]" +
+                        "[data-mode=\"diagnose\"]').click();");
+                    await WaitFor(
+                        "MacroStudioState.getState().mode === 'diagnose'");
+                    await Next();
+                    await WaitForScreen(1);
+                    await Next();
+                    await WaitForScreen(2);
+                    await Next();
                     await WaitForScreen(3);
+                    result.Add("diagnosePurpose", await ReadJson(
+                        "({" +
+                        "cards:document.querySelectorAll(" +
+                        "'[data-action=\"select-purpose\"]').length," +
+                        "descriptions:Array.prototype.map.call(" +
+                        "document.querySelectorAll('.choice-description')," +
+                        "function(node){return node.textContent;})" +
+                        "})"));
+                    await Back();
+                    await WaitForScreen(2);
+                    await Back();
+                    await WaitForScreen(1);
+                    await Back();
+                    await WaitForScreen(0);
+                    await Execute(
+                        "document.querySelector('[data-action=\"select-mode\"]" +
+                        "[data-mode=\"refactor\"]').click();");
+                    await WaitFor(
+                        "MacroStudioState.getState().mode === 'refactor'");
+
+                    await Next();
+                    await WaitForScreen(1);
+                    await Next();
+                    await WaitForScreen(2);
+
+                    await Next();
+                    await WaitForScreen(3);
+                    // The line under each name is read as rendered, to be
+                    // compared with the description section of the preset
+                    // file it came from.
                     result.Add("purpose", await ReadJson(
                         "({" +
                         "cards:document.querySelectorAll(" +
                         "'[data-action=\"select-purpose\"]').length," +
+                        "descriptions:Array.prototype.map.call(" +
+                        "document.querySelectorAll('.choice-description')," +
+                        "function(node){return node.textContent;})," +
                         "nextReady:!document.querySelector(" +
                         "'[data-action=\"go-next\"]').disabled" +
                         "})"));
@@ -587,18 +668,24 @@ namespace MacroStudio.Tests
                                 "MacroStudioState.getState()" +
                                 ".buildResult.diffPath"));
                     await NavigateTo(diffPath);
+                    // The report renders itself with the app's own diff
+                    // code, so the rows appear only if that bundle ran.
                     await WaitFor(
                         "document.readyState === 'complete' && " +
                         "document.querySelectorAll(" +
-                        "'.module-report').length > 0");
+                        "'.diff-row').length > 0");
                     result.Add("report", await ReadJson(
                         "({" +
                         "modules:document.querySelectorAll(" +
-                        "'.module-report').length," +
-                        "treeLinks:document.querySelectorAll(" +
-                        "'.tree-link').length," +
+                        "'.module-item').length," +
                         "markers:document.querySelectorAll(" +
                         "'.diff-marker').length," +
+                        "toolbar:document.querySelectorAll(" +
+                        "'.diff-toolbar .button').length," +
+                        "theme:document.documentElement.getAttribute(" +
+                        "'data-theme')," +
+                        "editable:document.querySelectorAll(" +
+                        "'textarea,input,[contenteditable]').length," +
                         "external:document.querySelectorAll(" +
                         "'link[href],script[src],img[src]').length," +
                         "horizontal:document.documentElement" +
@@ -669,6 +756,13 @@ namespace MacroStudio.Tests
                 await Execute(
                     "document.querySelector(" +
                     "'[data-action=\"go-next\"]').click();");
+            }
+
+            private async Task Back()
+            {
+                await Execute(
+                    "document.querySelector(" +
+                    "'[data-action=\"go-back\"]').click();");
             }
 
             private async Task WaitForScreen(int index)

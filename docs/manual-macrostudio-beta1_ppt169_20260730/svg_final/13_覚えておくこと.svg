@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="ending">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#1F4E79" />
+    <text x="114" y="75" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">第二部</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2933">覚えておくこと</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E8F0" stroke-width="1" />
+  </g>
+
+  <g id="card-pair" data-pptx-bounds="40 156 588 190">
+    <rect x="40" y="156" width="588" height="190" rx="16" fill="#F1F5F9" />
+    
+  <g transform="translate(72, 184) scale(1.25)" fill="#E07B39">
+    <path d="M12 1.67c.955 0 1.845 .467 2.39 1.247l.105 .16l8.114 13.548a2.914 2.914 0 0 1 -2.307 4.363l-.195 .008h-16.225a2.914 2.914 0 0 1 -2.582 -4.2l.099 -.185l8.11 -13.538a2.914 2.914 0 0 1 2.491 -1.403zm.01 13.33l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -7a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" />
+  </g>
+    <text x="114" y="208" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F4E79">依頼文と返答は 1 対 1</text>
+    <text font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="72" y="264">依頼文を作り直したら、返答も</text><text font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="72" y="298">取り直します。</text></g>
+
+  <g id="card-stop" data-pptx-bounds="652 156 588 190">
+    <rect x="652" y="156" width="588" height="190" rx="16" fill="#F1F5F9" />
+    
+  <g transform="translate(684, 184) scale(1.25)" fill="#2E7D5B">
+    <path d="M11.998 2l.118 .007l.059 .008l.061 .013l.111 .034a.993 .993 0 0 1 .217 .112l.104 .082l.255 .218a11 11 0 0 0 7.189 2.537l.342 -.01a1 1 0 0 1 1.005 .717a13 13 0 0 1 -9.208 16.25a1 1 0 0 1 -.502 0a13 13 0 0 1 -9.209 -16.25a1 1 0 0 1 1.005 -.717a11 11 0 0 0 7.531 -2.527l.263 -.225l.096 -.075a.993 .993 0 0 1 .217 -.112l.112 -.034a.97 .97 0 0 1 .119 -.021l.115 -.007zm3.71 7.293a1 1 0 0 0 -1.415 0l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.32 1.497l2 2l.094 .083a1 1 0 0 0 1.32 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z" />
+  </g>
+    <text x="726" y="208" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#2E7D5B">途中でやめてよい</text>
+    <text font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="684" y="264">どこで止めても、元のブックは</text><text font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="684" y="298">変わりません。</text></g>
+
+  <g id="card-report" data-pptx-bounds="40 370 588 190">
+    <rect x="40" y="370" width="588" height="190" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" />
+    
+  <g transform="translate(72, 398) scale(1.25)" fill="#1F4E79">
+    <path d="M2 6c0 -.796 .316 -1.558 .879 -2.121c.563 -.563 1.325 -.879 2.121 -.879h4l.099 .005c.229 .023 .444 .124 .608 .288l2.707 2.707h6.586c.796 0 1.558 .316 2.121 .879c.319 .319 .559 .703 .707 1.121l-14.523 0c-.407 0 -.805 .125 -1.14 .356c-.292 .203 -.525 .48 -.674 .801l-.058 .141l-1.379 3.676c-.194 .517 .068 1.093 .585 1.287c.517 .194 1.094 -.068 1.288 -.585l1.134 -3.027c.146 -.39 .519 -.649 .937 -.649h13.002l.217 .012c.216 .024 .426 .082 .624 .173c.054 .025 .107 .053 .159 .083c.199 .115 .377 .263 .525 .439c.188 .222 .325 .482 .403 .762c.077 .28 .092 .573 .045 .859c-.001 .008 -.003 .016 -.005 .024l-.995 5.21c-.131 .686 -.497 1.304 -1.036 1.749c-.47 .389 -1.046 .624 -1.65 .677l-.261 .012h-14.026c-.796 0 -1.558 -.316 -2.121 -.879c-.563 -.563 -.879 -1.325 -.879 -2.121v-11z" />
+  </g>
+    <text x="114" y="422" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F4E79">あとから読み返せる</text>
+    <text font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="72" y="478">出力フォルダの <tspan font-family="Consolas,monospace">diff-report.html</tspan></text><text font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="72" y="512">をブラウザで開きます。</text></g>
+
+  <g id="card-guide" data-pptx-bounds="652 370 588 190">
+    <rect x="652" y="370" width="588" height="190" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" />
+    
+  <g transform="translate(684, 398) scale(1.25)" fill="#1F4E79">
+    <path d="M12 2c5.523 0 10 4.477 10 10a10 10 0 0 1 -19.995 .324l-.005 -.324l.004 -.28c.148 -5.393 4.566 -9.72 9.996 -9.72zm0 13a1 1 0 0 0 -.993 .883l-.007 .117l.007 .127a1 1 0 0 0 1.986 0l.007 -.117l-.007 -.127a1 1 0 0 0 -.993 -.883zm1.368 -6.673a2.98 2.98 0 0 0 -3.631 .728a1 1 0 0 0 1.44 1.383l.171 -.18a.98 .98 0 0 1 1.11 -.15a1 1 0 0 1 -.34 1.886l-.232 .012a1 1 0 0 0 .111 1.994a3 3 0 0 0 1.371 -5.673z" />
+  </g>
+    <text x="726" y="422" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F4E79">迷ったら画面の左下</text>
+    <text font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="684" y="478">次にすることが、そこに一行で</text><text font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="684" y="512">出ています。</text></g>
+
+  <g id="restart-band" data-pptx-bounds="40 588 1200 64">
+    <rect x="40" y="588" width="1200" height="64" rx="16" fill="#1F4E79" />
+    <text x="640" y="629" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF">画面右上の［最初から］で、いつでも最初の画面に戻れます。</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1240" y="692" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">13</text>
+  </g>
+</svg>

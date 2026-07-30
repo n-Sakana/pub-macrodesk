@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="ending">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#1F4E79"/>
+    <text x="114" y="75" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">第二部</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2933">覚えておくこと</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E8F0" stroke-width="1"/>
+  </g>
+
+  <g id="card-pair" data-pptx-bounds="40 156 588 190">
+    <rect x="40" y="156" width="588" height="190" rx="16" fill="#F1F5F9"/>
+    <use data-icon="tabler-filled/alert-triangle" x="72" y="184" width="30" height="30" fill="#E07B39"/>
+    <text x="114" y="208" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F4E79">依頼文と返答は 1 対 1</text>
+    <text x="72" y="264" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">依頼文を作り直したら、返答も<tspan x="72" dy="34">取り直します。</tspan></text>
+  </g>
+
+  <g id="card-stop" data-pptx-bounds="652 156 588 190">
+    <rect x="652" y="156" width="588" height="190" rx="16" fill="#F1F5F9"/>
+    <use data-icon="tabler-filled/shield-check" x="684" y="184" width="30" height="30" fill="#2E7D5B"/>
+    <text x="726" y="208" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#2E7D5B">途中でやめてよい</text>
+    <text x="684" y="264" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">どこで止めても、元のブックは<tspan x="684" dy="34">変わりません。</tspan></text>
+  </g>
+
+  <g id="card-report" data-pptx-bounds="40 370 588 190">
+    <rect x="40" y="370" width="588" height="190" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <use data-icon="tabler-filled/folder-open" x="72" y="398" width="30" height="30" fill="#1F4E79"/>
+    <text x="114" y="422" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F4E79">あとから読み返せる</text>
+    <text x="72" y="478" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">出力フォルダの <tspan font-family="Consolas,monospace">diff-report.html</tspan><tspan x="72" dy="34">をブラウザで開きます。</tspan></text>
+  </g>
+
+  <g id="card-guide" data-pptx-bounds="652 370 588 190">
+    <rect x="652" y="370" width="588" height="190" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <use data-icon="tabler-filled/help-circle" x="684" y="398" width="30" height="30" fill="#1F4E79"/>
+    <text x="726" y="422" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F4E79">迷ったら画面の左下</text>
+    <text x="684" y="478" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">次にすることが、そこに一行で<tspan x="684" dy="34">出ています。</tspan></text>
+  </g>
+
+  <g id="restart-band" data-pptx-bounds="40 588 1200 64">
+    <rect x="40" y="588" width="1200" height="64" rx="16" fill="#1F4E79"/>
+    <text x="640" y="629" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF">画面右上の［最初から］で、いつでも最初の画面に戻れます。</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1240" y="692" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">13</text>
+  </g>
+</svg>

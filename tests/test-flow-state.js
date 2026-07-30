@@ -38,8 +38,11 @@ function currentScreen() {
   return state.getState().screen;
 }
 
-function attach() {
+// The work is chosen before the workbook is read, so a run that has a
+// workbook always has a mode as well.
+function attach(mode) {
   state.reset();
+  state.setMode(mode || "refactor");
   state.setBook(
     {
       name: "受注管理.xlsm",
@@ -95,8 +98,12 @@ assert(
   screens.describe({ mode: "refactor" }, 0).major === 1 &&
     screens.describe({ mode: "refactor" }, 11).major === 4,
   "The first and last screens belong to the first and last steps.");
+// The work is the first decision, then the workbook. Everything from the
+// purpose screen on keeps the position it had.
 assert(
-  screens.modeScreen === 2 &&
+  screens.modeScreen === 0 &&
+  screens.bookScreen === 1 &&
+  screens.readScreen === 2 &&
   screens.purposeScreen === 3 &&
   screens.questionScreen === 4 &&
   screens.requestScreen === 5 &&
@@ -106,6 +113,19 @@ assert(
   screens.buildScreen === 10 &&
   screens.doneScreen === 11,
   "The named screens must match the table.");
+assert(
+  screens.describe({ mode: null }, screens.modeScreen).title ===
+    "作業を選んでください",
+  "The opening screen asks what the work is.");
+assert(
+  screens.describe(
+    { mode: "refactor", questions: [] },
+    screens.purposeScreen).title === "目的を選んでください",
+  "The refactoring route asks for the purpose next.");
+assert(
+  screens.getMajors({ mode: null }).length === 1 &&
+    screens.getMajors({ mode: "refactor" })[0] === "作業とブックを選ぶ",
+  "The first step covers choosing the work and the workbook.");
 
 // A refactoring run without questions walks straight through.
 var index;
@@ -121,24 +141,16 @@ for (index = screens.purposeScreen; index < screens.doneScreen; index += 1) {
 
 state.reset();
 assert(
+  currentScreen() === screens.modeScreen,
+  "The flow opens on the work choice.");
+assert(
   !state.canGoNext(),
-  "Without a workbook the flow must not advance.");
+  "What the run is for must be chosen before advancing.");
 assert(
   !state.canGoBack(),
   "The first screen has nothing to go back to.");
 
-attach();
-assert(currentScreen() === 0, "Attaching keeps the first screen.");
-assert(state.canGoNext(), "An attached workbook enables next.");
-assert(state.goNext() && currentScreen() === 1, "0 must lead to 1.");
-assert(state.canGoBack(), "Later screens can go back.");
-
-assert(state.goNext() && currentScreen() === 2, "1 must lead to 2.");
-assert(
-  !state.canGoNext(),
-  "What the run is for must be chosen before advancing.");
-
-// ---- the three things this app can be used for ----
+// ---- the two things this app can be used for ----
 
 assert(state.setMode("diagnose"), "Diagnosis must be selectable.");
 assert(
@@ -153,7 +165,30 @@ assert(
   screens.getMajors(state.getState()).length === 4,
   "A refactoring run shows all four steps.");
 assert(state.canGoNext(), "A chosen mode enables next.");
-assert(state.goNext() && currentScreen() === 3, "2 must lead to 3.");
+assert(
+  state.goNext() && currentScreen() === screens.bookScreen,
+  "The work choice leads to the workbook.");
+assert(
+  !state.canGoNext(),
+  "Without a workbook the flow must not advance.");
+assert(state.canGoBack(), "The workbook screen can go back.");
+
+// Reading a workbook keeps the work that was already chosen.
+attach("refactor");
+assert(
+  currentScreen() === screens.bookScreen,
+  "Reading a workbook stays on the workbook screen.");
+assert(
+  state.getState().mode === "refactor",
+  "Reading a workbook must not drop the chosen work.");
+assert(state.canGoNext(), "An attached workbook enables next.");
+assert(
+  state.goNext() && currentScreen() === screens.readScreen,
+  "The workbook screen leads to the read result.");
+assert(state.canGoNext(), "A read workbook can be confirmed.");
+assert(
+  state.goNext() && currentScreen() === screens.purposeScreen,
+  "The read result leads to the purpose.");
 assert(
   !state.canGoNext(),
   "A purpose must be chosen before advancing.");
@@ -306,23 +341,35 @@ assert(state.canGoNext(), "Leaving the manual fix releases next.");
 assert(
   state.goNext() && currentScreen() === screens.outputScreen,
   "The review leads to the output name.");
+// <base>-Modified-<yyyyMMdd><extension>, with the date the run carries.
+var expectedStamp = state.getState().outputDateStamp;
+var expectedOutputName = "受注管理-Modified-" + expectedStamp + ".xlsm";
+
 assert(
-  state.getState().outputName === "受注管理_macrostudio.xlsm",
-  "The output name defaults to the book name plus _macrostudio.");
+  /^\d{8}$/.test(expectedStamp),
+  "The run must carry a fixed width date: " + expectedStamp);
+assert(
+  state.getState().outputName === expectedOutputName,
+  "The output name must default to " + expectedOutputName +
+    " but was " + state.getState().outputName);
+assert(
+  state.getDiffReportName(state.getState().book, expectedStamp) ===
+    "受注管理-Diff-Report-" + expectedStamp + ".html",
+  "The report name must carry the same base and date.");
 assert(state.canGoNext(), "A valid output name enables next.");
 
 [
   "",
-  "受注管理_macrostudio.txt",
-  "..\\受注管理_macrostudio.xlsm",
-  "sub/受注管理_macrostudio.xlsm"
+  "受注管理-Modified-" + expectedStamp + ".txt",
+  "..\\受注管理-Modified-" + expectedStamp + ".xlsm",
+  "sub/受注管理-Modified-" + expectedStamp + ".xlsm"
 ].forEach(function (name) {
   state.setOutputName(name);
   assert(
     !state.canGoNext(),
     "This output name must be refused: " + name);
 });
-state.setOutputName("受注管理_macrostudio.xlsm");
+state.setOutputName(expectedOutputName);
 assert(state.canGoNext(), "A repaired output name enables next again.");
 
 assert(

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <defs>
+    <clipPath id="p11-clip"><rect x="40" y="148" width="672" height="378" rx="10"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#1F4E79"/>
+    <text x="114" y="75" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">手順 3 · 2/2</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2933">取り込んだ変更を確認します</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E8F0" stroke-width="1"/>
+  </g>
+
+  <g id="shot" data-pptx-bounds="36 144 680 386">
+    <rect x="36" y="144" width="680" height="386" rx="14" fill="#F4F6F8"/>
+    <image href="../images/07-review.png" x="40" y="148" width="672" height="378" preserveAspectRatio="xMidYMid meet" clip-path="url(#p11-clip)"/>
+    <rect x="40" y="148" width="672" height="378" rx="10" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+    <circle cx="94" cy="288" r="17" fill="#1F4E79" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="94" y="295" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">1</text>
+    <circle cx="120" cy="440" r="17" fill="#1F4E79" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="120" y="447" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">2</text>
+    <circle cx="330" cy="414" r="17" fill="#1F4E79" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="330" y="421" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">3</text>
+  </g>
+
+  <g id="color-key" data-pptx-bounds="36 550 680 102">
+    <rect x="36" y="550" width="680" height="102" rx="14" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="66" y="576" width="10" height="24" rx="5" fill="#C25560"/>
+    <text x="92" y="596" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">赤 ＝ 消える行</text>
+    <rect x="66" y="614" width="10" height="24" rx="5" fill="#4C9155"/>
+    <text x="92" y="634" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">緑 ＝ 増える行</text>
+    <line x1="330" y1="572" x2="330" y2="632" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="360" y="596" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" fill="#5B6B7C">確かめたら、右下の<tspan x="360" dy="28">［次へ］へ進みます。</tspan></text>
+  </g>
+
+  <g id="legend" data-pptx-bounds="736 144 504 508">
+    <use data-icon="tabler-filled/eye" x="736" y="152" width="28" height="28" fill="#1F4E79"/>
+    <circle cx="760" cy="230" r="19" fill="#1F4E79"/>
+    <text x="760" y="238" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">1</text>
+    <text x="796" y="238" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">「変更内容を見る」を<tspan x="796" dy="34">開きます。</tspan></text>
+
+    <circle cx="760" cy="360" r="19" fill="#1F4E79"/>
+    <text x="760" y="368" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">2</text>
+    <text x="796" y="368" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">左の一覧に、モジュール<tspan x="796" dy="34">ごとの増減が出ます。</tspan></text>
+
+    <circle cx="760" cy="490" r="19" fill="#1F4E79"/>
+    <text x="760" y="498" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">3</text>
+    <text x="796" y="498" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">右に、消える行と<tspan x="796" dy="34">増える行が並びます。</tspan></text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第二部 操作マニュアル</text>
+    <text x="1240" y="692" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">11</text>
+  </g>
+</svg>

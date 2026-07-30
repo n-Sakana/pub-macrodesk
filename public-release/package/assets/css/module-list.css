@@ -1,0 +1,155 @@
+/* The module pane is the tree used by the intake and review screens. */
+.module-pane {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.module-pane-title {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-sub);
+  font-size: var(--type-label-size);
+  font-weight: var(--weight-semibold);
+}
+
+/* The tree is grouped by module kind, like the VBE project tree. */
+.module-group-title {
+  padding: var(--space-2) var(--space-3) 0;
+  color: var(--text-muted);
+  font-size: var(--type-micro-size);
+  font-weight: var(--weight-semibold);
+  letter-spacing: .03em;
+}
+
+.module-list {
+  min-height: 0;
+  padding: var(--space-2);
+  margin: 0;
+  list-style: none;
+  overflow: auto;
+}
+
+.module-item {
+  display: grid;
+  width: 100%;
+  min-height: var(--row-h);
+  align-items: center;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-sub);
+  font-size: var(--type-meta-size);
+  gap: var(--space-2);
+  grid-template-columns: var(--space-2) minmax(0, 1fr) auto;
+  text-align: left;
+}
+
+.module-item:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.module-item.is-active {
+  background: var(--surface-selected);
+  color: var(--accent-text);
+  font-weight: var(--weight-semibold);
+}
+
+.module-dot {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--state-pending);
+}
+
+.module-dot.pending {
+  background: var(--caution);
+}
+
+.module-dot.changed {
+  background: var(--state-staged);
+}
+
+.module-dot.accepted {
+  background: var(--success);
+}
+
+.module-dot.excluded {
+  background: var(--state-excluded);
+}
+
+.module-name {
+  overflow: hidden;
+  font-family: var(--font-code);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.module-state {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  font-size: var(--type-micro-size);
+}
+
+.module-item.is-active .module-state {
+  color: var(--accent-text);
+}
+
+/* The same two numbers, in the same colours, as the diff report. */
+.module-counts {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--space-2);
+  font-family: var(--font-code);
+  font-size: var(--type-micro-size);
+  font-weight: var(--weight-semibold);
+}
+
+.module-count--add {
+  color: var(--success-text);
+}
+
+.module-count--del {
+  color: var(--danger-text);
+}
+
+.module-pane-footer {
+  padding: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.module-legend {
+  display: grid;
+  margin-bottom: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--type-micro-size);
+  gap: var(--space-1);
+}
+
+.module-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.module-legend-item::before {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-pill);
+  content: "";
+}
+
+.module-legend-item:first-child::before {
+  background: var(--state-staged);
+}
+
+.module-legend-item:last-child::before {
+  background: var(--success);
+}
+
+.module-pane-footer .button {
+  width: 100%;
+}

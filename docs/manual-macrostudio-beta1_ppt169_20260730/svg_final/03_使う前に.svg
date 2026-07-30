@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" data-pptx-page-role="content">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF" />
+
+  <g id="page-header" data-pptx-bounds="40 44 1200 78">
+    <rect x="40" y="50" width="148" height="36" rx="18" fill="#1F4E79" />
+    <text x="114" y="75" text-anchor="middle" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">第一部</text>
+    <text x="206" y="86" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="42" font-weight="bold" fill="#1F2933">使う前に</text>
+    <line x1="40" y1="118" x2="1240" y2="118" stroke="#E2E8F0" stroke-width="1" />
+  </g>
+
+  <g id="card-need" data-pptx-bounds="40 168 588 340">
+    <rect x="40" y="168" width="588" height="340" rx="16" fill="#F1F5F9" />
+    
+  <g transform="translate(72, 200) scale(1.5)" fill="#1F4E79">
+    <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
+  </g>
+    <text x="120" y="228" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F4E79">用意するもの</text>
+    <circle cx="86" cy="290" r="8" fill="#4A87C4" />
+    <text font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="112" y="298">改修したいブック</text><text font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="112" y="332">（.xlsm / .xlam / .xlsb / .xls）</text><circle cx="86" cy="382" r="8" fill="#4A87C4" />
+    <text x="112" y="390" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">ファイルを添付できるAIチャット</text>
+    <circle cx="86" cy="440" r="8" fill="#4A87C4" />
+    <text font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="112" y="448">Windows 10・11</text><text font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933" x="112" y="482">（インストールは不要）</text></g>
+
+  <g id="card-fit" data-pptx-bounds="652 168 588 340">
+    <rect x="652" y="168" width="588" height="340" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" />
+    
+  <g transform="translate(684, 200) scale(1.5)" fill="#1F4E79">
+    <path d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm-1.553 11.106a1 1 0 0 0 -1.341 .447l-1 2a1 1 0 0 0 0 .894l1 2a1 1 0 0 0 1.341 .447l.102 -.058a1 1 0 0 0 .345 -1.283l-.776 -1.553l.776 -1.553a1 1 0 0 0 -.447 -1.341m4.447 .447a1 1 0 0 0 -1.341 -.447l-.102 .058a1 1 0 0 0 -.345 1.283l.774 1.553l-.775 1.553a1 1 0 0 0 1.788 .894l1 -2a1 1 0 0 0 0 -.894z" />
+    <path d="M19 7h-4l-.001 -4.001z" />
+  </g>
+    <text x="732" y="228" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="32" font-weight="bold" fill="#1F4E79">向いているマクロ</text>
+    <circle cx="698" cy="290" r="8" fill="#4A87C4" />
+    <text x="724" y="298" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">部門で使っている独自のマクロ</text>
+    <circle cx="698" cy="348" r="8" fill="#4A87C4" />
+    <text x="724" y="356" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">新しい端末で動かなくなったマクロ</text>
+    <circle cx="698" cy="406" r="8" fill="#4A87C4" />
+    <text x="724" y="414" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">作った人がいなくなったマクロ</text>
+  </g>
+
+  <g id="start-band" data-pptx-bounds="40 548 1200 64">
+    <rect x="40" y="548" width="1200" height="64" rx="16" fill="#FFFFFF" stroke="#1F4E79" stroke-width="2" />
+    <text x="72" y="589" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="24" fill="#1F2933">起動は <tspan font-family="Consolas,monospace">launch.vbs</tspan> をダブルクリックします。</text>
+  </g>
+
+  <g id="page-footer" data-pptx-role="footer" data-pptx-bounds="40 668 1200 32">
+    <text x="40" y="692" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">第一部 サービス説明</text>
+    <text x="1240" y="692" text-anchor="end" font-family="'Yu Gothic UI','Segoe UI',sans-serif" font-size="16" fill="#5B6B7C">03</text>
+  </g>
+</svg>

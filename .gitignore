@@ -2,3 +2,10 @@ testdata/
 *.log
 WebView2Cache/
 .playwright-mcp/
+
+# Authoring byproducts of the deck pipeline (kept locally, not published)
+_audit/
+docs/*/analysis/
+docs/*/validation/
+docs/*/backup/
+docs/*/live_preview/

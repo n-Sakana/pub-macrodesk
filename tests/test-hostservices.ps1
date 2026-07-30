@@ -115,6 +115,26 @@ Assert-True ($book['totalLines'] -eq 19) `
 Assert-True ($modules.Count -eq 6) `
     'Attached module count mismatch.'
 
+# A healthy workbook must raise nothing at all. "Incomplete" used to be a
+# single boolean OR-ed from about seventy places, so the report of what
+# actually fired is checked here against real files.
+Assert-True ($attached['warning'] -eq $false) `
+    'A healthy workbook must not report a read warning.'
+$cleanRead = $attached['read']
+Assert-True ($cleanRead['level'] -eq 'clean') `
+    ('A healthy workbook must read clean: ' + $cleanRead['level'])
+foreach ($key in @('containerFallback', 'salvaged', 'shortStream')) {
+    Assert-True ($cleanRead[$key] -eq $false) `
+        ('A healthy workbook must not set ' + $key + '.')
+}
+foreach ($key in @(
+    'partialModules',
+    'recoveredOffsetModules',
+    'unreadableModules')) {
+    Assert-True ($cleanRead[$key].Count -eq 0) `
+        ('A healthy workbook must name no module in ' + $key + '.')
+}
+
 $expectedNames = @(
     'Sheet1',
     'ThisWorkbook',
@@ -166,6 +186,24 @@ try {
         'A damaged workbook did not report a read warning.'
     Assert-True ($damagedAttached['modules'].Count -eq $modules.Count) `
         'A damaged workbook returned an empty module list.'
+
+    # A broken archive directory is a container finding: the VBA part had
+    # to be found another way, and every module then read normally. That
+    # must be reported as a complete read, not as code in doubt.
+    $damagedRead = $damagedAttached['read']
+    Assert-True ($damagedRead['level'] -eq 'structureOnly') `
+        ('A recoverable container must not put the code in doubt: ' +
+            $damagedRead['level'])
+    Assert-True ($damagedRead['containerFallback'] -eq $true) `
+        'The container fallback was not reported.'
+    Assert-True ($damagedRead['salvaged'] -eq $false) `
+        'A recoverable container must not be reported as salvaged.'
+    Assert-True ($damagedRead['shortStream'] -eq $false) `
+        'No stream was short, so none may be reported.'
+    Assert-True ($damagedRead['partialModules'].Count -eq 0) `
+        'No module source was partial, so none may be named.'
+    Assert-True ($damagedRead['unreadableModules'].Count -eq 0) `
+        'Every module was read, so none may be named as unreadable.'
     for ($index = 0; $index -lt $modules.Count; $index++) {
         Assert-True (
             $damagedAttached['modules'][$index]['code'] -ceq
@@ -178,6 +216,70 @@ try {
         [IO.File]::Delete($damagedAttachPath)
     }
 }
+
+# The other half of the split: a VBA part that is physically cut short.
+# Some source is still there, so the attach must succeed, but the code
+# cannot be vouched for and the report has to say which level it is.
+$truncatedPath = Join-Path $testdataRoot (
+    'host-truncated-' + [Guid]::NewGuid().ToString('N') + '.xlsm')
+Assert-InsideDirectory $truncatedPath $testdataRoot
+try {
+    [IO.File]::Copy($resolvedBookPath, $truncatedPath)
+    $archive = [IO.Compression.ZipFile]::Open(
+        $truncatedPath,
+        [IO.Compression.ZipArchiveMode]::Update)
+    try {
+        $vbaEntry = $null
+        foreach ($entry in $archive.Entries) {
+            if ($entry.Name -ieq 'vbaProject.bin') {
+                $vbaEntry = $entry
+                break
+            }
+        }
+        Assert-True ($null -ne $vbaEntry) `
+            'The test workbook has no vbaProject.bin to cut short.'
+        $entryName = $vbaEntry.FullName
+        $stream = $vbaEntry.Open()
+        try {
+            $buffer = New-Object IO.MemoryStream
+            $stream.CopyTo($buffer)
+            $vbaBytes = $buffer.ToArray()
+        } finally {
+            $stream.Dispose()
+        }
+        $keep = [int]($vbaBytes.Length * 0.6)
+        $vbaEntry.Delete()
+        $replacement = $archive.CreateEntry($entryName)
+        $output = $replacement.Open()
+        try {
+            $output.Write($vbaBytes, 0, $keep)
+        } finally {
+            $output.Dispose()
+        }
+    } finally {
+        $archive.Dispose()
+    }
+
+    $truncatedAttached = $service.AttachBook($truncatedPath)
+    $truncatedRead = $truncatedAttached['read']
+    Assert-True ($truncatedAttached['warning'] -eq $true) `
+        'A cut-short VBA part must report a read warning.'
+    Assert-True ($truncatedRead['level'] -eq 'sourceDoubt') `
+        ('A cut-short VBA part must put the code in doubt: ' +
+            $truncatedRead['level'])
+    Assert-True (
+        $truncatedRead['shortStream'] -eq $true -or
+        $truncatedRead['salvaged'] -eq $true -or
+        $truncatedRead['partialModules'].Count -gt 0 -or
+        $truncatedRead['unreadableModules'].Count -gt 0) `
+        'The finding that put the code in doubt was not reported.'
+} finally {
+    Assert-InsideDirectory $truncatedPath $testdataRoot
+    if ([IO.File]::Exists($truncatedPath)) {
+        [IO.File]::Delete($truncatedPath)
+    }
+}
+[void]$service.AttachBook($resolvedBookPath)
 
 # A workbook that another process holds open (Excel) is still read.
 $held = [IO.File]::Open(
@@ -256,6 +358,23 @@ try {
     Assert-True (
         $presetService.ReadPreset('A.md')['content'] -eq 'first') `
         'Preset content mismatch.'
+
+    # The card order is the file name order, with a leading number read as
+    # a number. Sorting the names as text alone would put "10_" in front of
+    # "2_", which is not the order the folder shows the owner.
+    foreach ($numbered in @('2_two.md', '10_ten.md')) {
+        [IO.File]::WriteAllText(
+            (Join-Path $presetRoot $numbered),
+            'numbered',
+            (New-Object Text.UTF8Encoding($false)))
+    }
+    $numberedFiles = @($presetService.GetAppInfo()['presets'] |
+        ForEach-Object { $_['file'] })
+    Assert-True (
+        ($numberedFiles -join '|') -ceq '2_two.md|10_ten.md|A.md|b.md') `
+        ('Preset order mismatch: ' + ($numberedFiles -join '|'))
+    [IO.File]::Delete((Join-Path $presetRoot '2_two.md'))
+    [IO.File]::Delete((Join-Path $presetRoot '10_ten.md'))
 
     # Discovery is dynamic: adding, removing and renaming files, or
     # editing one, changes the list with no code change and no restart.
@@ -421,10 +540,14 @@ try {
         [IO.Path]::GetFileName(
             [IO.Path]::GetDirectoryName($runFolder)) -ceq 'MacroStudio') `
         'The run folder must sit under a MacroStudio folder.'
+    # Without a name from the screen the host falls back to the same
+    # shape the screen would have produced.
     Assert-True (
         [IO.Path]::GetFileName($successOutput) -ceq
-        'test_large_macrostudio.xlsm') `
-        'Host build output name mismatch.'
+        ('test_large-Modified-' +
+            [DateTime]::Now.ToString('yyyyMMdd') + '.xlsm')) `
+        ('Host build output name mismatch: ' +
+            [IO.Path]::GetFileName($successOutput))
 } finally {
     if (-not [string]::IsNullOrEmpty($successOutput)) {
         Assert-InsideDirectory $successOutput $testdataRoot
@@ -462,8 +585,11 @@ try {
     Assert-True ([IO.File]::Exists($diffPath)) `
         'Diff report was not created.'
     Assert-True (
-        [IO.Path]::GetFileName($diffPath) -ceq 'diff-report.html') `
-        'Diff report file name mismatch.'
+        [IO.Path]::GetFileName($diffPath) -ceq
+        ('test_large-Diff-Report-' +
+            [DateTime]::Now.ToString('yyyyMMdd') + '.html')) `
+        ('Diff report file name mismatch: ' +
+            [IO.Path]::GetFileName($diffPath))
     Assert-True (
         [IO.Path]::GetDirectoryName($diffPath) -ceq
         [IO.Path]::GetDirectoryName($diffBuildOutput)) `
@@ -502,7 +628,11 @@ try {
     $collisionFolder = Join-Path $testdataRoot (
         'MacroStudio\test_large_' + $collisionTimestamp)
     [IO.Directory]::CreateDirectory($collisionFolder) | Out-Null
-    $collisionPath = Join-Path $collisionFolder 'diff-report.html'
+    # A report of the same name that this run did not write is left where
+    # it is, and the workbook is still produced.
+    $collisionName = 'test_large-Diff-Report-' +
+        [DateTime]::Now.ToString('yyyyMMdd') + '.html'
+    $collisionPath = Join-Path $collisionFolder $collisionName
     [IO.File]::WriteAllText(
         $collisionPath,
         'existing report',
@@ -513,7 +643,10 @@ try {
         $identityChanges,
         $noAdditions,
         $collisionTimestamp,
-        $diffHtml)
+        $diffHtml,
+        $null,
+        $null,
+        $collisionName)
     $collisionOutput = $collisionBuild['outputPath']
     Assert-InsideDirectory $collisionOutput $testdataRoot
     Assert-True ([IO.File]::Exists($collisionOutput)) `
@@ -603,7 +736,11 @@ try {
             $signatureModules[2]['code'])
     $signatureStamp = [DateTime]::Now.AddSeconds(
         6).ToString('yyyyMMdd_HHmmss')
-    $signatureName = 'signature_macrostudio.xlsm'
+    # The names the screen produces: one date for the whole run.
+    $signatureDate = $signatureStamp.Substring(0, 8)
+    $signatureName = 'signature-Modified-' + $signatureDate + '.xlsm'
+    $signatureDiffName =
+        'signature-Diff-Report-' + $signatureDate + '.html'
 
     $firstBuild = $signatureService.BuildBook(
         $signatureChanges,
@@ -611,7 +748,13 @@ try {
         $signatureStamp,
         '<!doctype html><html><body>first</body></html>',
         $signatureName,
-        "first note`r`n")
+        "first note`r`n",
+        $signatureDiffName)
+    Assert-True (
+        [IO.Path]::GetFileName($firstBuild['diffPath']) -ceq
+        $signatureDiffName) `
+        ('The report must use the name the screen gave: ' +
+            [IO.Path]::GetFileName($firstBuild['diffPath']))
     $signatureOutput = $firstBuild['outputPath']
     $signatureFolder = [IO.Path]::GetDirectoryName($signatureOutput)
     Assert-InsideDirectory $signatureOutput $signatureBase
@@ -632,9 +775,19 @@ try {
         $signatureStamp,
         '<!doctype html><html><body>second</body></html>',
         $signatureName,
-        "second note`r`n")
+        "second note`r`n",
+        $signatureDiffName)
     Assert-True ($rebuild['outputPath'] -ceq $signatureOutput) `
         'The rebuild must keep the output name of the same run.'
+    Assert-True (
+        [IO.Path]::GetFileName($rebuild['diffPath']) -ceq
+        $signatureDiffName) `
+        'The rebuild must replace the report of the same name.'
+    Assert-True (
+        @([IO.Directory]::GetFiles(
+            $signatureFolder, '*-Diff-Report-*.html')).Count -eq 1) `
+        'The rebuild left a second report beside the first.'
+
     Assert-True ([IO.File]::Exists($signatureOutput)) `
         'The rebuild must leave a workbook behind.'
     Assert-True (-not $rebuild.ContainsKey('diffError')) `
@@ -657,6 +810,43 @@ try {
         @([IO.Directory]::GetFiles(
             $signatureFolder, '*.previous')).Count -eq 0) `
         'The rebuild left its workpiece or the old generation behind.'
+
+    # An unusable report name is refused, but it never cancels a workbook
+    # that was built: the report is the one artifact whose failure is
+    # reported beside a successful build.
+    foreach ($badName in @(
+        '..\escaped.html',
+        'wrong_kind.txt',
+        'sub/report.html')) {
+        $badBuild = $signatureService.BuildBook(
+            $signatureChanges,
+            $noAdditions,
+            $signatureStamp,
+            $diffHtml,
+            $signatureName,
+            '',
+            $badName)
+
+        Assert-True ([IO.File]::Exists($badBuild['outputPath'])) `
+            ('An unusable report name cancelled the workbook: ' +
+                $badName)
+        Assert-True (
+            -not [string]::IsNullOrEmpty($badBuild['diffError'])) `
+            ('An unusable report name was not reported: ' + $badName)
+        Assert-True (-not $badBuild.ContainsKey('diffPath')) `
+            ('A refused report name returned a path: ' + $badName)
+        Assert-True (
+            @([IO.Directory]::GetFiles(
+                $signatureFolder, '*-Diff-Report-*.html')).Count -eq 1) `
+            ('A refused report name disturbed the existing report: ' +
+                $badName)
+        Assert-True (
+            [IO.File]::ReadAllText(
+                (Join-Path $signatureFolder $signatureDiffName),
+                [Text.Encoding]::UTF8).Contains('second')) `
+            ('A refused report name overwrote the existing report: ' +
+                $badName)
+    }
 
     # A workbook of the same name that this run did not write stays put.
     $foreignService = New-Object MacroStudio.HostServices($null, $repoRoot)
@@ -762,6 +952,55 @@ try {
     Assert-InsideDirectory $signatureBase $testdataRoot
     if ([IO.Directory]::Exists($signatureBase)) {
         [IO.Directory]::Delete($signatureBase, $true)
+    }
+}
+
+# Opening the output folder must never open something else instead.
+# Explorer, handed a target it cannot resolve, quietly shows the default
+# folder (the Desktop on a normal machine) and still starts successfully,
+# so a run folder that has been moved or deleted would be reported as
+# opened. A missing target is an error here, and no window is started.
+$revealService = New-Object MacroStudio.HostServices($null, $repoRoot)
+$revealBase = Join-Path $testdataRoot (
+    'host-reveal-' + [Guid]::NewGuid().ToString('N'))
+Assert-InsideDirectory $revealBase $testdataRoot
+try {
+    $missingFolder = Join-Path $revealBase 'MacroStudio\gone_20260730_000000'
+    $missingFile = Join-Path $revealBase 'gone.xlsm'
+
+    foreach ($target in @($missingFolder, $missingFile)) {
+        $revealCode = ''
+        $revealMessage = ''
+        try {
+            $revealService.RevealPath($target)
+        } catch [MacroStudio.HostActionException] {
+            $revealCode = $_.Exception.ErrorCode
+            if ($null -ne $_.Exception.ErrorData) {
+                $revealMessage =
+                    [string]$_.Exception.ErrorData['userMessage']
+            }
+        }
+        Assert-True ($revealCode -eq 'E-SYS-02') `
+            ('A target that does not exist must be refused instead of ' +
+                'opening another folder: ' + $target + ' -> ' +
+                $revealCode)
+        Assert-True ($revealMessage.Length -gt 0) `
+            'A refused reveal must carry a message for the user.'
+    }
+
+    # An empty path was already refused, and still is.
+    $emptyRevealRefused = $false
+    try {
+        $revealService.RevealPath('')
+    } catch [ArgumentException] {
+        $emptyRevealRefused = $true
+    }
+    Assert-True $emptyRevealRefused `
+        'An empty path must stay refused.'
+} finally {
+    Assert-InsideDirectory $revealBase $testdataRoot
+    if ([IO.Directory]::Exists($revealBase)) {
+        [IO.Directory]::Delete($revealBase, $true)
     }
 }
 

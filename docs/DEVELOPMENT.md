@@ -24,6 +24,9 @@ MacroStudio は dotnet SDK を必要としない。ホストの C# は Windows P
 - `src/` は番号付きファイル名（`01_App.cs` …）。`macrostudio.ps1` が名前順に連結し、
   using を先頭へ集約して 1 回の `Add-Type` でコンパイルする。
 - 名前空間は `MacroStudio`。WebView2 仮想ホスト名は `macrostudio.local`。
+  この 1 つが唯一の信頼 origin で、値は `WebViewSecurity.TrustedHost` が持つ
+  （SPEC §7.1.1）。新しい仮想ホストを足すと、そのページはホスト操作を
+  呼べないまま画面にも出せない。
 - ユーザーデータ: `%LOCALAPPDATA%\MacroStudio\WebView2Cache`、ログ: 同 `\logs`。
 - `lib/` の WebView2 DLL 4 本は NuGet パッケージ `Microsoft.Web.WebView2`
   （SDK 1.0.3856.49）の再配布 DLL。差し替える場合は 4 本の版を揃えること。
@@ -38,7 +41,8 @@ macrostudio/
 ├── src/                     # C#（ホスト + エンジン）
 │   ├── 01_App.cs            # エントリ。AssemblyResolve、STA スレッド、WebView2 ランタイム確認
 │   ├── 02_MainWindow.cs     # WPF 窓 + WebView2 + 仮想ホスト + D&D 受け
-│   ├── 03_MessageRouter.cs  # JS⇔C# の id 付き request/response IPC
+│   ├── 02_WebViewSecurity.cs # 信頼 origin の判定、遷移・新窓・frame の拒否、DevTools 無効化（SPEC §7.1.1）
+│   ├── 03_MessageRouter.cs  # JS⇔C# の id 付き request/response IPC（信頼外 origin のメッセージは破棄）
 │   ├── 04_HostServices.cs   # ダイアログ、クリップボード、explorer、実行フォルダと成果物の出力、template / presets 読み、ログ
 │   ├── 05_Ole2.cs           # OLE2(CFB) リーダ/ライタ
 │   ├── 06_VbaCompression.cs # MS-OVBA 2.4.1 展開・圧縮
@@ -64,7 +68,11 @@ macrostudio/
 - **画面フローの正本は `assets/js/screens.js`**。画面の順序・見出し・「次へ」を
   有効化する条件はこの表だけが持ち、`state.js` は現在地と履歴、`app.js` は描画と
   操作を担当する。画面を足すときはまず screens.js を直す。画面番号を JS の中へ
-  literal で書かず、`screens.js` が公開する名前（`intakeScreen` など）を使う。
+  literal で書かず、`screens.js` が公開する名前（`modeScreen` / `bookScreen` /
+  `readScreen` / `intakeScreen` など）を使う。
+- **最初の画面は「作業を選んでください」**（`modeScreen === 0`）で、ブックの読み込みは
+  その次（`bookScreen === 1`）。`setBook` は**選んだ作業を消さず**、画面を
+  `bookScreen` に置く。順序を変えるときは `screenBuilders` の並びも同時に直す。
 - **用途は 3 つ（改修 / 診断 / 相談）**。診断と相談は AI へ渡すファイルを作って
   終わり、取り込みもビルドも通らない（SPEC §4）。分岐は `nextIndex` の 2 か所だけで、
   ここ以外に用途による条件分岐を増やさない。
@@ -93,6 +101,27 @@ macrostudio/
   `timeoutMilliseconds: 0` + `onSlow` で送る。処理の正本は host の応答であり、
   120 秒経過は「まだ続いている」という表示にしかしない。ここへ client 側の
   失敗確定を戻さないこと（監査 P2-3 の再発になる）。
+- **読み取り警告は「何が起きたか」を分けて持つ**（SPEC §5.1.2）。
+  `HasReadWarnings` は約70か所から立つ1つの真偽値で、それだけでは原因も影響範囲も
+  言えない。そこで `Ole2File.HasShortStreamRead`（ストリームが短く返った）、
+  `VbaProjectData.PartialSourceModules` / `RecoveredOffsetModules` /
+  `UnreadableModules` / `ContainerFallback` / `Salvaged` を別に記録し、
+  `HasSourceDoubt()` が「コードに疑いがあるか」を判定する。`attachBook` は
+  `read.level`（`clean` / `structureOnly` / `sourceDoubt`）として返し、文言の選択は
+  `app.js` の `describeReadResult` だけが持つ。**新しい警告条件を足すときは、
+  どちらの段階に属するかを必ず決めること**（増やして一括警告へ戻さない）。
+  外部リンク等 VBA 以外のパートは読まないので、この記録には現れない。
+- **差分 HTML は確認画面の閲覧専用版で、画面と同じ実装を同梱する**（SPEC §5.4.1）。
+  `diff.js` / `vba-highlight.js` / `diff-view.js` と `variables.css` / `flow.css` /
+  `module-list.css` / `diff.css` を無加工でインラインし（`@font-face` の除去だけが
+  例外）、行生成・文脈行数・変更ブロック・`変更箇所のみ`・折り返し・前後移動はすべて
+  画面側の実装が動く。`diff-report.js` は枠（モジュール一覧・ツールバー・テーマ・
+  実行データ）だけを持ち、**diff の第 2 実装を置かない**
+  （`tests\test-diff-report-toggle.js` が、同梱バンドルと画面の出力一致と、
+  `expandRow` 等が `diff-report.js` に無いことを検査する）。
+  同梱アセットは `app.js` の `loadReportAssets()` が同一オリジンから読み、
+  `buildReport({assets})` へ渡す。アセットが無ければレポート生成はエラーにする
+  （縮小版で代替しない）。**外部通信・CDN・編集操作は入れないこと。**
 - **添付時点の VBA 内容署名をビルド直前に照合する**（SPEC §9.1-0）。
   `BookIO.CreateSourceSignature` が正本で、`HostServices` が添付時の値を保持し、
   `BookIO.BuildCopy` が自分で読み直した project と比較する。不一致は E-BUILD-04 で、
@@ -132,6 +161,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-build.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-hostservices.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-flow-webview.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-split-webview.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-diff-report-webview.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-webview-security.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-encrypted-book.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-window-icon.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-p9-distribution.ps1
 ```
 
@@ -144,6 +177,8 @@ node tests\test-diff.js
 node tests\test-file-drop.js
 node tests\test-diff-view.js
 node tests\test-diff-report.js
+node tests\test-diff-report-toggle.js
+node tests\test-read-report.js
 node tests\test-host-bridge.js
 node tests\test-flow-state.js
 node tests\test-module-split.js
@@ -152,6 +187,8 @@ node tests\test-p7-state.js
 node tests\test-paste-edit.js
 node tests\test-paste-normalize.js
 node tests\test-preset-document.js
+node tests\test-preset-description.js
+node tests\test-attach-blocked.js
 node tests\test-preset-migration.js
 node tests\test-prompt-template.js
 node tests\test-vba-highlight.js
@@ -166,6 +203,40 @@ node tests\test-vba-highlight.js
 - `tests\test-hostservices.ps1` … 添付後に元ブックが変わった場合の E-BUILD-04 と、
   同一 run の再ビルドが自分の成果物だけを世代交換すること。
 - `tests\test-host-bridge.js` … `buildBook` が client の時計で失敗確定しないこと。
+- `tests\test-read-report.js` … 読み取り結果の 2 段階（SPEC §5.1.2）。
+  管理情報だけの不整合に「コードを確認してください」を出さないこと、
+  内訳が無いときは控えめな文言へ落ちること。
+- `tests\test-diff-report-toggle.js` … レポートが同梱したバンドルを取り出して実行し、
+  画面側と同じ文脈行数・同じ行・同じ変更ブロックになることを突き合わせる。
+  併せて `diff-report.js` に diff の第 2 実装が無いことを検査する。
+- `tests\test-diff-report-webview.ps1` … 書き出した実ファイルを WebView2 で開き、
+  前／次・変更箇所のみ・折り返し・テーマ・モジュール切替を実クリックし、
+  高さ制限が無いこと・編集要素が 0 であることを確認。
+- `tests\test-hostservices.ps1` … 正常ブックが `clean`、EOCD を壊したブックが
+  `structureOnly`、vbaProject.bin を切り詰めたブックが `sourceDoubt` になること。
+  併せてカードの並びがファイル名の数値順であること（`10_` が `2_` の後ろ）。
+- `tests\test-encrypted-book.ps1` … ファイル全体が暗号化されたブック（SPEC §2.5.1）。
+  製品自前の OLE2 ライタで容器を組み立てるので Excel は要らない。`EncryptionInfo` と
+  `EncryptedPackage` の両方がある場合だけ E-ATTACH-04 になること、片方だけ・VBA
+  プロジェクトのロック（DPB/CMG）・破損ファイル・ヘッダだけの OLE2 が暗号化と
+  判定されないことを見る。`-EncryptedBookPath` を渡すと Excel が実際に作った
+  暗号化ファイルにも同じ検査を掛ける。
+- `tests\test-window-icon.ps1` … ウィンドウが自前のアイコンを持つこと。
+  アプリと同じ手順で窓を作り、そのアイコンを 32px へラスタライズして
+  画素を数える（角丸・起動画面と同じ地の色・文字が出ていること）。
+  設定を外すと落ちる。
+- `tests\test-attach-blocked.js` … 暗号化ブックが画面上のカードで止まり、
+  「全モジュール読み取れています」を出さないこと。
+- `tests\test-webview-security.ps1` … WebView2 の境界（SPEC §7.1.1）。信頼 origin の
+  判定表に加えて、実動する窓で「別 origin のページが同じ bridge へ投げても
+  ホスト操作が動かない」「https / file / data / about / 別ホストへ遷移できない」
+  「新しいウィンドウが開かない」「frame が読み込まれない」「DevTools・
+  ブラウザキー・既定コンテキストメニューが無効」を確認する。
+  いずれも結果を見る検査で、`e.Cancel` / `e.Handled` を外すと落ちる。
+- `tests\test-preset-description.js` と `tests\test-flow-webview.ps1` …
+  目的カードの 1 行が、ひな形の `## 説明` そのものであること（SPEC §5.2.1）。
+  改修指示から作り直す実装に戻すと両方が落ちる。同梱ひな形のファイル名が
+  H1 と一致していることも見張る。
 
 補助 runner:
 

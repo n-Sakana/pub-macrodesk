@@ -136,6 +136,8 @@ try {
     $book = $result.book | ConvertFrom-Json
     $mode = $result.mode | ConvertFrom-Json
     $modeChosen = $result.modeChosen | ConvertFrom-Json
+    $dropScreen = $result.dropScreen | ConvertFrom-Json
+    $backToStart = $result.backToStart | ConvertFrom-Json
     $purpose = $result.purpose | ConvertFrom-Json
     $purposeChosen = $result.purposeChosen | ConvertFrom-Json
     $request = $result.request | ConvertFrom-Json
@@ -155,7 +157,9 @@ try {
     $runFolder = [string]$result.runFolder
     $requestId = [string]$result.requestId
     # 'settings': the vague label a disclosure trigger must not use.
-    $vagueLabel = [string]([char]0x8A2D + [char]0x5B9A)
+    # Joined rather than added: adding two [char] values adds numbers,
+    # which turned this check into a comparison against "58823".
+    $vagueLabel = -join @([char]0x8A2D, [char]0x5B9A)
 
     # The shell: four progress steps, and one fixed pair of buttons
     # that never changes size or position.
@@ -176,35 +180,177 @@ try {
             'The progress bar must show the steps that are known.'
     }
 
-    Assert-True ($attached.screen -eq 0) `
-        'Loading a workbook must stay on the first screen.'
-    Assert-True ($attached.modules -gt 0) `
-        'No modules were read from the workbook.'
-    Assert-True ($attached.nextReady) `
-        'A loaded workbook must enable next.'
-    Assert-True ($attached.backDisabled) `
-        'The first screen must keep back disabled.'
+    # What the run is for is the first decision, before any workbook,
+    # and it does not advance the flow by itself.
+    Assert-True ($mode.screen -eq 0) `
+        'The flow must open on the work choice.'
+    # This runner is ASCII only, so Japanese wording is spelled out in
+    # code points and joined: adding [char] values would add numbers.
+    $expectedModeTitle = -join @(
+        [char]0x4F5C, [char]0x696D, [char]0x3092, [char]0x9078,
+        [char]0x3093, [char]0x3067, [char]0x304F, [char]0x3060,
+        [char]0x3055, [char]0x3044)
+    Assert-True ($mode.title -ceq $expectedModeTitle) `
+        ('The opening screen must ask what the work is: ' + $mode.title)
+    Assert-True (@($mode.cards).Count -eq 2) `
+        'The opening screen must offer exactly two choices.'
+    Assert-True (-not $mode.nextReady) `
+        'The opening screen must wait for a choice.'
+    Assert-True ($mode.backDisabled) `
+        'The opening screen has nothing to go back to.'
 
-    Assert-True ($book.screen -eq 1) `
-        'The read result screen is missing.'
-    Assert-True (@($book.stats).Count -ge 2) `
-        'The read result must show what was read.'
-
-    # What the run is for comes first, and it does not advance by
-    # itself either.
-    Assert-True ($mode.cards -eq 2 -and -not $mode.nextReady) `
-        'The first screen of step 1 must offer both categories and wait.'
-    Assert-True ($modeChosen.stillHere -eq 2) `
-        'Choosing a mode must not advance the screen by itself.'
+    # No workbook has been read yet, so nothing on this screen may point
+    # at one: read literally, "this macro" would be MacroStudio itself.
+    $thisMacro = -join @(
+        [char]0x3053, [char]0x306E, [char]0x30DE, [char]0x30AF,
+        [char]0x30ED)
+    $thisBook = -join @(
+        [char]0x3053, [char]0x306E, [char]0x30D6, [char]0x30C3,
+        [char]0x30AF)
+    foreach ($phrase in @($thisMacro, $thisBook)) {
+        Assert-True (-not ([string]$mode.text).Contains($phrase)) `
+            ('The opening screen points at a workbook it has not read: ' +
+                $phrase)
+    }
+    Assert-True ($modeChosen.stillHere -eq 0) `
+        'Choosing the work must not advance the screen by itself.'
     Assert-True ($modeChosen.steps -eq 4) `
         'A refactoring run must show four steps.'
     Assert-True ($modeChosen.nextReady) `
         'A chosen mode must enable next.'
 
+    Assert-True ($dropScreen.screen -eq 1) `
+        'The workbook screen must follow the work choice.'
+    Assert-True (-not $dropScreen.nextReady) `
+        'The workbook screen must wait for a workbook.'
+    Assert-True (-not $dropScreen.backDisabled) `
+        'The workbook screen must be able to go back.'
+
+    Assert-True ($attached.screen -eq 1) `
+        'Loading a workbook must stay on the workbook screen.'
+    Assert-True ($attached.mode -ceq 'refactor') `
+        'Loading a workbook must not drop the chosen work.'
+    Assert-True ($attached.modules -gt 0) `
+        'No modules were read from the workbook.'
+    Assert-True ($attached.nextReady) `
+        'A loaded workbook must enable next.'
+    Assert-True (-not $attached.backDisabled) `
+        'The workbook screen keeps its way back.'
+
+    Assert-True ($book.screen -eq 2) `
+        'The read result screen is missing.'
+    Assert-True (@($book.stats).Count -ge 2) `
+        'The read result must show what was read.'
+
+    # Back walks the new order in reverse and keeps what was decided.
+    Assert-True ($backToStart.screen -eq 0) `
+        'Back must reach the work choice again.'
+    Assert-True ($backToStart.mode -ceq 'refactor' -and
+        $backToStart.book) `
+        'Going back must keep the work and the workbook.'
+
     # One screen, one decision: the purpose is chosen by hand and does
     # not advance the flow by itself.
     Assert-True ($purpose.cards -ge 3 -and -not $purpose.nextReady) `
         'The purpose screen must offer every preset and wait.'
+
+    # The line under each preset name is the file's own description
+    # section, read here from the shipped presets. It used to be taken
+    # from the request, which is written for the chat AI and wraps
+    # wherever the column ran out, so the card showed somebody else's
+    # sentence with its tail cut off.
+    $fullStop = [char]0x3002
+    $danglingMarks = @(
+        [char]0x3001,
+        [char]0x30FB,
+        [char]0xFF0C,
+        [char]0x300C,
+        [char]0xFF08)
+    $descriptionHeading = '## ' + (-join [char[]](0x8AAC, 0x660E))
+    $modeHeading = '## ' + (-join [char[]](0x7528, 0x9014))
+    $diagnoseWord = -join [char[]](0x8A3A, 0x65AD)
+    $expected = @{ refactor = @(); diagnose = @() }
+    $presetFiles = @(Get-ChildItem `
+        (Join-Path $repoRoot 'presets') -Filter '*.md' |
+        Sort-Object `
+            @{ Expression = {
+                if ($_.Name -match '^(\d+)_') {
+                    [int]$Matches[1]
+                } else {
+                    [int]::MaxValue
+                } } },
+            Name)
+    Assert-True ($presetFiles.Count -ge 6) `
+        'The shipped presets are missing.'
+    foreach ($file in $presetFiles) {
+        $text = [regex]::Replace(
+            [IO.File]::ReadAllText($file.FullName, [Text.Encoding]::UTF8),
+            '<!--[\s\S]*?-->',
+            '')
+        $sections = @{}
+        $current = ''
+        foreach ($line in ($text -split "`r`n|`n")) {
+            if ($line -like '## *') {
+                $current = $line.Trim()
+                $sections[$current] = @()
+            } elseif ($current -ne '' -and $line.Trim() -ne '') {
+                $sections[$current] += $line.Trim()
+            }
+        }
+        Assert-True ($sections.ContainsKey($descriptionHeading)) `
+            ('A shipped preset declares no card line: ' + $file.Name)
+        # A wrap inside Japanese prose is not a space; between two Latin
+        # words it is.
+        $joined = ''
+        foreach ($line in $sections[$descriptionHeading]) {
+            if ($joined -eq '') {
+                $joined = $line
+                continue
+            }
+            if (($joined[$joined.Length - 1] -match '[0-9A-Za-z]') -and
+                ($line[0] -match '[0-9A-Za-z]')) {
+                $joined += ' '
+            }
+            $joined += $line
+        }
+        $route = 'refactor'
+        if ($sections.ContainsKey($modeHeading) -and
+            (@($sections[$modeHeading]) -join '') -ceq $diagnoseWord) {
+            $route = 'diagnose'
+        }
+        $expected[$route] += $joined
+    }
+
+    # Both routes list their own presets through the same card builder.
+    $diagnosePurpose = $result.diagnosePurpose | ConvertFrom-Json
+    foreach ($route in @('refactor', 'diagnose')) {
+        $screen = if ($route -eq 'refactor') {
+            $purpose
+        } else {
+            $diagnosePurpose
+        }
+        $shown = @($screen.descriptions | ForEach-Object {
+            ([string]$_).Trim() })
+        $declared = @($expected[$route])
+        Assert-True ($declared.Count -ge 3) `
+            ("The $route route ships too few presets: " + $declared.Count)
+        Assert-True ($shown.Count -eq $declared.Count) `
+            ("The $route purpose screen showed " + $shown.Count +
+                ' lines for ' + $declared.Count + ' presets.')
+        for ($i = 0; $i -lt $declared.Count; $i++) {
+            Assert-True ($shown[$i] -ceq $declared[$i]) `
+                ("The $route purpose screen shows " + $shown[$i] +
+                    ' instead of the declared ' + $declared[$i])
+            Assert-True ($shown[$i].EndsWith($fullStop)) `
+                ('A preset card line is cut mid-sentence: ' + $shown[$i])
+            foreach ($mark in $danglingMarks) {
+                Assert-True (-not $shown[$i].EndsWith($mark)) `
+                    ('A preset card line ends on a dangling mark: ' +
+                        $shown[$i])
+            }
+        }
+    }
+
     Assert-True ($purposeChosen.stillHere -eq 3) `
         'Choosing a purpose must not advance the screen by itself.'
     Assert-True ($purposeChosen.selected -eq 1) `
@@ -353,10 +499,22 @@ try {
 
     Assert-True (@($summary.values).Count -ge 3) `
         'The output screen must summarise what will be written.'
+    # The names carry the workbook's own base name and the run's date, so
+    # they are derived from the workbook this run was given.
+    $bookBase = [IO.Path]::GetFileNameWithoutExtension($resolvedBookPath)
+    $bookExtension = [IO.Path]::GetExtension($resolvedBookPath)
+    $expectedDiffName = $bookBase + '-Diff-Report-' +
+        [DateTime]::Now.ToString('yyyyMMdd') + '.html'
+    $expectedOutputName = $bookBase + '-Modified-' +
+        [DateTime]::Now.ToString('yyyyMMdd') + $bookExtension
     Assert-True (
         @($summary.files) -contains 'request.md' -and
-        @($summary.files) -contains 'diff-report.html') `
-        'The output screen must show the run folder contract.'
+        @($summary.files) -contains 'source-code.md' -and
+        @($summary.files) -contains 'result.md' -and
+        @($summary.files) -contains $expectedDiffName -and
+        @($summary.files) -contains $expectedOutputName) `
+        ('The output screen must show the run folder contract: ' +
+            (@($summary.files) -join ', '))
 
     Assert-True (
         $done.outputPath.StartsWith(
@@ -383,7 +541,7 @@ try {
         'request.md',
         'source-code.md',
         [IO.Path]::GetFileName($done.outputPath),
-        'diff-report.html',
+        [IO.Path]::GetFileName($done.diffPath),
         'result.md')) {
         Assert-True (@($done.rows) -contains $name) `
             "The result list is missing: $name"
@@ -396,12 +554,19 @@ try {
         [string]$result.output) `
         'The build must use the name shown on the output screen.'
 
+    # The written report is the review screen, read-only: it renders with
+    # the app's own diff code, so rows appear only if that bundle ran.
     $report = $result.report | ConvertFrom-Json
     Assert-True (
         $report.modules -ge 3 -and
-        $report.treeLinks -ge 3 -and
         $report.markers -gt 0) `
-        'The diff report must open with its tree and inline rows.'
+        'The diff report must open with its module list and its rows.'
+    Assert-True ($report.toolbar -ge 4) `
+        ('The report toolbar lost its controls: ' + $report.toolbar)
+    Assert-True ($report.theme -ceq 'light') `
+        'The report must open in the light theme.'
+    Assert-True ($report.editable -eq 0) `
+        'The report must offer nothing to edit.'
     Assert-True ($report.external -eq 0) `
         'The diff report must stay self-contained.'
     Assert-True (-not $report.horizontal) `
