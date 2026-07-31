@@ -19,6 +19,22 @@
     "AIへ渡す"
   ];
 
+  // The short way through. It is the same run as the detailed one -
+  // same request id, same answer checks, same rebuild - with the screens
+  // that ask the user to decide things left out: no preset to pick, no
+  // module list, no diff, no output name. Only the wording and which
+  // screens are visited differ, so nothing below is a second flow.
+  var SIMPLE_MAJORS = [
+    "ブックを選ぶ",
+    "AIへ依頼する",
+    "返答を取り込む",
+    "ブックを作る"
+  ];
+
+  function isSimple(state) {
+    return Boolean(state) && state.simple === true;
+  }
+
   function isDiagnose(state) {
     return Boolean(state) && state.mode === "diagnose";
   }
@@ -56,6 +72,9 @@
   var OPENING_MAJORS = [MAJORS[0]];
 
   function getMajors(state) {
+    if (isSimple(state)) {
+      return SIMPLE_MAJORS;
+    }
     if (!state || !state.mode) {
       return OPENING_MAJORS;
     }
@@ -90,6 +109,24 @@
     return Boolean(state) &&
       Boolean(state.requestId) &&
       state.intakeRequestId === state.requestId;
+  }
+
+  // The verdict that nothing should change, while it still answers the
+  // request on screen. Like an imported package it belongs to one
+  // request only, so a new request leaves it behind.
+  function getNoChangeResult(state) {
+    var result = state && state.noChangeResult
+      ? state.noChangeResult
+      : null;
+
+    if (!result || !state.requestId) {
+      return null;
+    }
+    return result.requestId === state.requestId ? result : null;
+  }
+
+  function isNoChange(state) {
+    return getNoChangeResult(state) !== null;
   }
 
   // The answer arrives one module at a time. Until every declared
@@ -211,7 +248,9 @@
     },
     {
       major: 1,
-      sub: "2/3",
+      sub: function (state) {
+        return isSimple(state) ? "1/4" : "2/3";
+      },
       title: function () {
         return "Excelブックを読み込みます";
       },
@@ -288,18 +327,28 @@
     {
       major: 2,
       sub: function (state) {
+        if (isSimple(state)) {
+          return "2/4";
+        }
         return stepTwoLabel(
           state,
           getQuestions(state).length > 0 ? 3 : 2);
       },
-      title: function () {
-        return "AIへ送る依頼文を用意しました";
+      title: function (state) {
+        return isSimple(state)
+          ? "どのように直しますか"
+          : "AIへ送る依頼文を用意しました";
       },
       meta: function (state) {
+        if (isSimple(state)) {
+          return getBookName(state);
+        }
         return state.presetName || "依頼文";
       },
-      context: function () {
-        return "内容を変えたいときは「依頼文を確認・編集」を開きます";
+      context: function (state) {
+        return isSimple(state)
+          ? "直したいことを、ふだんの言葉で書いてください"
+          : "内容を変えたいときは「依頼文を確認・編集」を開きます";
       },
       ready: function (state) {
         return state.requestText.trim().length > 0;
@@ -308,6 +357,9 @@
     {
       major: 2,
       sub: function (state) {
+        if (isSimple(state)) {
+          return "3/4";
+        }
         return stepTwoLabel(state, stepTwoCount(state));
       },
       title: function (state) {
@@ -338,11 +390,17 @@
       major: 3,
       sub: "1/2",
       title: function (state) {
+        if (isNoChange(state)) {
+          return "AIは変更なしと判断しました";
+        }
         return isSplitOutput(state)
           ? "AIの返答をモジュールごとに取り込みます"
           : "AIの返答をまとめて取り込みます";
       },
       meta: function (state) {
+        if (isNoChange(state)) {
+          return "変更するモジュールなし";
+        }
         if (countImported(state) > 0) {
           return countImported(state) + "個のモジュールを取り込み済み";
         }
@@ -353,6 +411,9 @@
         return "コードブロックをコピー";
       },
       context: function (state) {
+        if (isNoChange(state)) {
+          return "作るブックはありません。別の返答を取り込み直せます";
+        }
         if (countImported(state) > 0) {
           return "右下の「次へ」で、取り込んだ変更を確認します";
         }
@@ -362,20 +423,30 @@
         }
         return "AIの返答のコードブロックをコピーして、ボタンを押します";
       },
+      // A verdict of "nothing to change" is an answer, not a package:
+      // there is no diff to review and no workbook to build, so the
+      // flow stops here even though the intake succeeded.
       ready: function (state) {
-        return countImported(state) > 0 && isIntakeCurrent(state);
+        return countImported(state) > 0 &&
+          isIntakeCurrent(state) &&
+          !isNoChange(state);
       }
     },
     {
       major: 3,
       sub: "2/2",
-      title: function () {
-        return "取り込んだ変更を確認します";
+      title: function (state) {
+        return isSimple(state)
+          ? "AIが直した内容を確認します"
+          : "取り込んだ変更を確認します";
       },
       meta: function (state) {
         return countChanged(state) + "モジュールに変更";
       },
       context: function (state) {
+        if (isSimple(state)) {
+          return "内容でよければ、右下の「マクロを改修」を押します";
+        }
         return state.pasteEditing
           ? "手動修正を反映するか、やめると次へ進めます"
           : "内容を確かめたら、右下の「次へ」で作成へ進みます";
@@ -514,10 +585,21 @@
     return get(index).ready(state) === true;
   }
 
-  // One fork: presets without questions skip the form.
+  // Presets without questions skip the form. The short way skips the
+  // screens that exist only to be decided on: what was read, which
+  // preset, the questions, and the name of the file to write.
   function nextIndex(state, index) {
     var current = clampIndex(index);
 
+    if (isSimple(state)) {
+      if (current === BOOK_SCREEN) {
+        return REQUEST_SCREEN;
+      }
+      if (current === REVIEW_SCREEN) {
+        return BUILD_SCREEN;
+      }
+      return clampIndex(current + 1);
+    }
     if (current === PURPOSE_SCREEN && getQuestions(state).length === 0) {
       return REQUEST_SCREEN;
     }
@@ -544,8 +626,11 @@
     count: SCREENS.length,
     majors: MAJORS,
     getMajors: getMajors,
+    isSimple: isSimple,
     isDiagnose: isDiagnose,
     isChatOnly: isChatOnly,
+    isNoChange: isNoChange,
+    getNoChangeResult: getNoChangeResult,
     isTerminal: isTerminal,
     canFinish: canFinish,
     countAnswers: countAnswers,

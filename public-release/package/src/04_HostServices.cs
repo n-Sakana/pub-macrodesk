@@ -166,7 +166,7 @@ namespace MacroStudio
 
             Dictionary<string, object> result =
                 new Dictionary<string, object>();
-            result.Add("version", "beta 1.0.0");
+            result.Add("version", "beta 1.1.0");
             result.Add("presets", presets);
             result.Add(
                 "buildFileLabel",

@@ -1387,6 +1387,14 @@
   font-family: var(--font-code);
 }
 
+/* The short way in sits under the two main choices, at the far end of
+   the row, so it is available without competing with them. */
+.simple-start {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-3);
+}
+
 .result-note {
   margin: var(--space-3) 0 0;
   color: var(--danger-text);

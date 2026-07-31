@@ -30,7 +30,7 @@ namespace MacroStudio
 
         public MainWindow()
         {
-            Title = "MacroStudio beta 1.0.0";
+            Title = "MacroStudio beta 1.1.0";
             // Without this the window and its taskbar button show the
             // icon of whatever process is hosting it, which is
             // powershell.exe.
@@ -165,7 +165,7 @@ namespace MacroStudio
             stack.Children.Add(name);
 
             TextBlock version = new TextBlock();
-            version.Text = "beta 1.0.0";
+            version.Text = "beta 1.1.0";
             version.FontSize = 11;
             version.Margin = new Thickness(0, 4, 0, 0);
             version.HorizontalAlignment = HorizontalAlignment.Center;

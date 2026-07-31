@@ -13,6 +13,9 @@
       selectedModuleName: null,
       pasteEditing: false,
       mode: null,
+      // The short way through the same run: fewer screens, nothing else
+      // different. Off unless the opening screen turns it on.
+      simple: false,
       presetFile: null,
       presetName: "",
       questions: [],
@@ -21,6 +24,11 @@
       requestBase: "",
       requestId: null,
       intakeResult: null,
+      // An answer that concluded nothing should change: which verdict
+      // it reached, why, and which request it answered. It is a result
+      // in its own right, so it is kept apart from an import and never
+      // counts as one.
+      noChangeResult: null,
       // Which request the imported package answered. A package only
       // counts while it belongs to the request that is on screen.
       intakeRequestId: null,
@@ -251,6 +259,7 @@
     state.answers = {};
     state.requestId = null;
     state.intakeResult = null;
+    state.noChangeResult = null;
     state.intakeRequestId = null;
     state.intakeParts = null;
     state.requestText = "";
@@ -323,6 +332,7 @@
     state.selectedModuleName = null;
     state.pasteEditing = false;
     state.intakeResult = null;
+    state.noChangeResult = null;
     state.intakeRequestId = null;
     state.intakeParts = null;
     return discarded;
@@ -503,12 +513,39 @@
   // Refactor or diagnose. Changing the answer drops the preset that
   // belonged to the previous one, and with it the request id an
   // imported package would have answered.
+  // Starting the short way is choosing a refactoring run and moving on
+  // to the workbook in one press: there is no separate work to pick.
+  function startSimple() {
+    var api = screenApi();
+
+    state.simple = true;
+    state.mode = "refactor";
+    state.presetFile = null;
+    state.presetName = "";
+    state.questions = [];
+    state.answers = {};
+    state.questionIndex = 0;
+    state.requestBase = "";
+    state.requestId = null;
+    state.requestText = "";
+    state.outputRules = null;
+    state.splitOutputRules = null;
+    state.splitOutput = false;
+    state.lastError = null;
+    clearImportedModules();
+    state.history = [];
+    state.screen = api ? api.bookScreen : 1;
+    notify();
+    return true;
+  }
+
   function setMode(mode) {
     var next = mode === "diagnose" ? "diagnose" : "refactor";
 
-    if (state.mode === next) {
+    if (state.mode === next && state.simple === false) {
       return false;
     }
+    state.simple = false;
     state.mode = next;
     state.presetFile = null;
     state.presetName = "";
@@ -544,6 +581,7 @@
     state.answers = {};
     state.questionIndex = 0;
     state.intakeResult = null;
+    state.noChangeResult = null;
     notify();
   }
 
@@ -663,6 +701,23 @@
   function setIntakeResult(result) {
     state.intakeResult = result || null;
     notify();
+  }
+
+  // An answer that concluded nothing should change. It replaces any
+  // package taken in before it, because both cannot be the answer to
+  // the same request, and it carries the request it answered so a
+  // later one cannot inherit it.
+  function setNoChangeResult(verdict, summary) {
+    clearImportedModules();
+    state.noChangeResult = verdict
+      ? {
+        verdict: String(verdict),
+        summary: String(summary === undefined ? "" : summary),
+        requestId: state.requestId
+      }
+      : null;
+    notify();
+    return state.noChangeResult !== null;
   }
 
   // Taking the whole answer back out again, so a wrong package leaves
@@ -909,6 +964,7 @@
     setRequestText: setRequestText,
     setRequestBase: setRequestBase,
     setMode: setMode,
+    startSimple: startSimple,
     setPurpose: setPurpose,
     setAnswer: setAnswer,
     setQuestionIndex: setQuestionIndex,
@@ -918,6 +974,7 @@
     acceptModuleChange: acceptModuleChange,
     importPackage: importPackage,
     setIntakeResult: setIntakeResult,
+    setNoChangeResult: setNoChangeResult,
     setIntakeParts: setIntakeParts,
     discardImportedModules: discardImportedModules,
     setOutputRules: setOutputRules,

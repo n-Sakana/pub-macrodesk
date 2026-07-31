@@ -24,8 +24,25 @@
   //
   // The parts are collected here and merged back into one package, so
   // everything after the intake sees a single answer either way.
+  //
+  // An answer can also conclude that nothing should be changed. That is
+  // a result, not a failure, so it has to be said outright - which of
+  // the two conclusions it is, and why:
+  //
+  //   '@MACROSTUDIO <request id> SUMMARY BEGIN
+  //   ...why, and what was looked at...
+  //   '@MACROSTUDIO <request id> SUMMARY END
+  //   '@MACROSTUDIO <request id> NOCHANGE UNNECESSARY
+  //   '@MACROSTUDIO <request id> COMPLETE 0
+  //
+  // All four things are required. An answer that merely stops, or comes
+  // back empty, or is cut off, says none of this and must keep being
+  // refused: silence is not a verdict.
   var MARKER = "'@MACROSTUDIO";
   var KINDS = ["standard", "class", "form", "document"];
+  // UNNECESSARY: the macro already does what was asked.
+  // IMPOSSIBLE: it could be done, but not by rewriting these modules.
+  var VERDICTS = ["UNNECESSARY", "IMPOSSIBLE"];
   var NAME_PATTERN = /^[A-Za-zÀ-￿][\wÀ-￿]{0,30}$/;
 
   var MESSAGES = {
@@ -76,7 +93,17 @@
       "［最初から取り込み直す］を押してから、もう一度取り込んでください。",
     partDuplicateModule:
       "同じモジュールが別の番号でも届きました。AIへ、モジュールごとに" +
-      "1回だけ返すよう伝えてください。"
+      "1回だけ返すよう伝えてください。",
+    noChangeVerdict:
+      "「変更なし」の返答に、改修が不要なのか、できないのかが" +
+      "書かれていませんでした。コードブロック全体をコピーし直して、" +
+      "もう一度お試しください。",
+    noChangeReason:
+      "「変更なし」の返答に理由が書かれていませんでした。AIへ、" +
+      "そう判断した理由を要約に書いて返すよう伝えてください。",
+    noChangeContradiction:
+      "「変更なし」と書かれているのに、モジュールも入っていました。" +
+      "コードブロック全体をコピーし直して、もう一度お試しください。"
   };
 
   function createRequestId() {
@@ -218,12 +245,14 @@
     var summary = [];
     var inSummary = false;
     var part = null;
+    var noChange = null;
     var index;
     var sentinel;
     var kind;
     var name;
     var partIndex;
     var partTotal;
+    var verdict;
 
     if (!isRequestId(requestId)) {
       return failure("otherRequest");
@@ -298,6 +327,23 @@
         part = { index: partIndex, total: partTotal };
         continue;
       }
+      // The answer concluding that nothing should change. It has to
+      // name which conclusion it reached; anything else is unreadable
+      // rather than empty.
+      if (sentinel.directive === "NOCHANGE") {
+        if (noChange !== null) {
+          return failure("mismatch");
+        }
+        if (sentinel.parts.length !== 3) {
+          return failure("noChangeVerdict");
+        }
+        verdict = sentinel.parts[2].toUpperCase();
+        if (VERDICTS.indexOf(verdict) < 0) {
+          return failure("noChangeVerdict");
+        }
+        noChange = verdict;
+        continue;
+      }
       if (sentinel.directive === "BEGIN") {
         if (open !== null) {
           return failure("mismatch");
@@ -361,7 +407,23 @@
     if (!sawMarker) {
       return failure("noSentinel");
     }
-    if (modules.length === 0) {
+    summary = trimBlankEdges(summary);
+    if (noChange !== null) {
+      // Saying "nothing to change" and then sending modules is a
+      // contradiction, and a verdict with no reason behind it is not
+      // something to show anyone. Neither is a near miss to be waved
+      // through.
+      if (modules.length > 0) {
+        return failure("noChangeContradiction");
+      }
+      if (part !== null) {
+        return failure("mismatch");
+      }
+      if (summary.join("").replace(/[\s　]/g, "").length === 0) {
+        return failure("noChangeReason");
+      }
+    } else if (modules.length === 0) {
+      // No modules and no verdict: the answer simply stopped.
       return failure("truncated");
     }
     if (completed === null) {
@@ -375,8 +437,9 @@
       ok: true,
       reason: "",
       message: "",
-      summary: trimBlankEdges(summary).join("\r\n"),
+      summary: summary.join("\r\n"),
       part: part,
+      noChange: noChange,
       modules: modules
     };
   }
@@ -522,6 +585,7 @@
       message: "",
       summary: summaries.join("\r\n\r\n"),
       part: null,
+      noChange: null,
       modules: collection.parts.map(function (entry) {
         return {
           name: entry.name,
@@ -561,6 +625,7 @@
       existing: 0,
       added: 0,
       summary: "",
+      noChange: null,
       modules: [],
       kindWarnings: []
     };
@@ -569,6 +634,7 @@
       return parsed || failure("noSentinel");
     }
     summary.summary = parsed.summary || "";
+    summary.noChange = parsed.noChange || null;
     (existingModules || []).forEach(function (module) {
       known[module.name.toLowerCase()] = module;
     });
@@ -620,10 +686,18 @@
       "変更内容を見て、意図どおりか確かめてください。";
   }
 
+  // The sentinel an answer uses to say there is nothing to change.
+  function noChangeLine(requestId, verdict) {
+    return MARKER + " " + requestId + " NOCHANGE " +
+      String(verdict).toUpperCase();
+  }
+
   global.MacroStudioResponse = {
     marker: MARKER,
     kinds: KINDS,
+    verdicts: VERDICTS,
     messages: MESSAGES,
+    noChangeLine: noChangeLine,
     createRequestId: createRequestId,
     isRequestId: isRequestId,
     beginLine: beginLine,

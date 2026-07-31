@@ -165,6 +165,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-diff-report-w
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-webview-security.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-encrypted-book.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-window-icon.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-simple-webview.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-editor-focus.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-no-change-webview.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-p9-distribution.ps1
 ```
 
@@ -189,6 +192,8 @@ node tests\test-paste-normalize.js
 node tests\test-preset-document.js
 node tests\test-preset-description.js
 node tests\test-attach-blocked.js
+node tests\test-simple-mode.js
+node tests\test-no-change.js
 node tests\test-preset-migration.js
 node tests\test-prompt-template.js
 node tests\test-vba-highlight.js
@@ -221,6 +226,28 @@ node tests\test-vba-highlight.js
   プロジェクトのロック（DPB/CMG）・破損ファイル・ヘッダだけの OLE2 が暗号化と
   判定されないことを見る。`-EncryptedBookPath` を渡すと Excel が実際に作った
   暗号化ファイルにも同じ検査を掛ける。
+- `tests\test-simple-mode.js` と `tests\test-simple-webview.ps1` …
+  簡易モード（SPEC §5.5）。前者は最初の画面の副次ボタン、飛ばす画面、
+  1 つの入力欄と 1 つのチェック、概要だけの確認画面、詳細モードの非回帰を見る。
+  後者は実 WebView2 で**ワンペーストとモジュール単位の両方を最後まで通し**、
+  出力ファイルが実在することまで確認する。飛ばす分岐や概要画面を外すと落ちる。
+- `tests\test-editor-focus.ps1` … 入力中の画面（SPEC §3.7）。実 WebView2 で
+  詳細／簡易モードの `request-text` / `simple-request-input` / `answer-<n>` /
+  `output-name` / `split-output` に打ち込み、**値ではなく欄そのもの**を見る。
+  1 打鍵ごとに、同じ DOM 要素のままか・まだフォーカスを持つか・カーソル位置が
+  進んだかを記録し、通常入力・IME の変換と確定・貼り付け・範囲選択からの置換の
+  すべてで全打鍵が通ることを求める。あわせて依頼文のプレビュー行と文字数が
+  追随することも見る。`renderMain` の差分反映を外すと、全欄で `active=BODY` に
+  なって落ちる。
+- `tests\test-no-change.js` と `tests\test-no-change-webview.ps1` …
+  変更するモジュールが 0 件の返答（SPEC §6.5.1）。前者は規約側で、明示された
+  2 つの判断が受理されること、暗黙の 0 件・理由なし・不明な判断・モジュール同居・
+  別依頼 ID・途中切れ・欠番が断られること、0 件と取り込み済みが互いを打ち消すこと、
+  通常の返答が変わらないことを見る。ひな形が `NOCHANGE` の書き方を両方の
+  出力指示に持ち、その文章が JS 側へ複製されていないことも見る。後者は実 WebView2 で、
+  判断と理由が画面に出ること、`[次へ]` が閉じたままであること、diff が描かれないこと、
+  ［取り込み直す］が使えること、モジュール単位でも Part 待ちで止まらないこと、
+  そのあと通常の返答でブックまで到達できることを、両モードで確認する。
 - `tests\test-window-icon.ps1` … ウィンドウが自前のアイコンを持つこと。
   アプリと同じ手順で窓を作り、そのアイコンを 32px へラスタライズして
   画素を数える（角丸・起動画面と同じ地の色・文字が出ていること）。

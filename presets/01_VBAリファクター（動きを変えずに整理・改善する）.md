@@ -130,6 +130,26 @@
 
 '@MACROSTUDIO {{REQUEST_ID}} COMPLETE <モジュールの数>
 
+直すところが無いと判断したとき、または、この形では直せないと判断したときは、
+モジュールを 1 つも書かず、代わりに次の形で返してください。
+求められていない変更を作って埋めることはしないでください。
+
+'@MACROSTUDIO {{REQUEST_ID}} SUMMARY BEGIN
+（なぜそう判断したか。何を見て、どこがそうなっているか。
+　マクロを書かない人にも分かる言葉で 3〜6 行程度）
+'@MACROSTUDIO {{REQUEST_ID}} SUMMARY END
+'@MACROSTUDIO {{REQUEST_ID}} NOCHANGE <判断>
+'@MACROSTUDIO {{REQUEST_ID}} COMPLETE 0
+
+<判断> は次のどちらかです。
+
+- UNNECESSARY … いまのままで依頼の内容を満たしているので、直す必要がない
+- IMPOSSIBLE … 直したほうがよいが、渡されたモジュールを書き換える形ではできない
+
+この 4 行はすべて必要です。理由を書かずに NOCHANGE だけを返したり、
+COMPLETE 0 だけを返したりしないでください。何も返さないこと、
+返答を途中でやめることも、「変更なし」とは扱われません。
+
 守ってください:
 
 - <種類> は standard / class / form / document のどれかです。
@@ -184,6 +204,26 @@
 （そのモジュールの全文）
 '@MACROSTUDIO {{REQUEST_ID}} END <種類> <モジュール名>
 '@MACROSTUDIO {{REQUEST_ID}} COMPLETE 1
+
+直すところが無いと判断したとき、または、この形では直せないと判断したときは、
+モジュールを 1 つも出さず、1 回の返答だけで次の形で返してください。
+PART の行は付けません。番号を待つ必要も、続きを出す必要もありません。
+
+'@MACROSTUDIO {{REQUEST_ID}} SUMMARY BEGIN
+（なぜそう判断したか。何を見て、どこがそうなっているか。
+　マクロを書かない人にも分かる言葉で 3〜6 行程度）
+'@MACROSTUDIO {{REQUEST_ID}} SUMMARY END
+'@MACROSTUDIO {{REQUEST_ID}} NOCHANGE <判断>
+'@MACROSTUDIO {{REQUEST_ID}} COMPLETE 0
+
+<判断> は次のどちらかです。
+
+- UNNECESSARY … いまのままで依頼の内容を満たしているので、直す必要がない
+- IMPOSSIBLE … 直したほうがよいが、渡されたモジュールを書き換える形ではできない
+
+この 4 行はすべて必要です。理由を書かずに NOCHANGE だけを返したり、
+COMPLETE 0 だけを返したりしないでください。何も返さないこと、
+返答を途中でやめることも、「変更なし」とは扱われません。
 
 守ってください:
 

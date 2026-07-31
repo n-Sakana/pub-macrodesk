@@ -250,7 +250,9 @@
     arrowUp: '<path d="m6 15 6-6 6 6"/>',
     arrowDown: '<path d="m6 9 6 6 6-6"/>',
     restart: '<path d="M4 4v6h6"/><path d="M5.5 15a8 8 0 1 0 .8-7.7L4 10"/>',
-    chevron: '<path d="m9 6 6 6-6 6"/>'
+    chevron: '<path d="m9 6 6 6-6 6"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/>' +
+      '<path d="M12 8h.01"/>'
   };
 
   function createIcon(name, className) {
@@ -589,7 +591,23 @@
       list.appendChild(createModeCard(state, choice));
     });
     task.appendChild(list);
+    task.appendChild(createSimpleStart(state));
     return task;
+  }
+
+  // The short way in, offered quietly beside the two main choices so it
+  // never reads as a third one.
+  function createSimpleStart(state) {
+    var row = createElement("div", "simple-start");
+    var button = createFlowButton(
+      "簡易モードで始める",
+      "start-simple",
+      { compact: true, disabled: state.busyAction !== null });
+
+    button.title =
+      "ブックを選び、直したいことを書くだけで進みます";
+    row.appendChild(button);
+    return row;
   }
 
   // ---- screen 3: what kind of request ----
@@ -735,10 +753,71 @@
     return row;
   }
 
-  function createScreen3(state) {
+  // The short way: one box to write in, and one option for a long
+  // macro. Nothing about presets, ids or output rules appears - those
+  // are settled behind this screen.
+  function createSimpleRequestScreen(state) {
     var task = createTask("task--wide");
-    var headline = createElement("div", "headline-card");
-    var preview = state.requestText
+    var textarea = createElement("textarea", "form-textarea");
+
+    task.appendChild(createTaskIntro(
+      "直したいことを書いてください。"));
+    textarea.id = "simple-request-input";
+    textarea.value = state.requestText;
+    textarea.spellcheck = false;
+    textarea.rows = 8;
+    textarea.disabled = state.busyAction !== null;
+    textarea.setAttribute("data-simple-request", "true");
+    textarea.setAttribute(
+      "placeholder",
+      "例: 実行に時間がかかるので、速くしてください。" +
+        "動きは今までと同じにしてください。");
+    textarea.setAttribute("aria-label", "どのように直しますか");
+    task.appendChild(textarea);
+    if (state.splitOutputRules) {
+      task.appendChild(createSimpleSplitOption(state));
+    }
+    return task;
+  }
+
+  // The same switch as the detailed screen, on the same state and the
+  // same rules, worded for someone who only knows their macro is long.
+  function createSimpleSplitOption(state) {
+    var row = createElement("div", "option-row");
+    var label = createElement("label", "option-label");
+    var input = createElement("input", "option-checkbox");
+
+    input.type = "checkbox";
+    input.id = "split-output";
+    input.checked = state.splitOutput === true;
+    input.disabled = state.busyAction !== null;
+    label.setAttribute("for", "split-output");
+    label.appendChild(input);
+    label.appendChild(createElement(
+      "span",
+      "option-text",
+      "コードが長い場合は、モジュールごとに受け取る"));
+    row.appendChild(label);
+    row.appendChild(createElement(
+      "p",
+      "option-help",
+      state.splitOutput
+        ? "AIは1回の返答に1つずつ出します。届いた順に貼り付けてください。"
+        : "AIの返答が途中で切れるときに使います。"));
+    return row;
+  }
+
+  function createScreen3(state) {
+    var task;
+    var headline;
+    var preview;
+
+    if (global.MacroStudioScreens.isSimple(state)) {
+      return createSimpleRequestScreen(state);
+    }
+    task = createTask("task--wide");
+    headline = createElement("div", "headline-card");
+    preview = state.requestText
       .replace(/\r\n/g, "\n")
       .split("\n")
       .filter(function (line) {
@@ -898,6 +977,17 @@
       }
     });
     lines = withoutFences;
+
+    // An answer usually differs from the workbook at the end of a line
+    // without meaning anything by it: models drop or add trailing spaces
+    // as they format. Left in, such a line counts as changed and the
+    // diff marks the invisible difference with one dot per space, which
+    // reads as damage to code nobody touched. Only the end of the line
+    // is trimmed - the indent and any spacing inside the line are the
+    // code's own and are left exactly as written.
+    lines = lines.map(function (line) {
+      return line.replace(/[ \t]+$/, "");
+    });
 
     while (blockEnd < lines.length) {
       if (/^\s*Attribute VB_/i.test(lines[blockEnd])) {
@@ -1715,12 +1805,38 @@
     return box;
   }
 
+  // What came back when the answer was "there is nothing to change":
+  // which of the two verdicts it was, and the reason it gave. The
+  // reason is the AI's own words, shown as it wrote them.
+  function createNoChangeResult(state) {
+    var result = global.MacroStudioScreens.getNoChangeResult(state);
+    var described = describeNoChange(result.verdict);
+    var headline = createElement("div", "headline-card");
+    var wrap = createElement("div", "intake-result");
+
+    headline.appendChild(createIcon("info", "headline-icon"));
+    headline.appendChild(createElement(
+      "div",
+      "headline-text",
+      described.label));
+    headline.appendChild(createElement(
+      "p",
+      "headline-preview",
+      described.note));
+    wrap.appendChild(headline);
+    // The reason is the whole of this result, so it is on the screen,
+    // not behind something to open.
+    wrap.appendChild(createSummaryText(result.summary));
+    return wrap;
+  }
+
   function createScreen5(state) {
     var api = global.MacroStudioScreens;
     var task = createTask("task--wide");
     var imported = api.countImported(state);
     var split = api.isSplitOutput(state);
     var started = split && api.getIntakePartTotal(state) > 0;
+    var noChange = api.isNoChange(state);
     var target = createElement("div", "paste-target");
     var guide = createElement("div", "intake-guide");
     var actions = createElement("div", "inline-actions");
@@ -1737,17 +1853,21 @@
       ];
 
     task.appendChild(createTaskIntro(
-      imported > 0
-        ? "取り込みました。右下の「次へ」で内容を確認します。"
-        : split
-          ? "モジュールごとに返ってくるコードブロックを、" +
-            "届いた順に取り込んでください。"
-          : "AIの返答にあるコードブロックをコピーして、" +
-            "ボタンを押してください。"));
+      noChange
+        ? "AIは、変更するモジュールは無いと返してきました。"
+        : imported > 0
+          ? "取り込みました。右下の「次へ」で内容を確認します。"
+          : split
+            ? "モジュールごとに返ってくるコードブロックを、" +
+              "届いた順に取り込んでください。"
+            : "AIの返答にあるコードブロックをコピーして、" +
+              "ボタンを押してください。"));
 
     // Even after a package has come in, the way to take a corrected
     // answer instead stays on this screen.
-    if (imported > 0) {
+    if (noChange) {
+      task.appendChild(createNoChangeResult(state));
+    } else if (imported > 0) {
       task.appendChild(createIntakeResult(state));
     } else {
       steps.forEach(function (item) {
@@ -1771,22 +1891,27 @@
     }
 
     target.appendChild(createIcon(
-      imported > 0 ? "check" : "code",
+      imported > 0 || noChange ? "check" : "code",
       "drop-icon"));
     target.appendChild(createElement(
       "h2",
       "",
-      imported > 0
-        ? imported + "個のモジュールを取り込みました"
-        : split
-          ? "モジュールを1つずつ取り込みます"
-          : "AIの返答をここへ取り込みます"));
+      noChange
+        ? "変更するモジュールはありませんでした"
+        : imported > 0
+          ? imported + "個のモジュールを取り込みました"
+          : split
+            ? "モジュールを1つずつ取り込みます"
+            : "AIの返答をここへ取り込みます"));
     target.appendChild(createElement(
       "p",
       "",
-      imported > 0
-        ? "取り込み直すときは、もう一度コピーしてからボタンを押します。"
-        : "コードブロック全体をコピーしてから、ボタンを押してください。"));
+      noChange
+        ? "改修済みブックは作りません。" +
+          "別の返答を受け取ったときは、取り込み直せます。"
+        : imported > 0
+          ? "取り込み直すときは、もう一度コピーしてからボタンを押します。"
+          : "コードブロック全体をコピーしてから、ボタンを押してください。"));
     // Taking a different answer instead always stays available. With
     // one paste that means pasting again; with one module per answer the
     // collection is emptied first, then filled from module 00 again.
@@ -1799,14 +1924,14 @@
       actions.appendChild(createFlowButton(
         state.busyAction === "readClipboard"
           ? "読み取っています"
-          : imported > 0
+          : imported > 0 || noChange
             ? "取り込み直す"
             : started
               ? "次のモジュールを取り込む"
               : "クリップボードからAIの返答を取り込む",
         "import-response",
         {
-          kind: imported > 0 ? "" : "primary",
+          kind: imported > 0 || noChange ? "" : "primary",
           icon: "copy",
           disabled: state.busyAction !== null
         }));
@@ -1847,16 +1972,54 @@
 
   // The review screen shows what came in. Deciding to keep it is the
   // act of pressing next, so there is no separate accept button.
+  // The short way shows what the AI said it changed, and nothing else:
+  // no module list and no diff. The checks behind it are the same ones
+  // the detailed screen relies on - they have already run by now.
+  function createSimpleReviewScreen(state) {
+    var task = createTask("task--wide");
+    var headline = createElement("div", "headline-card");
+    var summary = state.intakeResult && state.intakeResult.summary
+      ? String(state.intakeResult.summary)
+      : "";
+
+    task.appendChild(createTaskIntro(
+      "AIが直した内容です。"));
+    headline.appendChild(createIcon("code", "headline-icon"));
+    headline.appendChild(createElement(
+      "div",
+      "headline-text",
+      "改修内容"));
+    task.appendChild(headline);
+    if (summary) {
+      task.appendChild(createSummaryText(summary));
+    } else {
+      task.appendChild(createElement(
+        "p",
+        "headline-preview",
+        "AIからの説明はありませんでした。" +
+          "そのまま改修へ進めます。"));
+    }
+    return task;
+  }
+
   function createScreen6(state) {
     var api = global.MacroStudioScreens;
-    var changed = api.countChanged(state);
-    var unchanged = api.countUnchangedImports(state);
-    var open = disclosureOpen["change-detail"] === true;
-    var task = createTask(
-      "task--wide" + (open ? " task--fill" : ""));
-    var headline = createElement("div", "headline-card");
-    var kindWarning = state.intakeResult &&
-      state.intakeResult.kindWarning
+    var changed;
+    var unchanged;
+    var open;
+    var task;
+    var headline;
+    var kindWarning;
+
+    if (api.isSimple(state)) {
+      return createSimpleReviewScreen(state);
+    }
+    changed = api.countChanged(state);
+    unchanged = api.countUnchangedImports(state);
+    open = disclosureOpen["change-detail"] === true;
+    task = createTask("task--wide" + (open ? " task--fill" : ""));
+    headline = createElement("div", "headline-card");
+    kindWarning = state.intakeResult && state.intakeResult.kindWarning
       ? state.intakeResult.kindWarning
       : "";
 
@@ -2247,7 +2410,14 @@
     var api = global.MacroStudioScreens;
     var done = api.isTerminal(state, state.screen);
     var forwardAction = done ? "finish" : "go-next";
-    var forwardLabel = done ? "完了" : "次へ";
+    // The short way builds straight from the review screen, so the one
+    // button there says what pressing it does.
+    var forwardLabel = done
+      ? "完了"
+      : (api.isSimple(state) &&
+          state.screen === api.reviewScreen
+        ? "マクロを改修"
+        : "次へ");
     var forwardReady = done
       ? api.canFinish(state, state.screen)
       : global.MacroStudioState.canGoNext();
@@ -2325,11 +2495,129 @@
     return true;
   }
 
+  // The box the person is writing in, if there is one.
+  //
+  // Typing goes through the state, and the state repaints the screen.
+  // That is fine for everything except the box the characters are
+  // coming from: replacing that element takes the caret, the selection
+  // and any half-finished IME word with it, so one keystroke throws
+  // away the next. Whenever such a box has the focus, the screen is
+  // patched in place instead of rebuilt.
+  function focusedEditor() {
+    var node = document.activeElement;
+
+    if (!node || !elements.main.contains(node)) {
+      return null;
+    }
+    if (node.isContentEditable === true) {
+      return node;
+    }
+    return node.tagName === "INPUT" ||
+      node.tagName === "TEXTAREA" ||
+      node.tagName === "SELECT"
+      ? node
+      : null;
+  }
+
+  function sameKind(current, next) {
+    if (current.nodeType !== next.nodeType) {
+      return false;
+    }
+    return current.nodeType !== 1 || current.tagName === next.tagName;
+  }
+
+  function patchAttributes(current, next) {
+    var attributes = current.attributes;
+    var index;
+    var name;
+
+    for (index = attributes.length - 1; index >= 0; index -= 1) {
+      name = attributes[index].name;
+      if (!next.hasAttribute(name)) {
+        current.removeAttribute(name);
+      }
+    }
+    attributes = next.attributes;
+    for (index = 0; index < attributes.length; index += 1) {
+      name = attributes[index].name;
+      if (current.getAttribute(name) !== attributes[index].value) {
+        current.setAttribute(name, attributes[index].value);
+      }
+    }
+  }
+
+  // What a field holds is not an attribute, so it has to be carried
+  // across by hand - except for the field being written in, whose
+  // contents are the one thing on screen the state was just told about.
+  function patchFieldValue(current, next, keep) {
+    if (current === keep ||
+        (current.tagName !== "INPUT" && current.tagName !== "TEXTAREA")) {
+      return;
+    }
+    if (current.value !== next.value) {
+      current.value = next.value;
+    }
+    if (current.checked !== next.checked) {
+      current.checked = next.checked;
+    }
+  }
+
+  function holdsEditor(node, keep) {
+    return node === keep ||
+      (typeof node.contains === "function" && node.contains(keep));
+  }
+
+  function patchChildren(current, next, keep) {
+    var incoming = Array.prototype.slice.call(next.childNodes);
+    var index;
+    var existing;
+    var last;
+
+    for (index = 0; index < incoming.length; index += 1) {
+      existing = current.childNodes[index];
+      if (!existing) {
+        current.appendChild(incoming[index]);
+      } else if (sameKind(existing, incoming[index])) {
+        patchNode(existing, incoming[index], keep);
+      } else if (holdsEditor(existing, keep)) {
+        // The screen changed shape around the box being written in.
+        // Rather than lose it, the new node goes beside it.
+        current.insertBefore(incoming[index], existing);
+      } else {
+        current.replaceChild(incoming[index], existing);
+      }
+    }
+    while (current.childNodes.length > incoming.length) {
+      last = current.lastChild;
+      if (holdsEditor(last, keep)) {
+        break;
+      }
+      current.removeChild(last);
+    }
+  }
+
+  // Bring the screen on display in line with the one just built, node
+  // by node, so that everything derived from the state stays current
+  // without anything being thrown away that did not have to be.
+  function patchNode(current, next, keep) {
+    if (current.nodeType !== 1) {
+      if (current.nodeValue !== next.nodeValue) {
+        current.nodeValue = next.nodeValue;
+      }
+      return;
+    }
+    patchAttributes(current, next);
+    patchFieldValue(current, next, keep);
+    patchChildren(current, next, keep);
+  }
+
   function renderMain(state, direction) {
     var described = global.MacroStudioScreens.describe(state, state.screen);
     var screen = createElement("section", "screen");
     var header = createElement("header", "screen-header");
     var workspace = createElement("div", "workspace");
+    var live;
+    var keep;
 
     screen.setAttribute("data-screen", String(state.screen));
     if (direction) {
@@ -2354,8 +2642,19 @@
     workspace.appendChild(screenBuilders[state.screen](state));
     screen.appendChild(workspace);
 
-    elements.main.textContent = "";
-    elements.main.appendChild(screen);
+    live = elements.main.querySelector(".screen");
+    keep = focusedEditor();
+    // Only a screen that is still the same screen can be patched, and
+    // only while someone is writing in it. Every other repaint is the
+    // wholesale one it always was.
+    if (keep &&
+        live &&
+        live.getAttribute("data-screen") === String(state.screen)) {
+      patchNode(live, screen, keep);
+    } else {
+      elements.main.textContent = "";
+      elements.main.appendChild(screen);
+    }
     elements.actionContext.textContent = described.context;
   }
 
@@ -2881,6 +3180,71 @@
     return true;
   }
 
+  function startSimple() {
+    if (global.MacroStudioState.getState().busyAction) {
+      return false;
+    }
+    global.MacroStudioState.startSimple();
+    clearToast();
+    announce("簡易モードで始めます。ブックを選んでください。");
+    return true;
+  }
+
+  // The short way asks the user what to change instead of offering
+  // purposes, but the answer still has to come back in the shape the
+  // importer accepts. Those rules live in the presets and nowhere else,
+  // so one is read here for its output rules alone - its own request
+  // text is replaced by what the user wrote. A preset that cannot answer
+  // both ways is not usable, because the long-code option must stay
+  // available.
+  function findSimplePreset(state) {
+    var chosen = null;
+
+    getPresetEntries(state).forEach(function (entry) {
+      if (chosen ||
+          !entry.valid ||
+          entry.mode !== "refactor" ||
+          !entry.splitOutput) {
+        return;
+      }
+      chosen = entry;
+    });
+    return chosen;
+  }
+
+  // Called when the short way reaches the request screen. The request id
+  // is minted here, exactly as choosing a purpose would.
+  function prepareSimpleRequest() {
+    var state = global.MacroStudioState.getState();
+    var entry;
+
+    // Always a promise: the caller waits on it before moving the flow
+    // on, so a refusal has to arrive the same way an answer does.
+    if (!state.simple || state.busyAction || state.requestId) {
+      return Promise.resolve(null);
+    }
+    entry = findSimplePreset(state);
+    if (!entry) {
+      handleHostError({
+        code: "E-PRESET-01",
+        data: {
+          userMessage: "依頼の形式を読み取れませんでした。" +
+            "presets フォルダを確認してください。"
+        }
+      }, "");
+      return Promise.resolve(null);
+    }
+    return selectPurpose(entry.file).then(function (result) {
+      if (!result) {
+        return null;
+      }
+      // What the user writes replaces the preset's own request text.
+      global.MacroStudioState.setRequestBase("");
+      global.MacroStudioState.setRequestText("");
+      return result;
+    });
+  }
+
   // Turning the option on changes which rules the request carries, so
   // anything already taken in under the other shape is dropped.
   function setSplitOutput(enabled) {
@@ -3225,12 +3589,65 @@
   // One answer, one press: the package is parsed, checked against the
   // request id, and every module in it is applied together. With the
   // module-by-module option the same press takes in one part.
+  // What the two verdicts mean for the person reading them. How an
+  // answer is asked to declare them belongs to the preset templates;
+  // this is only how the declared result is reported back. Each verdict
+  // is named here rather than being reached by falling through, so a
+  // third one could never quietly be shown as one of these two.
+  var noChangeWords = {
+    UNNECESSARY: {
+      label: "改修は不要と判断されました",
+      note: "いまのマクロのままで依頼の内容を満たしている、という" +
+        "返答です。下の理由を読んで、納得できないときは依頼文を" +
+        "書き直して、AIへもう一度渡してください。"
+    },
+    IMPOSSIBLE: {
+      label: "この依頼では改修できないと判断されました",
+      note: "渡したモジュールを書き換える形では対応できない、という" +
+        "返答です。下の理由を読んで、依頼の書き方を変えるか、" +
+        "別のやり方を考えてください。"
+    }
+  };
+
+  function describeNoChange(verdict) {
+    return Object.prototype.hasOwnProperty.call(noChangeWords, verdict)
+      ? noChangeWords[verdict]
+      : {
+        label: "変更なしと判断されました",
+        note: "変更するモジュールは無い、という返答です。" +
+          "下の理由を読んで、どうするか決めてください。"
+      };
+  }
+
+  // An answer that concludes nothing should change is a result, so it
+  // is taken in and shown. There is no diff to look at and no workbook
+  // to build, so the run stops on this screen instead of going on.
+  function applyNoChange(parsed) {
+    var described = describeNoChange(parsed.noChange);
+
+    global.MacroStudioState.setNoChangeResult(
+      parsed.noChange,
+      parsed.summary || "");
+    global.MacroStudioState.setLastError(null);
+    clearToast();
+    showToast(described.label + "。", "info");
+    announce(described.label + "。");
+    recordInfo("no change reported: " + parsed.noChange);
+    return true;
+  }
+
   function applyResponsePackage(text) {
     var state = global.MacroStudioState.getState();
     var parsed = global.MacroStudioResponse.parse(text, state.requestId);
 
     if (!parsed.ok) {
       return showIntakeError(parsed.message);
+    }
+    // A verdict of "nothing to change" is a whole answer however the
+    // run asked for its modules, so it is taken before the split path
+    // can sit waiting for a module 00 that is never coming.
+    if (parsed.noChange) {
+      return applyNoChange(parsed);
     }
     if (global.MacroStudioScreens.isSplitOutput(state)) {
       return applySplitPart(state, parsed);
@@ -3539,6 +3956,20 @@
       global.MacroStudioState.setRequestText(
         composeRequestWithAnswers(state));
     }
+    // The short way has no purpose screen, so the request id and the
+    // answer rules are taken on the way to where the user writes.
+    if (state.simple &&
+        state.screen === global.MacroStudioScreens.bookScreen &&
+        !state.requestId) {
+      prepareSimpleRequest().then(function (result) {
+        if (result) {
+          global.MacroStudioState.goNext();
+          elements.main.focus();
+        }
+        return result;
+      });
+      return true;
+    }
     // Leaving the request screen is where the run folder and its two
     // files are written.
     if (state.screen === global.MacroStudioScreens.handoffScreen - 1) {
@@ -3680,6 +4111,8 @@
       toggleDisclosure(button.getAttribute("data-disclosure"));
     } else if (action === "select-mode") {
       selectMode(button.getAttribute("data-mode"));
+    } else if (action === "start-simple") {
+      startSimple();
     } else if (action === "go-question") {
       goToQuestion(button.getAttribute("data-index"));
     } else if (action === "answer-choice") {
@@ -3735,6 +4168,10 @@
     }
     if (event.target.id === "split-output") {
       setSplitOutput(event.target.checked === true);
+      return;
+    }
+    if (event.target.id === "simple-request-input") {
+      global.MacroStudioState.setRequestText(event.target.value);
       return;
     }
     if (event.target.id !== "request-text") {
@@ -4003,6 +4440,9 @@
     createResultMarkdown: createResultMarkdown,
     createIntakeScreen: createScreen5,
     createDoneScreen: createScreenDone,
+    createModeScreen: createScreenMode,
+    createRequestScreen: createScreen3,
+    createReviewScreen: createScreen6,
     createBookScreen: createScreen0,
     createPurposeScreen: createScreen2,
     buildBook: buildBook,

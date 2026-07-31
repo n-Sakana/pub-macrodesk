@@ -87,7 +87,7 @@ $resolvedBookPath = (Resolve-Path -LiteralPath $BookPath).Path
 $service = New-Object MacroStudio.HostServices($null, $repoRoot)
 
 $appInfo = $service.GetAppInfo()
-Assert-True ($appInfo['version'] -eq 'beta 1.0.0') `
+Assert-True ($appInfo['version'] -eq 'beta 1.1.0') `
     'Application version mismatch.'
 $expectedBuildFileLabel = [IO.File]::ReadAllText(
     (Join-Path $repoRoot 'assets\messages\build-file-label.txt'),
