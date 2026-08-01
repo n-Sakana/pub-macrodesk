@@ -53,6 +53,19 @@ function finding(number, className, module, environmentKey) {
 
 var state = {
   book: {name: "申請管理.xlsm", ext: ".xlsm"},
+  bookInventory: {
+    sha256: "0123456789abcdef",
+    sizeBytes: 12345,
+    modifiedUtc: "2026-08-01 00:00:00Z",
+    references: ["stdole", "Office", "Scripting"],
+    connections: ["申請一覧の接続"],
+    barcodeFonts: [],
+    hasPowerQuery: true,
+    activeXCount: 2,
+    externalLinkCount: 0,
+    hasVbaSignature: false,
+    complete: true
+  },
   outputName: "申請管理-Modified-20260801.xlsm",
   targetEnvironment: ENVIRONMENT,
   presetName: "Win32 API を使わない形へ直す",
@@ -140,8 +153,13 @@ assert(notBuilt.length === 0,
 
 var human = handover.humanTasks(state);
 var humanText = human.map(function (task) {
-  return task.title + task.reason;
-}).join("\n");
+  return task.title + task.reason + task.detail;
+}).join(" ");
+var byKey = {};
+
+human.forEach(function (task) {
+  byKey[task.key] = task;
+});
 
 ["参照設定", "Power Query", "ActiveX", "バーコード"].forEach(function (name) {
   assert(humanText.indexOf(name) >= 0,
@@ -151,6 +169,27 @@ human.forEach(function (task) {
   assert(task.reason.length > 0,
     "Each handed-over task must say why this tool cannot do it.");
 });
+
+// Each line says what was looked for and what was found, so an absence is
+// a reported observation rather than a gap in the list.
+assert(byKey.references.found === true &&
+  byKey.references.detail.indexOf("Scripting") >= 0,
+"A reference that exists must be named.");
+assert(byKey.activeX.found === true &&
+  byKey.activeX.detail.indexOf("2 件") >= 0,
+"ActiveX parts must be counted from the workbook, not assumed.");
+assert(byKey.barcode.found === false &&
+  byKey.barcode.detail.indexOf("見つかりませんでした") >= 0,
+"Nothing found must be reported as nothing found, not left out.");
+assert(byKey.externalLinks.found === false,
+  "An absent external link must report as absent.");
+
+// Without an inventory the tool says it could not look, rather than
+// listing four tasks it never checked.
+var unknown = handover.humanTasks({});
+
+assert(unknown.length === 1 && unknown[0].key === "inventory",
+  "A run with no inventory must say it could not look, not guess.");
 
 // ---- the six deliverables ----
 

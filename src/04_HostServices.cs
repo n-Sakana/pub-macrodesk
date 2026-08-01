@@ -365,6 +365,45 @@ namespace MacroStudio
             return result;
         }
 
+        private static Dictionary<string, object> CreateInventory(
+            string fullPath,
+            VbaProjectData project)
+        {
+            BookInventory inventory;
+            Dictionary<string, object> item =
+                new Dictionary<string, object>();
+            byte[] bookBytes;
+
+            try
+            {
+                bookBytes = File.ReadAllBytes(fullPath);
+            }
+            catch (IOException)
+            {
+                bookBytes = null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                bookBytes = null;
+            }
+            inventory = BookInventoryReader.Read(
+                fullPath,
+                bookBytes,
+                project);
+            item.Add("sha256", inventory.Sha256);
+            item.Add("sizeBytes", inventory.SizeBytes);
+            item.Add("modifiedUtc", inventory.ModifiedUtc);
+            item.Add("references", inventory.References.ToArray());
+            item.Add("connections", inventory.Connections.ToArray());
+            item.Add("barcodeFonts", inventory.BarcodeFonts.ToArray());
+            item.Add("hasPowerQuery", inventory.HasPowerQuery);
+            item.Add("activeXCount", inventory.ActiveXCount);
+            item.Add("externalLinkCount", inventory.ExternalLinkCount);
+            item.Add("hasVbaSignature", inventory.HasVbaSignature);
+            item.Add("complete", inventory.Complete);
+            return item;
+        }
+
         public Dictionary<string, object> AttachBook(string path)
         {
             string fullPath = ValidateAttachPath(path);
@@ -413,6 +452,10 @@ namespace MacroStudio
             // internal bookkeeping was off, instead of warning about
             // everything in the same breath.
             result.Add("read", CreateReadReport(project));
+            // Everything in the workbook that is not VBA code. This tool
+            // does not change any of it, so the screen and the handover
+            // memo can only name it and hand it to a person.
+            result.Add("inventory", CreateInventory(fullPath, project));
 
             attachedBookPath = fullPath;
             attachedSourceSignature =

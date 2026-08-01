@@ -188,6 +188,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-extract.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-roundtrip.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-bookio.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-build.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-book-inventory.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-hostservices.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-clipboard-retry.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test-diagnose-webview.ps1
@@ -284,6 +285,11 @@ node tests\test-vba-lexer.js
   ［取り込み直す］の到達性、`resultError` の表示、長いビルドの扱い）。
 - `tests\test-module-split.js` … モジュール単位出力（SPEC §13.10）の区切り行・
   複数回の取り込み・統合・全拒否経路・ひな形が文面を持つこと・既定経路の非回帰。
+- `tests\test-book-inventory.ps1` … 実ブックから、ファイルのハッシュ・サイズ・
+  更新時刻、VBA の参照設定、接続名、Power Query の有無、ActiveX と外部リンクの
+  件数、バーコードらしいフォントを読む。**接続文字列とライブラリのパスは持ち出さない**
+  こと、パッケージが開けない場合と project が無い場合に「読めなかった」と
+  申告することを固定する。
 - `tests\test-hostservices.ps1` … 添付後に元ブックが変わった場合の E-BUILD-04 と、
   同一 run の再ビルドが自分の成果物だけを世代交換すること。
 - `tests\test-host-bridge.js` … `buildBook` が client の時計で失敗確定しないこと。

@@ -27,6 +27,7 @@
       history: [],
       appInfo: null,
       book: null,
+      bookInventory: null,
       bookSnapshot: "",
       modules: [],
       selectedModuleName: null,
@@ -411,6 +412,13 @@
     state.diagnosisPromptCopied = false;
     state.diagnosisFolderOpened = false;
     invalidateDiagnosisResult();
+  }
+
+  // What the workbook carries besides its code. It belongs to the book,
+  // so it arrives and departs with it.
+  function setBookInventory(inventory) {
+    state.bookInventory = inventory || null;
+    notify();
   }
 
   function setBook(book, modules) {
@@ -1184,6 +1192,7 @@
     goNext: goNext,
     goBack: goBack,
     setBook: setBook,
+    setBookInventory: setBookInventory,
     setAppInfo: setAppInfo,
     setTargetEnvironment: setTargetEnvironment,
     setDiagnosisConcern: setDiagnosisConcern,

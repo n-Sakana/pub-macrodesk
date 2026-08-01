@@ -996,7 +996,52 @@
       "book-read-result",
       "読み取った内容を見る",
       read,
-      false));
+      false,
+      state.modules.length + " モジュール"));
+    appendOutsideCode(root, state);
+    return root;
+  }
+
+  // The workbook carries more than its code, and this tool changes none
+  // of it. What was found is named here so the reader knows before the
+  // diagnosis that some of the work will be theirs. Counts on the line,
+  // the list inside.
+  function appendOutsideCode(root, state) {
+    var tasks = global.MacroStudioHandover.humanTasks(state);
+    var found = tasks.filter(function (task) {
+      return task.found;
+    });
+    var body = element("div", "outside-code");
+    var list = element("ul", "outside-code-list");
+    var inventory = state.bookInventory;
+
+    if (!inventory) {
+      return root;
+    }
+    body.appendChild(element(
+      "p",
+      "task-note",
+      "このツールが読み書きするのは VBA のコードだけです。" +
+        "次はコードの外にあるので、見つけて名前を出すだけにします。"));
+    tasks.forEach(function (task) {
+      list.appendChild(element(
+        "li",
+        task.found ? "outside-code-found" : "",
+        task.title + " … " + task.detail));
+    });
+    body.appendChild(list);
+    if (inventory.sha256) {
+      body.appendChild(element(
+        "p",
+        "outside-code-hash",
+        "SHA-256: " + inventory.sha256));
+    }
+    root.appendChild(createDisclosure(
+      "book-outside-code",
+      "コードの外にあるもの",
+      body,
+      false,
+      found.length > 0 ? found.length + " 件あり" : "該当なし"));
     return root;
   }
 

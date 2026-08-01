@@ -19,30 +19,74 @@
   };
 
   // Work this tool cannot do. It only ever reads and rewrites VBA code,
-  // so anything living outside the modules has to be named and handed to
-  // a person rather than quietly left out.
-  var HUMAN_ONLY = [
-    {
-      key: "references",
-      title: "参照設定の棚卸しと整理",
-      reason: "参照設定はコードの外にあり、このツールは読み書きしません。"
-    },
-    {
-      key: "powerQuery",
-      title: "Power Query の接続先と資格情報の再設定",
-      reason: "クエリ定義はモジュールの外にあり、このツールは読み書きしません。"
-    },
-    {
-      key: "activeX",
-      title: "ActiveX コントロールと信頼設定の確認",
-      reason: "コントロールと信頼設定はブックと端末の設定で、コードではありません。"
-    },
-    {
-      key: "barcode",
-      title: "バーコードの生成方式と実機読取の確認",
-      reason: "フォントとコントロールの有無は端末側の状態で、コードでは決まりません。"
+  // so anything living outside the modules is found, named, and handed to
+  // a person. Each entry says what was looked for and what was found, so
+  // "見つかりませんでした" is a reported observation rather than silence.
+  function inventoryOf(state) {
+    return state && state.bookInventory ? state.bookInventory : null;
+  }
+
+  function list(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function humanTasks(state) {
+    var inventory = inventoryOf(state);
+    var tasks = [];
+
+    function add(key, title, reason, found, detail) {
+      tasks.push({
+        key: key,
+        title: title,
+        reason: reason,
+        found: found === true,
+        detail: text(detail)
+      });
     }
-  ];
+
+    if (!inventory) {
+      add("inventory", "ブックの棚卸し",
+        "参照設定・接続・ActiveX・フォントを読み取れていません。" +
+          "ブックを読み込み直してください。",
+        true, "");
+      return tasks;
+    }
+    add("references", "参照設定の棚卸しと整理",
+      "参照設定はコードの外にあり、このツールは読み書きしません。",
+      list(inventory.references).length > 0,
+      list(inventory.references).length > 0
+        ? list(inventory.references).join("、")
+        : "参照は見つかりませんでした。");
+    add("powerQuery", "Power Query の接続先と資格情報の再設定",
+      "クエリ定義はモジュールの外にあり、このツールは読み書きしません。",
+      inventory.hasPowerQuery === true ||
+        list(inventory.connections).length > 0,
+      list(inventory.connections).length > 0
+        ? "接続: " + list(inventory.connections).join("、")
+        : (inventory.hasPowerQuery === true
+          ? "Power Query の定義があります。"
+          : "クエリと接続は見つかりませんでした。"));
+    add("activeX", "ActiveX コントロールと信頼設定の確認",
+      "コントロールと信頼設定はブックと端末の設定で、コードではありません。",
+      Number(inventory.activeXCount || 0) > 0,
+      Number(inventory.activeXCount || 0) > 0
+        ? "ActiveX の部品が " + inventory.activeXCount + " 件あります。"
+        : "ActiveX の部品は見つかりませんでした。");
+    add("barcode", "バーコードの生成方式と実機読取の確認",
+      "フォントとコントロールの有無は端末側の状態で、コードでは決まりません。",
+      list(inventory.barcodeFonts).length > 0,
+      list(inventory.barcodeFonts).length > 0
+        ? "バーコード用らしいフォント: " +
+          list(inventory.barcodeFonts).join("、")
+        : "バーコード用らしいフォントは見つかりませんでした。");
+    add("externalLinks", "外部ブックへのリンクの確認",
+      "リンク先はブックの設定で、コードではありません。",
+      Number(inventory.externalLinkCount || 0) > 0,
+      Number(inventory.externalLinkCount || 0) > 0
+        ? "外部リンクが " + inventory.externalLinkCount + " 件あります。"
+        : "外部リンクは見つかりませんでした。");
+    return tasks;
+  }
 
   function text(value) {
     return String(value === undefined || value === null ? "" : value);
@@ -192,16 +236,6 @@
     return done;
   }
 
-  function humanTasks(state) {
-    return HUMAN_ONLY.map(function (task) {
-      return {
-        key: task.key,
-        title: task.title,
-        reason: task.reason
-      };
-    });
-  }
-
   function environmentRows(state) {
     var seen = {};
     var rows = [];
@@ -302,10 +336,12 @@
     lines.push("## 既知の制約");
     lines.push("");
     lines.push("このツールが読み書きするのは VBA のコードだけです。" +
-      "次はコードの外にあるため、検出も改修もしていません。");
+      "次はコードの外にあるため、探して名前を出すだけで、改修はしていません。");
     lines.push("");
     humanTasks(state).forEach(function (task) {
-      lines.push("- [ ] " + task.title + " … " + task.reason);
+      lines.push("- [ ] " + task.title +
+        (task.found ? "（該当あり）" : "（該当なし）") +
+        " … " + task.detail + " " + task.reason);
     });
     lines.push("");
     list.filter(function (problem) {

@@ -2297,6 +2297,7 @@
       data.book.warning = data.warning === true;
       data.book.read = describeReadResult(data);
       global.MacroStudioState.setBook(data.book, data.modules);
+      global.MacroStudioState.setBookInventory(data.inventory || null);
       global.MacroStudioState.setBusyAction(null);
       clearToast();
       warningMessage = data.book.read;
