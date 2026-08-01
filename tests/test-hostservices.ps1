@@ -61,6 +61,43 @@ function Assert-InsideDirectory {
         "Test path is outside the expected directory: $fullPath"
 }
 
+function Get-ClipboardDataForCleanup {
+    $lastError = $null
+    foreach ($attempt in 1..40) {
+        try {
+            return [Windows.Clipboard]::GetDataObject()
+        } catch {
+            $lastError = $_
+            Start-Sleep -Milliseconds 50
+        }
+    }
+    throw (
+        'The test could not capture the clipboard for cleanup: ' +
+        $lastError.Exception.Message)
+}
+
+function Restore-ClipboardDataForCleanup {
+    param([Windows.IDataObject]$Data)
+
+    $lastError = $null
+    foreach ($attempt in 1..40) {
+        try {
+            if ($null -eq $Data) {
+                [Windows.Clipboard]::Clear()
+            } else {
+                [Windows.Clipboard]::SetDataObject($Data, $true)
+            }
+            return
+        } catch {
+            $lastError = $_
+            Start-Sleep -Milliseconds 250
+        }
+    }
+    throw (
+        'The test could not restore the clipboard during cleanup: ' +
+        $lastError.Exception.Message)
+}
+
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName WindowsBase
@@ -86,8 +123,74 @@ $testdataRoot = (Resolve-Path (
 $resolvedBookPath = (Resolve-Path -LiteralPath $BookPath).Path
 $service = New-Object MacroStudio.HostServices($null, $repoRoot)
 
+$environmentHostRoot = Join-Path $testdataRoot (
+    'target-environment-host-' + [Guid]::NewGuid().ToString('N'))
+Assert-InsideDirectory $environmentHostRoot $testdataRoot
+$environmentDirectory = Join-Path $environmentHostRoot 'environment'
+$environmentPath = Join-Path $environmentDirectory 'target-environment.json'
+try {
+    [IO.Directory]::CreateDirectory($environmentDirectory) | Out-Null
+    $environmentService = New-Object MacroStudio.HostServices(
+        $null,
+        $environmentHostRoot)
+
+    $missingEnvironmentCode = ''
+    $missingEnvironmentValidation = ''
+    try {
+        [void]$environmentService.GetTargetEnvironment()
+    } catch [MacroStudio.HostActionException] {
+        $missingEnvironmentCode = $_.Exception.ErrorCode
+        $missingEnvironmentValidation =
+            $_.Exception.ErrorData['validationId']
+    }
+    Assert-True (
+        $missingEnvironmentCode -eq 'E-ENV-01' -and
+        $missingEnvironmentValidation -eq 'ENV-READ') `
+        'A missing target environment must fail with E-ENV-01/ENV-READ.'
+
+    $environmentProbe = 'not-json: the host must not interpret this text'
+    [IO.File]::WriteAllText(
+        $environmentPath,
+        $environmentProbe,
+        (New-Object Text.UTF8Encoding($false, $true)))
+    $environmentRead = $environmentService.GetTargetEnvironment()
+    Assert-True ($environmentRead['content'] -ceq $environmentProbe) `
+        'The host must carry target-environment text without interpreting it.'
+
+    [IO.File]::WriteAllText(
+        $environmentPath,
+        $environmentProbe,
+        (New-Object Text.UTF8Encoding($true, $true)))
+    $environmentBomRead = $environmentService.GetTargetEnvironment()
+    Assert-True ($environmentBomRead['content'] -ceq $environmentProbe) `
+        'A valid UTF-8 BOM must be accepted and removed by the host transport.'
+
+    [IO.File]::WriteAllBytes(
+        $environmentPath,
+        [byte[]]@(0x7B, 0x22, 0x78, 0x22, 0x3A, 0x22, 0xC3, 0x28,
+            0x22, 0x7D))
+    $invalidEnvironmentCode = ''
+    $invalidEnvironmentValidation = ''
+    try {
+        [void]$environmentService.GetTargetEnvironment()
+    } catch [MacroStudio.HostActionException] {
+        $invalidEnvironmentCode = $_.Exception.ErrorCode
+        $invalidEnvironmentValidation =
+            $_.Exception.ErrorData['validationId']
+    }
+    Assert-True (
+        $invalidEnvironmentCode -eq 'E-ENV-01' -and
+        $invalidEnvironmentValidation -eq 'ENV-READ') `
+        'Invalid UTF-8 must fail with E-ENV-01/ENV-READ.'
+} finally {
+    Assert-InsideDirectory $environmentHostRoot $testdataRoot
+    if ([IO.Directory]::Exists($environmentHostRoot)) {
+        [IO.Directory]::Delete($environmentHostRoot, $true)
+    }
+}
+
 $appInfo = $service.GetAppInfo()
-Assert-True ($appInfo['version'] -eq 'beta 1.1.0') `
+Assert-True ($appInfo['version'] -eq 'beta 2.0.0') `
     'Application version mismatch.'
 $expectedBuildFileLabel = [IO.File]::ReadAllText(
     (Join-Path $repoRoot 'assets\messages\build-file-label.txt'),
@@ -99,7 +202,7 @@ $expectedRequestTemplate = [IO.File]::ReadAllText(
     (Join-Path $repoRoot 'templates\request-template.txt'),
     [Text.Encoding]::UTF8)
 Assert-True (
-    $service.ReadRequestTemplate()['content'] -ceq
+    $service.ReadRequestTemplate('request-template')['content'] -ceq
     $expectedRequestTemplate) `
     'Request template content mismatch.'
 
@@ -313,10 +416,16 @@ Assert-True ($lockErrorCode -eq 'E-ATTACH-02') `
 $tempBase = Join-Path $testdataRoot (
     'p3-host-' + [Guid]::NewGuid().ToString('N'))
 $presetRoot = Join-Path $tempBase 'presets'
+$diagnoseFolderName = '01_' + [char]0x8A3A + [char]0x65AD
+$repairFolderName = '02_' + [char]0x6539 + [char]0x4FEE
+$diagnosePresetRoot = Join-Path $presetRoot $diagnoseFolderName
+$repairPresetRoot = Join-Path $presetRoot $repairFolderName
 $templateRoot = Join-Path $tempBase 'templates'
 $messageRoot = Join-Path $tempBase 'assets\messages'
 Assert-InsideDirectory $tempBase $testdataRoot
 [IO.Directory]::CreateDirectory($presetRoot) | Out-Null
+[IO.Directory]::CreateDirectory($diagnosePresetRoot) | Out-Null
+[IO.Directory]::CreateDirectory($repairPresetRoot) | Out-Null
 [IO.Directory]::CreateDirectory($templateRoot) | Out-Null
 [IO.Directory]::CreateDirectory($messageRoot) | Out-Null
 [IO.File]::Copy(
@@ -326,37 +435,58 @@ Assert-InsideDirectory $tempBase $testdataRoot
     (Join-Path $repoRoot 'assets\messages\preset-encoding-error.txt'),
     (Join-Path $messageRoot 'preset-encoding-error.txt'))
 [IO.File]::WriteAllText(
-    (Join-Path $presetRoot 'b.md'),
+    (Join-Path $diagnosePresetRoot '01_D.md'),
+    'diagnose',
+    (New-Object Text.UTF8Encoding($true)))
+[IO.File]::WriteAllText(
+    (Join-Path $repairPresetRoot 'b.md'),
     'second',
     (New-Object Text.UTF8Encoding($true)))
 [IO.File]::WriteAllText(
-    (Join-Path $presetRoot 'A.md'),
+    (Join-Path $repairPresetRoot 'A.md'),
     'first',
     (New-Object Text.UTF8Encoding($true)))
 $requestTemplatePath = Join-Path $templateRoot 'request-template.txt'
+$diagnoseTemplatePath = Join-Path $templateRoot 'diagnose-template.txt'
 [IO.File]::WriteAllText(
     $requestTemplatePath,
     'first template',
+    (New-Object Text.UTF8Encoding($false)))
+[IO.File]::WriteAllText(
+    $diagnoseTemplatePath,
+    'diagnose template',
     (New-Object Text.UTF8Encoding($false)))
 
 try {
     $presetService = New-Object MacroStudio.HostServices($null, $tempBase)
     $presetInfo = $presetService.GetAppInfo()
-    Assert-True ($presetInfo['presets'].Count -eq 2) `
-        'Preset count mismatch.'
-    Assert-True ($presetInfo['presets'][0]['file'] -eq 'A.md') `
+    $diagnosePresets = @($presetInfo['presets']['diagnose'])
+    $repairPresets = @($presetInfo['presets']['repair'])
+    Assert-True (
+        $diagnosePresets.Count -eq 1 -and
+        $repairPresets.Count -eq 2) `
+        'Grouped preset count mismatch.'
+    Assert-True (
+        $diagnosePresets[0]['file'] -eq
+            (Join-Path $diagnoseFolderName '01_D.md')) `
+        'Diagnosis preset path mismatch.'
+    Assert-True (
+        $repairPresets[0]['file'] -eq
+            (Join-Path $repairFolderName 'A.md')) `
         'Preset sort order mismatch.'
     # The host carries the markdown text; the UI parses it. No preset
     # name is computed here.
     Assert-True (
-        -not $presetInfo['presets'][0].ContainsKey('name')) `
+        -not $repairPresets[0].ContainsKey('name')) `
         'The host must not name presets.'
     Assert-True (
-        $presetInfo['presets'][0]['content'] -ceq 'first' -and
-        $presetInfo['presets'][1]['content'] -ceq 'second') `
+        $diagnosePresets[0]['content'] -ceq 'diagnose' -and
+        $repairPresets[0]['content'] -ceq 'first' -and
+        $repairPresets[1]['content'] -ceq 'second') `
         'GetAppInfo must return the markdown of every preset.'
     Assert-True (
-        $presetService.ReadPreset('A.md')['content'] -eq 'first') `
+        $presetService.ReadPreset(
+            (Join-Path $repairFolderName 'A.md'))['content'] -eq 'first') `
         'Preset content mismatch.'
 
     # The card order is the file name order, with a leading number read as
@@ -364,75 +494,109 @@ try {
     # "2_", which is not the order the folder shows the owner.
     foreach ($numbered in @('2_two.md', '10_ten.md')) {
         [IO.File]::WriteAllText(
-            (Join-Path $presetRoot $numbered),
+            (Join-Path $repairPresetRoot $numbered),
             'numbered',
             (New-Object Text.UTF8Encoding($false)))
     }
-    $numberedFiles = @($presetService.GetAppInfo()['presets'] |
+    $numberedFiles = @(
+        $presetService.GetAppInfo()['presets']['repair'] |
         ForEach-Object { $_['file'] })
     Assert-True (
-        ($numberedFiles -join '|') -ceq '2_two.md|10_ten.md|A.md|b.md') `
+        ($numberedFiles -join '|') -ceq (
+            (Join-Path $repairFolderName '2_two.md') + '|' +
+            (Join-Path $repairFolderName '10_ten.md') + '|' +
+            (Join-Path $repairFolderName 'A.md') + '|' +
+            (Join-Path $repairFolderName 'b.md'))) `
         ('Preset order mismatch: ' + ($numberedFiles -join '|'))
-    [IO.File]::Delete((Join-Path $presetRoot '2_two.md'))
-    [IO.File]::Delete((Join-Path $presetRoot '10_ten.md'))
+    [IO.File]::Delete((Join-Path $repairPresetRoot '2_two.md'))
+    [IO.File]::Delete((Join-Path $repairPresetRoot '10_ten.md'))
 
     # Discovery is dynamic: adding, removing and renaming files, or
     # editing one, changes the list with no code change and no restart.
     [IO.File]::WriteAllText(
-        (Join-Path $presetRoot 'c.md'),
+        (Join-Path $repairPresetRoot 'c.md'),
         'third',
         (New-Object Text.UTF8Encoding($true)))
     [IO.File]::WriteAllText(
-        (Join-Path $presetRoot 'notes.txt'),
+        (Join-Path $repairPresetRoot 'notes.txt'),
         'not a preset',
         (New-Object Text.UTF8Encoding($true)))
     $addedInfo = $presetService.GetAppInfo()
-    Assert-True ($addedInfo['presets'].Count -eq 3) `
+    Assert-True ($addedInfo['presets']['repair'].Count -eq 3) `
         'An added preset file was not discovered.'
     Assert-True (
-        @($addedInfo['presets'] |
-            ForEach-Object { $_['file'] }) -contains 'c.md') `
+        @($addedInfo['presets']['repair'] |
+            ForEach-Object { $_['file'] }) -contains
+                (Join-Path $repairFolderName 'c.md')) `
         'The added preset is missing from the list.'
     Assert-True (
-        -not (@($addedInfo['presets'] |
-            ForEach-Object { $_['file'] }) -contains 'notes.txt')) `
+        -not (@($addedInfo['presets']['repair'] |
+            ForEach-Object { $_['file'] }) -contains
+                (Join-Path $repairFolderName 'notes.txt'))) `
         'A non-markdown file must not become a preset.'
 
     [IO.File]::Move(
-        (Join-Path $presetRoot 'c.md'),
-        (Join-Path $presetRoot 'renamed.md'))
+        (Join-Path $repairPresetRoot 'c.md'),
+        (Join-Path $repairPresetRoot 'renamed.md'))
     [IO.File]::WriteAllText(
-        (Join-Path $presetRoot 'b.md'),
+        (Join-Path $repairPresetRoot 'b.md'),
         'edited',
         (New-Object Text.UTF8Encoding($true)))
     $renamedInfo = $presetService.GetAppInfo()
-    $renamedFiles = @($renamedInfo['presets'] |
+    $renamedFiles = @($renamedInfo['presets']['repair'] |
         ForEach-Object { $_['file'] })
     Assert-True (
-        ($renamedFiles -contains 'renamed.md') -and
-        -not ($renamedFiles -contains 'c.md')) `
+        ($renamedFiles -contains
+            (Join-Path $repairFolderName 'renamed.md')) -and
+        -not ($renamedFiles -contains
+            (Join-Path $repairFolderName 'c.md'))) `
         'A renamed preset file was not rediscovered.'
     Assert-True (
-        @($renamedInfo['presets'] |
-            Where-Object { $_['file'] -eq 'b.md' })[0]['content'] -ceq
+        @($renamedInfo['presets']['repair'] |
+            Where-Object {
+                $_['file'] -eq (Join-Path $repairFolderName 'b.md')
+            })[0]['content'] -ceq
         'edited') `
         'An edited preset was not read again.'
 
-    [IO.File]::Delete((Join-Path $presetRoot 'renamed.md'))
-    [IO.File]::Delete((Join-Path $presetRoot 'notes.txt'))
+    [IO.File]::Delete((Join-Path $repairPresetRoot 'renamed.md'))
+    [IO.File]::Delete((Join-Path $repairPresetRoot 'notes.txt'))
     Assert-True (
-        $presetService.GetAppInfo()['presets'].Count -eq 2) `
+        $presetService.GetAppInfo()['presets']['repair'].Count -eq 2) `
         'A deleted preset file is still listed.'
     Assert-True (
-        $presetService.ReadRequestTemplate()['content'] -ceq
+        $presetService.ReadRequestTemplate(
+            'request-template')['content'] -ceq
         'first template') `
         'Initial request template content mismatch.'
+    Assert-True (
+        $presetService.ReadRequestTemplate(
+            'diagnose-template')['content'] -ceq
+        'diagnose template') `
+        'Named diagnosis template content mismatch.'
+    foreach ($invalidTemplateName in @(
+        '',
+        '..\outside',
+        '../outside',
+        'request-template.txt',
+        'Request-Template')) {
+        $invalidTemplateErrorCode = ''
+        try {
+            $presetService.ReadRequestTemplate($invalidTemplateName)
+        } catch [MacroStudio.HostActionException] {
+            $invalidTemplateErrorCode = $_.Exception.ErrorCode
+        }
+        Assert-True ($invalidTemplateErrorCode -eq 'E-GEN-02') `
+            ('Invalid template name was accepted: ' +
+                $invalidTemplateName)
+    }
     [IO.File]::WriteAllText(
         $requestTemplatePath,
         'second template',
         (New-Object Text.UTF8Encoding($false)))
     Assert-True (
-        $presetService.ReadRequestTemplate()['content'] -ceq
+        $presetService.ReadRequestTemplate(
+            'request-template')['content'] -ceq
         'second template') `
         'Request template was not read again after editing.'
 
@@ -445,7 +609,22 @@ try {
     Assert-True ($presetErrorCode -eq 'E-SYS-02') `
         "Preset traversal error mismatch: $presetErrorCode"
 
-    $invalidPresetPath = Join-Path $presetRoot 'invalid-encoding.md'
+    $outsidePresetPath = Join-Path $tempBase 'outside.md'
+    [IO.File]::WriteAllText(
+        $outsidePresetPath,
+        'outside',
+        (New-Object Text.UTF8Encoding($false)))
+    $outsidePresetErrorCode = ''
+    try {
+        $presetService.ReadPreset($outsidePresetPath)
+    } catch [MacroStudio.HostActionException] {
+        $outsidePresetErrorCode = $_.Exception.ErrorCode
+    }
+    Assert-True ($outsidePresetErrorCode -eq 'E-SYS-02') `
+        "Preset absolute-path error mismatch: $outsidePresetErrorCode"
+    [IO.File]::Delete($outsidePresetPath)
+
+    $invalidPresetPath = Join-Path $repairPresetRoot 'invalid-encoding.md'
     [IO.File]::WriteAllBytes(
         $invalidPresetPath,
         [byte[]](0x83, 0x76))
@@ -453,7 +632,8 @@ try {
     $presetEncodingMessage = ''
     $presetEncodingUserMessage = ''
     try {
-        $presetService.ReadPreset('invalid-encoding.md')
+        $presetService.ReadPreset(
+            (Join-Path $repairFolderName 'invalid-encoding.md'))
     } catch [MacroStudio.HostActionException] {
         $presetEncodingErrorCode = $_.Exception.ErrorCode
         $presetEncodingMessage = $_.Exception.Message
@@ -473,8 +653,12 @@ try {
 
     # A file the host cannot decode stays visible in the list, marked
     # as unreadable, so the mistake is not silently hidden.
-    $encodingEntry = @($presetService.GetAppInfo()['presets'] |
-        Where-Object { $_['file'] -eq 'invalid-encoding.md' })
+    $encodingEntry = @(
+        $presetService.GetAppInfo()['presets']['repair'] |
+        Where-Object {
+            $_['file'] -eq
+                (Join-Path $repairFolderName 'invalid-encoding.md')
+        })
     Assert-True ($encodingEntry.Count -eq 1) `
         'An unreadable preset disappeared from the list.'
     Assert-True (
@@ -486,7 +670,7 @@ try {
     [IO.File]::Delete($requestTemplatePath)
     $missingTemplateErrorCode = ''
     try {
-        $presetService.ReadRequestTemplate()
+        $presetService.ReadRequestTemplate('request-template')
     } catch [MacroStudio.HostActionException] {
         $missingTemplateErrorCode = $_.Exception.ErrorCode
     }
@@ -498,7 +682,7 @@ try {
         [byte[]](0x83, 0x76))
     $templateEncodingErrorCode = ''
     try {
-        $presetService.ReadRequestTemplate()
+        $presetService.ReadRequestTemplate('request-template')
     } catch [MacroStudio.HostActionException] {
         $templateEncodingErrorCode = $_.Exception.ErrorCode
     }
@@ -1005,11 +1189,14 @@ try {
 }
 
 $clipboardService = New-Object MacroStudio.HostServices($null, $repoRoot)
-$originalClipboard = $clipboardService.ReadClipboard()['text']
+$originalClipboardData = Get-ClipboardDataForCleanup
 try {
     $clipboardProbe = "MacroStudio clipboard probe`r`n2 lines`r`n"
     [void]$clipboardService.WriteClipboard($clipboardProbe)
-    $clipboardRead = $clipboardService.ReadClipboard()['text']
+    $clipboardReadResult = $clipboardService.ReadClipboard()
+    Assert-True ($clipboardReadResult.ContainsKey('text')) `
+        'A successful clipboard read must return the text field.'
+    $clipboardRead = $clipboardReadResult['text']
     Assert-True ($clipboardRead -ceq $clipboardProbe) `
         'Clipboard round trip mismatch.'
     $clipboardNullCode = ''
@@ -1021,7 +1208,10 @@ try {
     Assert-True ($clipboardNullCode -eq 'E-GEN-03') `
         "Clipboard null error mismatch: $clipboardNullCode"
 } finally {
-    [void]$clipboardService.WriteClipboard([string]$originalClipboard)
+    # Cleanup is deliberately independent of the product retry budget. Product
+    # behavior is asserted above and in test-clipboard-retry.ps1; this path must
+    # preserve every clipboard format even when a background service is busy.
+    Restore-ClipboardDataForCleanup $originalClipboardData
 }
 
 if ($TestExplorer) {
@@ -1035,13 +1225,16 @@ if ($TestExplorer) {
     $requestBody = "request body`r`n"
     $codeBody = "code body`r`n"
     $runFolder = ''
+    $runFolders = @()
     try {
         $stamp = [DateTime]::Now.ToString('yyyyMMdd_HHmmss')
         $written = $requestService.WriteRequestFiles(
+            'diagnose',
             $stamp,
             $requestBody,
             $codeBody)
         $runFolder = $written['folderPath']
+        $runFolders += $runFolder
         Assert-InsideDirectory $runFolder (
             Join-Path $testdataRoot 't2_6_outputs')
         Assert-True (
@@ -1056,10 +1249,11 @@ if ($TestExplorer) {
             'The run folder must sit under a MacroStudio folder.'
         Assert-True (
             [IO.Path]::GetFileName($written['requestPath']) -ceq
-            'request.md' -and
+            'diagnose-request.md' -and
             [IO.Path]::GetFileName($written['codePath']) -ceq
             'source-code.md') `
-            'The request files must be request.md and source-code.md.'
+            ('The diagnosis files must be diagnose-request.md and ' +
+                'source-code.md.')
 
         foreach ($pair in @(
             @($written['requestPath'], $requestBody),
@@ -1080,16 +1274,95 @@ if ($TestExplorer) {
                 ('Request file content mismatch: ' + $pair[0])
         }
 
+        # Rebuilding the diagnosis request generation-replaces only the
+        # request. source-code.md remains the first generation.
+        $sourceBytesBefore = [IO.File]::ReadAllBytes($written['codePath'])
+        $diagnoseBody2 = "diagnose request generation 2`r`n"
+        $diagnose2 = $requestService.WriteRequestFiles(
+            'diagnose',
+            $stamp,
+            $diagnoseBody2,
+            "ignored replacement code`r`n")
+        Assert-True (
+            [IO.File]::ReadAllText(
+                $diagnose2['requestPath'],
+                [Text.Encoding]::UTF8) -ceq $diagnoseBody2) `
+            'The diagnosis request was not generation-replaced.'
+        Assert-True (
+            [Convert]::ToBase64String(
+                [IO.File]::ReadAllBytes($diagnose2['codePath'])) -ceq
+            [Convert]::ToBase64String($sourceBytesBefore)) `
+            'A diagnosis request rebuild must not rewrite source-code.md.'
+
+        $repairBody = "repair request generation 1`r`n"
+        $repair = $requestService.WriteRequestFiles(
+            'repair',
+            $stamp,
+            $repairBody,
+            [NullString]::Value)
+        Assert-True (
+            [IO.Path]::GetFileName($repair['requestPath']) -ceq
+                'repair-request.md' -and
+            -not $repair.ContainsKey('codePath')) `
+            'Repair stage must write repair-request.md only.'
+        Assert-True (
+            [IO.File]::ReadAllText(
+                $repair['requestPath'],
+                [Text.Encoding]::UTF8) -ceq $repairBody) `
+            'Repair request content mismatch.'
+        $repairBody2 = "repair request generation 2`r`n"
+        [void]$requestService.WriteRequestFiles(
+            'repair',
+            $stamp,
+            $repairBody2,
+            [NullString]::Value)
+        Assert-True (
+            [IO.File]::ReadAllText(
+                $repair['requestPath'],
+                [Text.Encoding]::UTF8) -ceq $repairBody2) `
+            'The repair request was not generation-replaced.'
+
+        $diagnosisBody = "# diagnosis generation 1`r`n"
+        $diagnosis = $requestService.WriteDiagnosisFile(
+            $stamp,
+            $diagnosisBody)
+        Assert-True (
+            [IO.Path]::GetFileName($diagnosis['path']) -ceq
+                'diagnosis.md' -and
+            [IO.File]::ReadAllText(
+                $diagnosis['path'],
+                [Text.Encoding]::UTF8) -ceq $diagnosisBody) `
+            'diagnosis.md content mismatch.'
+        $diagnosisBody2 = "# diagnosis generation 2`r`n"
+        [void]$requestService.WriteDiagnosisFile($stamp, $diagnosisBody2)
+        Assert-True (
+            [IO.File]::ReadAllText(
+                $diagnosis['path'],
+                [Text.Encoding]::UTF8) -ceq $diagnosisBody2) `
+            'diagnosis.md was not generation-replaced.'
+        Assert-True (
+            @(Get-ChildItem -LiteralPath $runFolder -File |
+                Where-Object {
+                    $_.Name -like '*.tmp' -or
+                    $_.Name -like '*.previous'
+                }).Count -eq 0) `
+            'Atomic run-file writes left a temporary generation behind.'
+
         # The build of the same run reuses the folder created here.
         $sameRunChanges = New-Object `
             'System.Collections.Generic.Dictionary[string,string]' `
             ([StringComparer]::OrdinalIgnoreCase)
         $sameRunModules = @($requestService.AttachBook(
             $requestBookPath)['modules'])
-        $requestService.WriteRequestFiles(
-            $stamp,
+        $secondStamp = [DateTime]::Now.AddSeconds(1).ToString(
+            'yyyyMMdd_HHmmss')
+        $secondWritten = $requestService.WriteRequestFiles(
+            'diagnose',
+            $secondStamp,
             $requestBody,
-            $codeBody) | Out-Null
+            $codeBody)
+        $runFolder = $secondWritten['folderPath']
+        $runFolders += $runFolder
         $sameRunChanges.Add(
             $sameRunModules[0]['name'],
             $sameRunModules[0]['attributes'] +
@@ -1099,7 +1372,7 @@ if ($TestExplorer) {
         $sameRunBuild = $requestService.BuildBook(
             $sameRunChanges,
             $noAdds,
-            $stamp,
+            $secondStamp,
             '<!doctype html><html><body>d</body></html>',
             'renamed_output.xlsm')
         Assert-True (
@@ -1112,8 +1385,10 @@ if ($TestExplorer) {
             'renamed_output.xlsm') `
             'The build must use the name given by the screen.'
         Assert-True (
-            [IO.File]::Exists(
-                (Join-Path $runFolder 'diff-report.html'))) `
+            $sameRunBuild.ContainsKey('diffPath') -and
+            [IO.Path]::GetDirectoryName(
+                $sameRunBuild['diffPath']) -ceq $runFolder -and
+            [IO.File]::Exists($sameRunBuild['diffPath'])) `
             'The diff report must join the same folder.'
 
         $nameErrorCode = ''
@@ -1144,13 +1419,16 @@ if ($TestExplorer) {
         Assert-True ($extensionErrorCode -eq 'E-BUILD-03') `
             "A different extension must be refused: $extensionErrorCode"
     } finally {
-        if (-not [string]::IsNullOrEmpty($runFolder)) {
-            Assert-InsideDirectory $runFolder (
-                Join-Path $testdataRoot 't2_6_outputs')
-            if ([IO.Directory]::Exists($runFolder)) {
-                [IO.Directory]::Delete($runFolder, $true)
+        foreach ($folderToRemove in @($runFolders | Select-Object -Unique)) {
+            if ([string]::IsNullOrEmpty($folderToRemove)) {
+                continue
             }
-            $macroRoot = [IO.Path]::GetDirectoryName($runFolder)
+            Assert-InsideDirectory $folderToRemove (
+                Join-Path $testdataRoot 't2_6_outputs')
+            if ([IO.Directory]::Exists($folderToRemove)) {
+                [IO.Directory]::Delete($folderToRemove, $true)
+            }
+            $macroRoot = [IO.Path]::GetDirectoryName($folderToRemove)
             if ([IO.Directory]::Exists($macroRoot) -and
                 @([IO.Directory]::GetFileSystemEntries(
                     $macroRoot)).Count -eq 0) {

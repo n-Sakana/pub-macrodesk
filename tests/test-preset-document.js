@@ -26,6 +26,10 @@ vm.runInContext(
 
 var presetApi = windowObject.MacroStudioPreset;
 
+function parseRepair(content) {
+  return presetApi.parse(content, "repair");
+}
+
 function lines(list) {
   return list.join("\n");
 }
@@ -57,7 +61,7 @@ var complete = lines([
   ""
 ]);
 
-var parsed = presetApi.parse(complete);
+var parsed = parseRepair(complete);
 
 assert(parsed.valid, "A complete preset must parse: " + parsed.message);
 assert(
@@ -94,13 +98,13 @@ assert(
 
 // Line endings: CRLF input parses to the same result as LF input.
 assert(
-  JSON.stringify(presetApi.parse(complete.replace(/\n/g, "\r\n"))) ===
+  JSON.stringify(parseRepair(complete.replace(/\n/g, "\r\n"))) ===
     JSON.stringify(parsed),
   "CRLF input must parse like LF input.");
 
 // ---- comments ----
 
-var inlineComment = presetApi.parse(lines([
+var inlineComment = parseRepair(lines([
   "# 名前 <!-- 表示名の注意 -->",
   "## 改修指示",
   "本文 <!-- 行内コメント --> のつづき",
@@ -124,7 +128,7 @@ assert(
   strippedOnly.text === "abc" && !strippedOnly.unterminated,
   "stripComments must remove every comment.");
 
-var unterminated = presetApi.parse(lines([
+var unterminated = parseRepair(lines([
   "# 名前",
   "<!-- 閉じ忘れ",
   "## 改修指示",
@@ -139,7 +143,7 @@ assert(
 
 // ---- fenced code blocks are body text, not headings ----
 
-var fenced = presetApi.parse(lines([
+var fenced = parseRepair(lines([
   "# 名前",
   "## 改修指示",
   "```",
@@ -219,8 +223,10 @@ var invalidCases = [
     ]),
     message:
       "知らない見出しがあります: ## メモ。" +
-      "使えるのは「## 改修指示」「## 出力指示」「## 用途」「## 質問」" +
-      "「## 説明」「## 出力指示（モジュール単位）」です。"
+      "使えるのは「## 改修指示」「## 出力指示」「## 質問」「## 説明」" +
+      "「## エンジン」「## 希望動作の候補」「## 維持すること」" +
+      "「## 推奨条件」" +
+      "「## 出力指示（モジュール単位）」「## 出力指示（分割）」です。"
   },
   {
     label: "empty section body",
@@ -265,7 +271,7 @@ var invalidCases = [
 ];
 
 invalidCases.forEach(function (item) {
-  var result = presetApi.parse(item.text);
+  var result = parseRepair(item.text);
 
   assert(
     !result.valid,
@@ -279,9 +285,150 @@ invalidCases.forEach(function (item) {
 });
 
 assert(
-  !presetApi.parse(null).valid &&
-    !presetApi.parse(undefined).valid,
+  !parseRepair(null).valid &&
+    !parseRepair(undefined).valid,
   "Missing content must be refused.");
+
+// ---- beta 2 sections and folder-defined stages ----
+
+var repairWithSections = parseRepair(lines([
+  "# 改修ひな形",
+  "## 説明",
+  "画面に出す説明です。",
+  "## エンジン",
+  "AI",
+  "## 希望動作の候補",
+  "- 結果を変えずに直す",
+  "- 確認事項を返す",
+  "## 維持すること",
+  "- 公開入口は変えない",
+  "- 判断できないことは決めない",
+  "## 改修指示",
+  "本文",
+  "## 出力指示",
+  "出力",
+  "## 出力指示（モジュール単位）",
+  "分割出力"
+]));
+
+assert(repairWithSections.valid, repairWithSections.message);
+assert(
+  repairWithSections.stage === "repair" &&
+    repairWithSections.engine === presetApi.engines.ai,
+  "A repair preset must expose its stage and AI engine.");
+assert(
+  JSON.stringify(repairWithSections.behaviorCandidates) ===
+    JSON.stringify(["結果を変えずに直す", "確認事項を返す"]) &&
+    JSON.stringify(repairWithSections.preserveItems) ===
+      JSON.stringify(["公開入口は変えない", "判断できないことは決めない"]),
+  "Behavior candidates and preserve items must stay structured.");
+assert(
+  repairWithSections.splitOutput.body === "分割出力" &&
+    repairWithSections.splitDiagnosisOutput === null,
+  "Repair split output must use its beta 1.10 property only.");
+assert(
+  parsed.engine === presetApi.engines.ai,
+  "An omitted repair engine must default to AI.");
+
+var diagnosisWithSplit = presetApi.parse(lines([
+  "# 診断ひな形",
+  "## 説明",
+  "事実を調べます。",
+  "## 改修指示",
+  "コードを書き換えずに調べてください。",
+  "## 出力指示",
+  "診断形式で返してください。",
+  "## 出力指示（分割）",
+  "診断を分割して返してください。"
+]), "diagnose");
+
+assert(diagnosisWithSplit.valid, diagnosisWithSplit.message);
+assert(
+  diagnosisWithSplit.stage === "diagnose" &&
+    diagnosisWithSplit.engine === null &&
+    diagnosisWithSplit.splitOutput === null &&
+    diagnosisWithSplit.splitDiagnosisOutput.body ===
+      "診断を分割して返してください。",
+  "Diagnosis split output must be separate from repair split output.");
+
+var pathReplacement = parseRepair(lines([
+  "# 固定パスを置き換える",
+  "## 説明",
+  "確認した値へ置き換えます。",
+  "## エンジン",
+  "固定パス置換"
+]));
+assert(
+  pathReplacement.valid &&
+    pathReplacement.engine === presetApi.engines.pathReplacement &&
+    pathReplacement.instruction === null &&
+    pathReplacement.output === null,
+  "A fixed-path preset needs no AI instruction or output section.");
+
+[
+  {
+    label: "obsolete purpose section",
+    stage: "repair",
+    text: complete.replace(
+      "## 改修指示",
+      "## 用途\n\n改修\n\n## 改修指示"),
+    message: presetApi.messages.obsoleteMode
+  },
+  {
+    label: "diagnosis carrying repair split output",
+    stage: "diagnose",
+    text: complete + "\n## 出力指示（モジュール単位）\n分割\n",
+    message: presetApi.messages.wrongDiagnosisSplit
+  },
+  {
+    label: "repair carrying diagnosis split output",
+    stage: "repair",
+    text: complete + "\n## 出力指示（分割）\n分割\n",
+    message: presetApi.messages.wrongRepairSplit
+  },
+  {
+    label: "unknown engine",
+    stage: "repair",
+    text: complete.replace(
+      "## 改修指示",
+      "## エンジン\n\n自動\n\n## 改修指示"),
+    message: presetApi.messages.unknownEngine
+  },
+  {
+    label: "non-list behavior candidates",
+    stage: "repair",
+    text: complete.replace(
+      "## 改修指示",
+      "## 希望動作の候補\n\n箇条書きではない\n\n## 改修指示"),
+    message: "「## 希望動作の候補」は「- 文」の箇条書きで書いてください。"
+  },
+  {
+    label: "repair-only engine in diagnosis",
+    stage: "diagnose",
+    text: complete.replace(
+      "## 改修指示",
+      "## エンジン\n\nAI\n\n## 改修指示"),
+    message: "「## エンジン」は改修ひな形だけで使えます。"
+  },
+  {
+    label: "fixed-path preset without description",
+    stage: "repair",
+    text: "# 固定パス\n\n## エンジン\n\n固定パス置換\n",
+    message: "「## 説明」がありません。"
+  }
+].forEach(function (item) {
+  var result = presetApi.parse(item.text, item.stage);
+
+  assert(!result.valid, "This beta 2 preset must fail: " + item.label);
+  assert(
+    result.message === item.message,
+    "Wrong beta 2 reason for " + item.label + ": " + result.message);
+});
+
+assert(
+  !presetApi.parse(complete).valid &&
+    presetApi.parse(complete).message === presetApi.messages.unknownStage,
+  "The containing folder stage must be supplied; content cannot declare it.");
 
 // ---- the list the UI renders ----
 
@@ -289,7 +436,7 @@ var entries = presetApi.describeAll([
   { file: "a.md", content: complete },
   { file: "b.md", content: "# 名前だけ" },
   { file: "c.md", content: "", error: "read" }
-]);
+], "repair");
 
 assert(entries.length === 3, "Every file must stay in the list.");
 assert(
@@ -307,11 +454,11 @@ assert(
   presetApi.countValid([
     { file: "a.md", content: complete },
     { file: "b.md", content: "# 名前だけ" }
-  ]) === 1,
+  ], "repair") === 1,
   "Only parsable files count as usable presets.");
 assert(
-  presetApi.countValid([]) === 0 &&
-    presetApi.describeAll(null).length === 0,
+  presetApi.countValid([], "repair") === 0 &&
+    presetApi.describeAll(null, "repair").length === 0,
   "An empty presets folder must yield no usable presets.");
 
 console.log("test-preset-document: PASS");

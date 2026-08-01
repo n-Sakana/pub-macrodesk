@@ -43,28 +43,43 @@ function flatten(text) {
   return String(text).replace(/\r?\n[ \t]*/g, "");
 }
 
-// The list is discovered from the folder. No test, and no product
-// file, may name a specific preset.
+// Both lists are discovered from their folders. Folder membership is the
+// stage; preset content is not allowed to declare a purpose of its own.
 var presetDir = path.join(root, "presets");
-var presetFiles = fs.readdirSync(presetDir).filter(function (name) {
-  return path.extname(name).toLowerCase() === ".md";
-});
-var presets = presetFiles.map(function (name) {
-  return {
-    file: name,
-    content: readUtf8(path.join(presetDir, name))
-  };
-});
+var diagnosisDir = path.join(presetDir, "01_診断");
+var repairDir = path.join(presetDir, "02_改修");
+
+function readGroup(directory, folderName) {
+  if (!fs.existsSync(directory)) {
+    return [];
+  }
+  return fs.readdirSync(directory).filter(function (name) {
+    return path.extname(name).toLowerCase() === ".md";
+  }).sort().map(function (name) {
+    return {
+      file: path.join(folderName, name),
+      content: readUtf8(path.join(directory, name))
+    };
+  });
+}
+
+var diagnosisPresets = readGroup(diagnosisDir, "01_診断");
+var repairPresets = readGroup(repairDir, "02_改修");
+var presets = diagnosisPresets.concat(repairPresets);
 var template = readUtf8(
   path.join(root, "templates", "request-template.txt"));
 
 assert(
-  presets.length > 0,
-  "The shipped presets folder must contain at least one markdown file.");
+  diagnosisPresets.length === 1 && repairPresets.length === 4,
+  "The shipped folders must contain one diagnosis and four repair presets.");
 
 // ---- every shipped preset is a self-contained request ----
 
-var entries = presetApi.describeAll(presets);
+var diagnoseEntries = presetApi.describeAll(
+  diagnosisPresets,
+  "diagnose");
+var repairEntries = presetApi.describeAll(repairPresets, "repair");
+var entries = diagnoseEntries.concat(repairEntries);
 
 entries.forEach(function (entry) {
   assert(
@@ -74,36 +89,51 @@ entries.forEach(function (entry) {
   assert(
     entry.name.length > 0,
     "Shipped preset " + entry.file + " has no H1 name.");
+  if (entry.engine !== presetApi.engines.pathReplacement) {
+    assert(
+      entry.instruction.body.length > 0 &&
+        entry.output.body.length > 0,
+      "Shipped AI preset " + entry.file + " has an empty section.");
+  }
+});
+
+// ---- folder-defined stages and hidden engine dispatch ----
+
+var refactorEntries = repairEntries.filter(function (entry) {
+  return entry.engine === presetApi.engines.ai;
+});
+var pathEntries = repairEntries.filter(function (entry) {
+  return entry.engine === presetApi.engines.pathReplacement;
+});
+
+assert(
+  diagnoseEntries.length === 1 &&
+    diagnoseEntries[0].stage === "diagnose" &&
+    repairEntries.every(function (entry) {
+      return entry.stage === "repair";
+    }),
+  "Folder membership must be the only source of the preset stage.");
+assert(
+  refactorEntries.length === 3 && pathEntries.length === 1,
+  "Repair presets must expose three AI routes and one fixed-path route.");
+assert(
+  pathEntries[0].instruction === null && pathEntries[0].output === null,
+  "The fixed-path route must not invent an AI request.");
+refactorEntries.forEach(function (entry) {
   assert(
-    entry.instruction.body.length > 0 &&
-      entry.output.body.length > 0,
-    "Shipped preset " + entry.file + " has an empty section.");
+    entry.behaviorCandidates.length > 0 &&
+      entry.preserveItems.length === 3,
+    "Each AI repair preset must carry behavior choices and three " +
+      "visible preserve items: " + entry.file);
+  [entry.output, entry.splitOutput].forEach(function (rules) {
+    assert(rules && rules.body.indexOf("NOCHANGE NEEDDECISION") >= 0 &&
+      rules.body.indexOf("DECISION BEGIN 1") >= 0 &&
+      rules.body.indexOf("META FINDING=") >= 0 &&
+      rules.body.indexOf("COMPLETE 0") >= 0,
+    "Every whole and split AI output contract must teach NEEDDECISION: " +
+      entry.file);
+  });
 });
-
-// ---- the three things a preset can be for ----
-
-var refactorEntries = entries.filter(function (entry) {
-  return entry.mode === "refactor";
-});
-var diagnoseEntries = entries.filter(function (entry) {
-  return entry.mode === "diagnose";
-});
-var formEntries = entries.filter(function (entry) {
-  return entry.questions.length > 0;
-});
-
-assert(
-  refactorEntries.length >= 2 && diagnoseEntries.length >= 2,
-  "The shipped presets must cover both refactoring and diagnosis.");
-assert(
-  formEntries.length >= 1,
-  "At least one shipped preset must use the question form.");
-// The form is not tied to one mode: any preset may declare questions.
-assert(
-  entries.every(function (entry) {
-    return entry.mode === "refactor" || entry.mode === "diagnose";
-  }),
-  "A preset belongs to one of the two categories.");
 
 // ---- the migration preset, found by what it says, not by its name ----
 
@@ -440,71 +470,44 @@ assert(
     "The prompt must not ask for a file answer: " + phrase);
 });
 
-// ---- a diagnosis asks about the workbook, never rewrites it ----
+// ---- the sole diagnosis preset asks for facts, never rewrites code ----
 
 var diagnosis = diagnoseEntries[0];
+// A diagnosis is prose about the macro, not the macro, so it fits in one
+// reply and the template no longer offers a split form.
+assert(diagnosis.splitDiagnosisOutput === null,
+  "The diagnosis preset must not offer a split reply.");
+var diagnosisWhole = flatten(
+  diagnosis.instruction.body + diagnosis.output.body);
 
 [
-  "Win32 API",
-  "Declare",
-  "Shell",
-  "PowerShell",
-  "SharePoint",
-  "ThisWorkbook.Path",
-  "Dir()",
-  "ドライブ文字",
-  "DAO",
-  "SendKeys"
+  "事実",
+  "根拠",
+  "コードは書き換え",
+  "'@MACROSTUDIO",
+  "DIAG BEGIN",
+  "DIAG COMPLETE",
+  "ENVKEY"
 ].forEach(function (phrase) {
   assert(
-    flatten(diagnosis.instruction.body).indexOf(phrase) >= 0,
-    "The diagnosis instruction is missing the constraint: " + phrase);
+    diagnosisWhole.indexOf(phrase) >= 0,
+    "The diagnosis preset is missing its fact contract: " + phrase);
 });
 assert(
-  flatten(diagnosis.instruction.body).indexOf("コードは書き換えず") >= 0,
+  /コード(は|を)書き換え/.test(diagnosisWhole),
   "The diagnosis must state that it changes nothing.");
-
-// ---- a consultation collects answers, then opens a conversation ----
-
-var consult = formEntries[0];
-
 assert(
-  consult.questions.length >= 3,
-  "A preset with a form must ask the user something.");
-assert(
-  consult.questions.some(function (question) {
-    return question.choices.length > 0;
-  }) &&
-    consult.questions.some(function (question) {
-      return question.choices.length === 0;
-    }),
-  "The form needs both choices and free text.");
+  diagnosis.splitOutput === null && diagnosis.engine === null,
+  "Diagnosis must expose neither a repair split contract nor an engine.");
 [
-  "一緒に決める",
-  "1 つずつ聞いて",
-  "改修方針"
-].forEach(function (phrase) {
+  "ThisWorkbook.Path",
+  "Win32 API の Declare 呼び出しが実行できない",
+  "固定の AppData パスが解決できない"
+].forEach(function (environmentFact) {
   assert(
-    flatten(consult.instruction.body).indexOf(phrase) >= 0,
-    "The consulting instruction is missing: " + phrase);
-});
-
-// Neither of them may ask for the intake protocol or for code.
-[diagnosis, consult].forEach(function (entry) {
-  var whole = flatten(entry.instruction.body + entry.output.body);
-
-  assert(
-    whole.indexOf("'@MACROSTUDIO") < 0 &&
-      whole.indexOf("{{REQUEST_ID}}") < 0,
-    "A chat-only preset must not carry the intake protocol: " +
-      entry.file);
-  assert(
-    /コード(は|を)書かないでください/.test(whole),
-    "A chat-only preset must forbid returning code: " + entry.file);
-  assert(
-    /チャット(の)?本文/.test(whole),
-    "A chat-only preset must still ask for a chat answer: " +
-      entry.file);
+    diagnosisWhole.indexOf(environmentFact) < 0,
+    "Environment facts must come from target-environment.json, not the " +
+      "diagnosis preset: " + environmentFact);
 });
 
 // ---- the request id reaches the answer protocol ----
@@ -580,16 +583,24 @@ assert(
 
 var productFiles = [
   path.join(root, "assets", "index.html"),
-  path.join(root, "templates", "request-template.txt")
+  path.join(root, "templates", "request-template.txt"),
+  path.join(root, "templates", "diagnose-template.txt"),
+  path.join(root, "templates", "repair-template.txt")
 ];
 
-fs.readdirSync(path.join(root, "assets", "js")).forEach(
-  function (name) {
-    productFiles.push(path.join(root, "assets", "js", name));
+function addProductFiles(directory) {
+  fs.readdirSync(directory, {withFileTypes: true}).forEach(function (entry) {
+    var filePath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      addProductFiles(filePath);
+    } else {
+      productFiles.push(filePath);
+    }
   });
-fs.readdirSync(path.join(root, "src")).forEach(function (name) {
-  productFiles.push(path.join(root, "src", name));
-});
+}
+
+addProductFiles(path.join(root, "assets", "js"));
+addProductFiles(path.join(root, "src"));
 
 productFiles.forEach(function (filePath) {
   var text = readUtf8(filePath);
@@ -613,39 +624,40 @@ productFiles.forEach(function (filePath) {
 // Adding, removing and renaming files changes the rendered list with
 // no code change: the list is a pure function of the folder.
 var renamed = presetApi.describeAll([
-  { file: "別の名前.md", content: presets[0].content }
-]);
+  { file: "別の名前.md", content: repairPresets[0].content }
+], "repair");
 assert(
   renamed.length === 1 &&
     renamed[0].file === "別の名前.md" &&
-    renamed[0].name === entries[0].name,
+    renamed[0].name === repairEntries[0].name,
   "Renaming a file must keep the H1 as the displayed name.");
 
 var retitled = presetApi.describeAll([
   {
-    file: presets[0].file,
-    content: presets[0].content.replace(
-      "# " + entries[0].name,
+    file: repairPresets[0].file,
+    content: repairPresets[0].content.replace(
+      "# " + repairEntries[0].name,
       "# 別の表示名")
   }
-]);
+], "repair");
 assert(
   retitled[0].valid && retitled[0].name === "別の表示名",
   "Editing the H1 must change the displayed name.");
 
-var added = presetApi.describeAll(presets.concat([
+var added = presetApi.describeAll(repairPresets.concat([
   {
     file: "追加.md",
-    content: "# 追加\n\n## 改修指示\n本文\n\n## 出力指示\n出力\n"
+    content: "# 追加\n\n## エンジン\nAI\n\n## 改修指示\n本文\n\n" +
+      "## 出力指示\n出力\n"
   }
-]));
+]), "repair");
 assert(
-  added.length === presets.length + 1 &&
+  added.length === repairPresets.length + 1 &&
     added[added.length - 1].name === "追加",
   "Adding a file must add a preset.");
 assert(
-  presetApi.describeAll(presets.slice(1)).length ===
-    presets.length - 1,
+  presetApi.describeAll(repairPresets.slice(1), "repair").length ===
+    repairPresets.length - 1,
   "Removing a file must remove its preset.");
 
 console.log("test-preset-migration: PASS");

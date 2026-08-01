@@ -10,6 +10,7 @@
 var fs = require("fs");
 var path = require("path");
 var vm = require("vm");
+var contracts = require("./helpers/contracts");
 
 function assert(condition, message) {
   if (!condition) {
@@ -127,14 +128,17 @@ windowObject.hostBridge = {
   }
 };
 
-[
+["icons.js",
   "diff.js",
   "diff-view.js",
   "vba-highlight.js",
   "preset-document.js",
+  "prompt-template.js",
   "response-package.js",
+  "diagnosis-package.js",
   "screens.js",
   "state.js",
+  "screens/workflow.js",
   "app.js"
 ].forEach(function (name) {
   vm.runInContext(
@@ -146,6 +150,7 @@ windowObject.hostBridge = {
 var app = windowObject.MacroStudioApp;
 var presetApi = windowObject.MacroStudioPreset;
 var stateApi = windowObject.MacroStudioState;
+var workflow = windowObject.MacroStudioWorkflow;
 
 function readUtf8(filePath) {
   var text = fs.readFileSync(filePath, "utf8");
@@ -163,30 +168,34 @@ function build(description) {
     "## 出力指示\n\n本文で返してください。\n";
 }
 
+function parseRepair(content) {
+  return presetApi.parse(content, "repair");
+}
+
 // ---- the section, on its own ----
 
 assert(
-  presetApi.parse(build("画面に出る 1 行です。")).description ===
+  parseRepair(build("画面に出る 1 行です。")).description ===
     "画面に出る 1 行です。",
   "The description section must become the card line.");
 assert(
-  presetApi.parse(build(null)).valid &&
-    presetApi.parse(build(null)).description === "",
+  parseRepair(build(null)).valid &&
+    parseRepair(build(null)).description === "",
   "A preset without the section stays valid and has no card line.");
 assert(
-  presetApi.parse(build("今の動きを変えないまま、コードを\n読みやすく直します。"))
+  parseRepair(build("今の動きを変えないまま、コードを\n読みやすく直します。"))
     .description === "今の動きを変えないまま、コードを読みやすく直します。",
   "A wrapped description must be joined without a space.");
 assert(
-  presetApi.parse(build("Win32\nAPI を使いません。")).description ===
+  parseRepair(build("Win32\nAPI を使いません。")).description ===
     "Win32 API を使いません。",
   "A wrap between two Latin words must become a space.");
 assert(
-  presetApi.parse(build("Win32 API\nを使いません。")).description ===
+  parseRepair(build("Win32 API\nを使いません。")).description ===
     "Win32 APIを使いません。",
   "A wrap next to Japanese must not become a space.");
 
-var empty = presetApi.parse(build("   "));
+var empty = parseRepair(build("   "));
 
 assert(
   !empty.valid &&
@@ -195,7 +204,7 @@ assert(
       "説明"),
   "An empty description must be rejected: " + empty.message);
 
-var twoParagraphs = presetApi.parse(build("一段落です。\n\n二段落です。"));
+var twoParagraphs = parseRepair(build("一段落です。\n\n二段落です。"));
 
 assert(
   !twoParagraphs.valid &&
@@ -210,29 +219,31 @@ assert(
 
 // ---- every shipped preset ----
 
-var presetDir = path.join(root, "presets");
+var presetDir = path.join(root, "presets", "02_改修");
 var presets = fs.readdirSync(presetDir).filter(function (name) {
   return path.extname(name).toLowerCase() === ".md";
 }).map(function (name) {
   return {
-    file: name,
+    file: path.join("02_改修", name),
     content: readUtf8(path.join(presetDir, name))
   };
 });
-var entries = presetApi.describeAll(presets).filter(function (entry) {
+var entries = presetApi.describeAll(presets, "repair").filter(function (entry) {
   return entry.valid;
 });
 
 assert(
-  entries.length >= 5,
+  entries.length === 4,
   "The shipped presets must be readable for this check.");
 
 entries.forEach(function (entry) {
   var text = entry.description;
-  var firstLine = entry.instruction.body
-    .replace(/\r\n/g, "\n")
-    .split("\n")[0]
-    .trim();
+  var firstLine = entry.instruction
+    ? entry.instruction.body
+      .replace(/\r\n/g, "\n")
+      .split("\n")[0]
+      .trim()
+    : null;
 
   assert(
     text.length > 0,
@@ -255,15 +266,17 @@ entries.forEach(function (entry) {
       text);
   // Whatever the request happens to say is the AI's business, so a card
   // line that repeats its opening is a sign of the old derivation.
-  assert(
-    text !== firstLine,
-    "The card line of " + entry.file + " is the request's first line.");
+  if (firstLine !== null) {
+    assert(
+      text !== firstLine,
+      "The card line of " + entry.file + " is the request's first line.");
+  }
 
   // The file name is not read by any code, which is how it drifted away
   // from the title in the first place. Keeping them equal is what makes
   // the next drift visible in the folder.
   assert(
-    entry.file.replace(/^[0-9]+_/, "").replace(/\.md$/i, "") ===
+    path.basename(entry.file).replace(/^[0-9]+_/, "").replace(/\.md$/i, "") ===
       entry.name,
     "The file name of " + entry.file + " does not match its title: " +
       entry.name);
@@ -273,7 +286,8 @@ entries.forEach(function (entry) {
 var refactor = null;
 
 entries.forEach(function (entry) {
-  if (entry.instruction.body.indexOf("読みやすく") >= 0) {
+  if (entry.instruction &&
+      entry.instruction.body.indexOf("読みやすく") >= 0) {
     refactor = entry;
   }
 });
@@ -285,57 +299,118 @@ assert(
 // ---- the screen actually shows it ----
 //
 // Checking the parser alone is not enough: the card builder has to read
-// the field. Both routes are built here and their lines read back.
+// the field. The repair route is built here and its lines read back.
+var screen;
+var lines;
+var declared;
 
-["refactor", "diagnose"].forEach(function (mode) {
-  var screen;
-  var lines;
-  var declared;
-
+function prepareFindings(presetList) {
+  var diagnosisId = "11111111-1111-4111-8111-111111111111";
   stateApi.reset();
-  stateApi.setAppInfo({ version: "test", presets: presets });
-  stateApi.setMode(mode);
-  screen = app.createPurposeScreen(stateApi.getState());
-  lines = collectByClass(screen, "choice-description").map(
-    function (node) {
-      return node.textContent;
-    });
-  declared = entries.filter(function (entry) {
-    return entry.mode === mode;
-  }).map(function (entry) {
-    return entry.description;
+  stateApi.setAppInfo({
+    version: "test",
+    presets: {diagnose: [], repair: presetList}
   });
+  stateApi.setBook({
+    name: "book.xlsm", path: "book.xlsm", ext: ".xlsm", totalLines: 1
+  }, [{
+    name: "Main", type: "standard", typeLabel: "標準モジュール",
+    ext: "bas", lineCount: 1, code: "Option Explicit", attributes: ""
+  }]);
+  stateApi.setTargetEnvironment({
+    displayName: "test", revision: "1", constraints: []
+  }, "ENV");
+  stateApi.commitDiagnosisRequest({requestId: diagnosisId});
+  stateApi.commitDiagnosis(contracts.diagnosis(
+    windowObject.MacroStudioDiagnosis,
+    {requestId: diagnosisId, modules: stateApi.getState().modules}),
+  "diagnosis.md");
+}
 
-  assert(
-    declared.length >= 3,
-    "The " + mode + " route must ship several presets.");
-  assert(
-    lines.length === declared.length,
-    "The " + mode + " purpose screen showed " + lines.length +
-      " lines for " + declared.length + " presets.");
-  lines.forEach(function (text, index) {
-    assert(
-      text === declared[index],
-      "The " + mode + " purpose screen shows " + text +
-        " instead of the declared " + declared[index]);
+prepareFindings(presets);
+// The templates live on their own page now; the diagnosis page before it
+// carries no template at all.
+screen = workflow.createNextStepScreen(stateApi.getState());
+lines = collectByClass(screen, "choice-description").map(
+  function (node) {
+    return node.textContent;
   });
+declared = entries.map(function (entry) {
+  return entry.description;
+});
+
+assert(
+  lines.length === declared.length,
+  "The repair purpose screen showed " + lines.length +
+    " lines for " + declared.length + " presets.");
+lines.forEach(function (text, index) {
+  assert(
+    text === declared[index],
+    "The repair purpose screen shows " + text +
+      " instead of the declared " + declared[index]);
 });
 
 // A preset with no 説明 shows its name alone rather than borrowing a
 // sentence from the request.
-stateApi.reset();
-stateApi.setAppInfo({
-  version: "test",
-  presets: [{ file: "plain.md", content: build(null) }]
-});
-stateApi.setMode("refactor");
+prepareFindings([{ file: "02_改修\\plain.md", content: build(null) }]);
 assert(
   collectByClass(
-    app.createPurposeScreen(stateApi.getState()),
+    workflow.createNextStepScreen(stateApi.getState()),
     "choice-description").length === 0,
   "A preset without 説明 must show no line at all.");
 
-console.log("test-preset-description: PASS");
-console.log(
-  "every shipped preset declares its own card line, the screen shows " +
-  "that line and nothing else, and the file names match the titles");
+// A context without Web Crypto still gets an id, reports the fallback
+// exactly once, and does not let a failed best-effort log stop selection.
+var bridgeCalls = [];
+windowObject.hostBridge.request = function (action, params) {
+  bridgeCalls.push({ action: action, params: params || {} });
+  if (action === "readPreset") {
+    return Promise.resolve({ content: presets[0].content });
+  }
+  if (action === "readRequestTemplate") {
+    return Promise.resolve({
+      content: readUtf8(path.join(root, "templates", "repair-template.txt"))
+    });
+  }
+  if (action === "writeRequestFiles") {
+    return Promise.resolve({
+      requestPath: "C:\\work\\run\\repair-request.md",
+      folderPath: "C:\\work\\run"
+    });
+  }
+  if (action === "writeLog") {
+    return Promise.reject(new Error("log unavailable"));
+  }
+  return Promise.resolve(null);
+};
+prepareFindings(presets);
+
+workflow.selectRepairPreset(presets[0].file).then(function (result) {
+  stateApi.setExtraRequest("fallback test");
+  stateApi.goTo(windowObject.MacroStudioScreens.repairInputScreen, false);
+  return workflow.prepareRepairRequest().then(function () { return result; });
+}).then(function (result) {
+  var warnings = bridgeCalls.filter(function (call) {
+    return call.action === "writeLog" && call.params.level === "WARN";
+  });
+
+  assert(result !== null, "A failed fallback log must not stop selection.");
+  assert(
+    warnings.length === 1 &&
+      warnings[0].params.message.indexOf("Math.random") >= 0,
+    "The insecure request id fallback must write one WARN and only one.");
+  assert(
+    windowObject.MacroStudioResponse.isRequestId(
+      stateApi.getState().repairRequestId),
+    "The fallback request generation must still store a valid request id.");
+
+  console.log("test-preset-description: PASS");
+  console.log(
+    "every shipped preset declares its own card line, the screen shows " +
+    "that line and nothing else, file names match titles, and request id " +
+    "fallback logging is best-effort");
+}).catch(function (error) {
+  global.setTimeout(function () {
+    throw error;
+  }, 0);
+});

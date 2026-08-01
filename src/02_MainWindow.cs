@@ -30,14 +30,18 @@ namespace MacroStudio
 
         public MainWindow()
         {
-            Title = "MacroStudio beta 1.1.0";
+            Title = "MacroStudio beta 2.0.0";
             // Without this the window and its taskbar button show the
             // icon of whatever process is hosting it, which is
             // powershell.exe.
             Icon = CreateWindowIcon();
-            Width = 1200;
-            Height = 740;
-            MinWidth = 1100;
+            // 4:3. The flow is a column of text with a diff at the end,
+            // so height is what it needs; a wide short window squeezes the
+            // changed code sideways and turns reading into scrolling.
+            // The reader may still resize.
+            Width = 1120;
+            Height = 840;
+            MinWidth = 900;
             MinHeight = 700;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             Background = new SolidColorBrush(Color.FromRgb(20, 22, 28));
@@ -165,7 +169,7 @@ namespace MacroStudio
             stack.Children.Add(name);
 
             TextBlock version = new TextBlock();
-            version.Text = "beta 1.1.0";
+            version.Text = "beta 2.0.0";
             version.FontSize = 11;
             version.Margin = new Thickness(0, 4, 0, 0);
             version.HorizontalAlignment = HorizontalAlignment.Center;

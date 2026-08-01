@@ -1,0 +1,211 @@
+"use strict";
+
+var fs = require("fs");
+var path = require("path");
+var vm = require("vm");
+var dom = require("./helpers/dom-shim");
+
+function assert(condition, message) {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
+function readUtf8(filePath) {
+  var text = fs.readFileSync(filePath, "utf8");
+  return text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text;
+}
+
+function finding(number, className, confidence, title) {
+  return {
+    number: number,
+    class: className,
+    confidence: confidence,
+    basis: confidence === "CONFIRMED" ? "CODE" : "ENVIRONMENT",
+    module: "Main",
+    procedure: "Run",
+    lines: String(number),
+    environmentKey: "excel-bitness",
+    texts: {
+      title: title,
+      condition: title + " の成立条件",
+      impact: title + " の影響",
+      evidence: title + " の根拠"
+    }
+  };
+}
+
+var root = path.resolve(__dirname, "..");
+var windowObject = {};
+var documentObject = {createElement: dom.createElement};
+var context = vm.createContext({window: windowObject, document: documentObject});
+windowObject.window = windowObject;
+windowObject.document = documentObject;
+
+["icons.js", "preset-document.js", "screens.js", "screens/workflow.js"].forEach(
+  function (name) {
+    vm.runInContext(readUtf8(path.join(root, "assets", "js", name)), context,
+      {filename: name});
+  });
+
+var workflow = windowObject.MacroStudioWorkflow;
+var state = {
+  busyAction: null,
+  presetFile: null,
+  appInfo: {presets: {repair: []}},
+  targetEnvironment: {
+    displayName: "新しい業務端末",
+    revision: "2026-08-01",
+    constraints: [{
+      key: "excel-bitness",
+      title: "Excel は 64 bit",
+      detail: "",
+      sourceIds: []
+    }]
+  },
+  diagnosis: {
+    sections: {
+      PURPOSE: "帳票を作ります。\r\n月次処理です。",
+      FLOW: "Main から始まります。",
+      DEPENDENCY: "共有フォルダを使います。",
+      ENVIRONMENT: "64 bit Excel を想定します。"
+    },
+    findings: [
+      finding(5, "INFO", "UNVERIFIED", "補助情報"),
+      finding(4, "EXTERNAL", "LIKELY", "外部前提"),
+      finding(3, "CONDITIONAL", "LIKELY", "条件付き"),
+      finding(2, "DEFECT", "CONFIRMED", "不具合"),
+      finding(1, "BLOCKER", "CONFIRMED", "阻害")
+    ]
+  }
+};
+
+var screen = workflow.createFindingsScreen(state);
+var rows = dom.collect(screen, function (node) {
+  return node.classList && node.classList.contains("finding-row");
+});
+var rowTitles = rows.map(function (row) {
+  return dom.text(row.querySelector(".finding-title"));
+});
+
+assert(JSON.stringify(rowTitles) === JSON.stringify([
+  "阻害", "不具合", "条件付き", "外部前提", "補助情報"
+]), "Findings must be rendered in the fixed class order.");
+
+var infoDisclosure = dom.collect(screen, function (node) {
+  return node.getAttribute &&
+    node.getAttribute("data-disclosure-key") === "info-findings";
+})[0];
+assert(infoDisclosure && infoDisclosure.getAttribute("aria-expanded") === "false",
+  "INFO must begin collapsed as one group.");
+
+var details = rows[0].querySelector(".finding-detail");
+var detailText = dom.text(details);
+assert(details.hidden === true &&
+  detailText.indexOf("成立条件") >= 0 &&
+  detailText.indexOf("影響") >= 0 &&
+  detailText.indexOf("該当箇所") >= 0 &&
+  detailText.indexOf("根拠") >= 0 &&
+  detailText.indexOf("Excel は 64 bit") >= 0,
+"The second layer must contain condition, impact, location, evidence and " +
+  "the referenced environment constraint.");
+
+// The macro's own description sits under the headline as four rows that
+// open, drawn the same way the finding rows are.
+var summaryRows = dom.collect(screen, function (node) {
+  return node.classList && node.classList.contains("summary-row");
+});
+assert(summaryRows.length === 4,
+  "All four sections of the macro summary must be present as rows.");
+summaryRows.forEach(function (row) {
+  var toggle = row.querySelector(".summary-toggle");
+  var panel = row.querySelector(".summary-panel");
+
+  assert(toggle && toggle.getAttribute("aria-expanded") === "false",
+    "Each summary row must begin closed.");
+  assert(panel && panel.hidden === true,
+    "A closed summary row must keep its body out of the page.");
+});
+assert(dom.text(screen).indexOf("帳票を作ります。") >= 0,
+  "The summary bodies must still carry the section text.");
+
+var counts = dom.text(screen.querySelector(".diagnosis-counts"));
+assert(counts.indexOf("阻害 1") >= 0 && counts.indexOf("補助 1") >= 0 &&
+  dom.text(screen).indexOf("想定環境: 新しい業務端末（2026-08-01 版）") >= 0,
+"The conclusion band must show class counts and the actual environment.");
+
+state.diagnosis.findings = [];
+var empty = workflow.createFindingsScreen(state);
+assert(dom.text(empty).indexOf(
+  "この監査範囲では動作阻害要因を確認できませんでした。") >= 0 &&
+  dom.collect(empty, function (node) {
+    return node.classList && node.classList.contains("finding-row");
+  }).length === 0,
+"A valid zero-finding diagnosis must have a factual empty result, not an " +
+  "empty frame.");
+
+// ---- the star is drawn from the diagnosis, never from the template ----
+// Each shipped template declares which environment constraints it
+// addresses. A finding that names one earns the badge; a finding that
+// names none earns nothing, however plausible the template looks.
+var repairDir = path.join(root, "presets", "02_改修");
+var shippedPresets = fs.readdirSync(repairDir).filter(function (name) {
+  return /\.md$/.test(name);
+}).sort().map(function (name) {
+  return {
+    file: "02_改修\\" + name,
+    content: readUtf8(path.join(repairDir, name))
+  };
+});
+
+function starredTitles() {
+  return dom.collect(
+    workflow.createNextStepScreen(state),
+    function (node) {
+      return node.classList && node.classList.contains("choice-card");
+    }).filter(function (card) {
+    return card.classList.contains("is-recommended");
+  }).map(function (card) {
+    return dom.text(card.querySelector(".choice-title"));
+  });
+}
+
+state.appInfo = {presets: {repair: shippedPresets}};
+state.diagnosis.findings = [finding(1, "BLOCKER", "CONFIRMED", "見つかった事実")];
+
+var orderedTitles = dom.collect(
+  workflow.createNextStepScreen(state),
+  function (node) {
+    return node.classList && node.classList.contains("choice-title");
+  }).map(function (node) {
+  return dom.text(node);
+});
+
+assert(orderedTitles.length === 4 &&
+  orderedTitles[0].indexOf("Win32") >= 0 &&
+  orderedTitles[1].indexOf("固定パス") >= 0 &&
+  orderedTitles[2].indexOf("リファクター") >= 0 &&
+  orderedTitles[3].indexOf("自分で") >= 0,
+"The templates must be offered in the fixed order: " +
+  JSON.stringify(orderedTitles));
+
+state.diagnosis.findings[0].environmentKey = "-";
+assert(starredTitles().length === 0,
+  "A finding that names no environment constraint must star nothing.");
+
+state.diagnosis.findings[0].environmentKey = "WIN32API_BLOCKED";
+assert(JSON.stringify(starredTitles()).indexOf("Win32") >= 0 &&
+  starredTitles().length === 1,
+"Only the template declaring WIN32API_BLOCKED may be starred: " +
+  JSON.stringify(starredTitles()));
+
+state.diagnosis.findings[0].environmentKey = "FIXED_DRIVE_LETTER";
+assert(JSON.stringify(starredTitles()).indexOf("固定パス") >= 0 &&
+  starredTitles().length === 1,
+"A fixed-path finding must star the fixed-path template: " +
+  JSON.stringify(starredTitles()));
+
+console.log("test-findings-view: PASS");
+console.log("class order, INFO collapse, evidence hierarchy, summary rows, " +
+  "zero-finding rendering, the fixed template order and the " +
+  "diagnosis-backed recommendation match the beta2 contract");

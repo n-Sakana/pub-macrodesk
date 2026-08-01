@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "origin": {
+    "workbook": "testdata/test_large.xlsm",
+    "extractor": "MacroStudio.BookIO.ReadProject",
+    "encoding": "UTF-8",
+    "extractedOn": "2026-08-01"
+  },
+  "modules": [
+    {
+      "name": "Sheet1",
+      "kind": "Document",
+      "codeBase64": "",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "ThisWorkbook",
+      "kind": "Document",
+      "codeBase64": "",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "AppController",
+      "kind": "Standard",
+      "codeBase64": "T3B0aW9uIEV4cGxpY2l0DQpQdWJsaWMgU3ViIFRlc3QoKTogRW5kIFN1Yg0K",
+      "sha256": "da82b0da2a2174c8f5d8de9913695b5cee07eaa89cc393e2741a6e0f5aa95099"
+    },
+    {
+      "name": "SystemInfo",
+      "kind": "Standard",
+      "codeBase64": "T3B0aW9uIEV4cGxpY2l0DQonIFtzYW5pdGl6ZWRdIFByaXZhdGUgRGUqKioqZSBQdHJTYWZlIEZ1KioqKipuIEdldFVzZXJOYW1lIExpYiAiYWR2YXBpMzIuZGxsIiBBbGlhcyAiR2V0VXNlck5hbWVBIiAoQnlWYWwgbHBCdWZmZXIgQXMgU3RyaW5nLCBuU2l6ZSBBcyBMb25nKSBBcyBMb25nDQonIFtzYW5pdGl6ZWRdIFByaXZhdGUgRGUqKioqZSBQdHJTYWZlIEZ1KioqKipuIEdldENvbXB1dGVyTmFtZSBMaWIgImtlcm5lbDMyIiBBbGlhcyAiR2V0Q29tcHV0ZXJOYW1lQSIgKEJ5VmFsIGxwQnVmZmVyIEFzIFN0cmluZywgblNpemUgQXMgTG9uZykgQXMgTG9uZw0KJyBbc2FuaXRpemVkXSBQcml2YXRlIERlKioqKmUgUHRyU2FmZSBGdSoqKioqbiBHZXRUZW1wUGF0aCBMaWIgImtlcm5lbDMyIiBBbGlhcyAiR2V0VGVtcFBhdGhBIiAoQnlWYWwgbkJ1ZmZlckxlbmd0aCBBcyBMb25nLCBCeVZhbCBscEJ1ZmZlciBBcyBTdHJpbmcpIEFzIExvbmcNClB1YmxpYyBTdWIgVGVzdCgpOiBFbmQgU3ViDQo=",
+      "sha256": "a72690cbbb432afb52c6857748f09d11ca33ac6bcc9e5c0d9467e56765773499"
+    },
+    {
+      "name": "TimerUtils",
+      "kind": "Standard",
+      "codeBase64": "T3B0aW9uIEV4cGxpY2l0DQonIFtzYW5pdGl6ZWRdIFByaXZhdGUgRGUqKioqZSBQdHJTYWZlIEZ1KioqKipuIEdldFRpY2tDb3VudCBMaWIgImtlcm5lbDMyIiAoKSBBcyBMb25nDQonIFtzYW5pdGl6ZWRdIFByaXZhdGUgRGUqKioqZSBQdHJTYWZlIEZ1KioqKipuIFNsZWVwIExpYiAia2VybmVsMzIiIChCeVZhbCBkd01pbGxpc2Vjb25kcyBBcyBMb25nKSBBcyBMb25nDQpQdWJsaWMgU3ViIFRlc3QoKTogRW5kIFN1Yg0K",
+      "sha256": "c9c5a4d440d0b7d97dd0db19b1d50493b4a69e73c9f116dba148199a81ea85f4"
+    },
+    {
+      "name": "WindowUtils",
+      "kind": "Standard",
+      "codeBase64": "T3B0aW9uIEV4cGxpY2l0DQonIFtzYW5pdGl6ZWRdIFByaXZhdGUgRGUqKioqZSBQdHJTYWZlIEZ1KioqKipuIEZpbmRXaW5kb3cgTGliICJ1c2VyMzIiIEFsaWFzICJGaW5kV2luZG93QSIgKEJ5VmFsIGxwQ2xhc3NOYW1lIEFzIFN0cmluZywgQnlWYWwgbHBXaW5kb3dOYW1lIEFzIFN0cmluZykgQXMgTG9uZ1B0cg0KJyBbc2FuaXRpemVkXSBQcml2YXRlIERlKioqKmUgUHRyU2FmZSBGdSoqKioqbiBTZXRXaW5kb3dQb3MgTGliICJ1c2VyMzIiIChCeVZhbCBoV25kIEFzIExvbmdQdHIsIEJ5VmFsIGhXbmRJbnNlcnRBZnRlciBBcyBMb25nUHRyLCBCeVZhbCBYIEFzIExvbmcsIEJ5VmFsIFkgQXMgTG9uZywgQnlWYWwgY3ggQXMgTG9uZywgQnlWYWwgY3kgQXMgTG9uZywgQnlWYWwgdUZsYWdzIEFzIExvbmcpIEFzIExvbmcNCicgW3Nhbml0aXplZF0gUHJpdmF0ZSBEZSoqKiplIFB0clNhZmUgRnUqKioqKm4gR2V0U3lzdGVtTWV0cmljcyBMaWIgInVzZXIzMiIgKEJ5VmFsIG5JbmRleCBBcyBMb25nKSBBcyBMb25nDQonIFtzYW5pdGl6ZWRdIFByaXZhdGUgRGUqKioqZSBQdHJTYWZlIEZ1KioqKipuIFNob3dXaW5kb3cgTGliICJ1c2VyMzIiIChCeVZhbCBoV25kIEFzIExvbmdQdHIsIEJ5VmFsIG5DbWRTaG93IEFzIExvbmcpIEFzIExvbmcNCicgW3Nhbml0aXplZF0gUHJpdmF0ZSBEZSoqKiplIFB0clNhZmUgRnUqKioqKm4gU2V0Rm9yZWdyb3VuZFdpbmRvdyBMaWIgInVzZXIzMiIgKEJ5VmFsIGhXbmQgQXMgTG9uZ1B0cikgQXMgTG9uZw0KJyBbc2FuaXRpemVkXSBQcml2YXRlIERlKioqKmUgUHRyU2FmZSBGdSoqKioqbiBTZW5kTWVzc2FnZSBMaWIgInVzZXIzMiIgQWxpYXMgIlNlbmRNZXNzYWdlQSIgKEJ5VmFsIGhXbmQgQXMgTG9uZ1B0ciwgQnlWYWwgTXNnIEFzIExvbmcsIEJ5VmFsIHdQYXJhbSBBcyBMb25nUHRyLCBsUGFyYW0gQXMgQW55KSBBcyBMb25nUHRyDQpQdWJsaWMgU3ViIFRlc3QoKTogRW5kIFN1Yg0K",
+      "sha256": "e6dd7e242c065aa4ce0e35f57eea80916aaec4a45fe3f49421e250fce677b2e5"
+    }
+  ]
+}

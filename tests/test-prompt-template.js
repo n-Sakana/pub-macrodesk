@@ -28,6 +28,12 @@ var promptApi = windowObject.MacroStudioPrompt;
 var defaultTemplate = fs.readFileSync(
   path.join(root, "templates", "request-template.txt"),
   "utf8");
+var diagnosisTemplate = fs.readFileSync(
+  path.join(root, "templates", "diagnose-template.txt"),
+  "utf8");
+var repairTemplate = fs.readFileSync(
+  path.join(root, "templates", "repair-template.txt"),
+  "utf8");
 var crlf = "\r\n";
 var banner = new Array(81).join("=");
 var indexLine = new Array(41).join("-");
@@ -180,6 +186,146 @@ assert(
   actualPrompt.indexOf("省略はありません") >= 0 &&
     actualPrompt.indexOf("欠落") >= 0,
   "The template frame must state that the attached code is complete.");
+
+// ---- diagnosis template: environment is data, not preset prose ----
+
+var diagnosisPrompt = promptApi.buildRequestPrompt({
+  template: diagnosisTemplate,
+  requestText: "事実だけを監査してください。",
+  targetEnvironment: "[execution]\n- WIN32API_BLOCKED: 利用できません。",
+  outputRules: {
+    title: "出力指示",
+    body: "契約形式で返してください。"
+  },
+  requestId: "3f1c9c7a-2b64-4a1e-9f52-0b5a4d2e77c1",
+  codeFileName: options.codeFileName,
+  book: options.book,
+  modules: options.modules
+});
+var expectedDiagnosisPrompt = [
+  "添付ファイル " + options.codeFileName + " は、Excel ブック 台帳.xlsm の VBA コード全文です",
+  "（2 モジュール、合計 3 行。省略はありません）。",
+  "ソースコードが欠落している・省略されていると判断せず、追加の資料を求めず、",
+  "添付ファイルの内容と下の【想定動作環境】だけを根拠に、事実を診断してください。",
+  "",
+  "【想定動作環境】",
+  "[execution]",
+  "- WIN32API_BLOCKED: 利用できません。",
+  "",
+  "【診断指示】",
+  "事実だけを監査してください。",
+  "",
+  "【対象モジュール】※ 0 行のモジュールは元から空です",
+  "  - Module1 （標準モジュール, 3 行）",
+  "  - ThisWorkbook （ドキュメントモジュール, 0 行）",
+  "",
+  "【出力指示】",
+  "契約形式で返してください。"
+].join(crlf) + crlf;
+
+assert(
+  diagnosisPrompt === expectedDiagnosisPrompt,
+  "Generated diagnosis request prompt mismatch.");
+
+var missingEnvironmentPlaceholder = false;
+try {
+  promptApi.buildRequestPrompt({
+    template: "{{REQUEST_TEXT}}",
+    requestText: "診断",
+    targetEnvironment: "環境",
+    codeFileName: options.codeFileName,
+    book: options.book,
+    modules: options.modules
+  });
+} catch (error) {
+  missingEnvironmentPlaceholder =
+    error.message.indexOf("TARGET_ENVIRONMENT") >= 0;
+}
+assert(
+  missingEnvironmentPlaceholder,
+  "A diagnosis template without TARGET_ENVIRONMENT must be rejected.");
+
+// ---- repair template: diagnosis and zero-selection context are mandatory ----
+
+var repairPrompt = promptApi.buildRequestPrompt({
+  template: repairTemplate,
+  requestText: "保存場所を選べるようにしてください。",
+  targetEnvironment: "TARGET ENVIRONMENT\nrevision: 2026-08-01",
+  diagnosis: "## PURPOSE\n帳票を保存します。\n\n#01 [BLOCKER/CONFIRMED] 保存先が固定です。",
+  selectedFindings: [
+    indexLine + indexLine,
+    " REQUESTED CHANGES",
+    indexLine + indexLine,
+    "（指摘の選択なし。追加の要望のみ）",
+    indexLine + indexLine
+  ].join("\n"),
+  outputRules: {title: "出力指示", body: "契約どおり返してください。"},
+  requestId: "3f1c9c7a-2b64-4a1e-9f52-0b5a4d2e77c1",
+  codeFileName: "source-code.md",
+  book: options.book,
+  modules: options.modules
+});
+var repairDivider = new Array(81).join("-");
+var expectedRepairPrompt = [
+  "添付ファイル source-code.md は、Excel ブック 台帳.xlsm の VBA コード全文です",
+  "（2 モジュール、合計 3 行。省略はありません）。",
+  "ソースコードが欠落している・省略されていると判断せず、追加の資料を求めず、",
+  "診断結果と希望する動作、想定動作環境をすべて守って改修してください。",
+  "",
+  "【想定動作環境】",
+  "TARGET ENVIRONMENT",
+  "revision: 2026-08-01",
+  "",
+  "【診断結果】",
+  "## PURPOSE",
+  "帳票を保存します。",
+  "",
+  "#01 [BLOCKER/CONFIRMED] 保存先が固定です。",
+  "",
+  "【選んだ指摘と希望する動作】",
+  repairDivider,
+  " REQUESTED CHANGES",
+  repairDivider,
+  "（指摘の選択なし。追加の要望のみ）",
+  repairDivider,
+  "",
+  "【改修指示】",
+  "保存場所を選べるようにしてください。",
+  "",
+  "【対象モジュール】※ 0 行のモジュールは元から空です",
+  "  - Module1 （標準モジュール, 3 行）",
+  "  - ThisWorkbook （ドキュメントモジュール, 0 行）",
+  "",
+  "【出力指示】",
+  "契約どおり返してください。"
+].join(crlf) + crlf;
+
+assert(repairPrompt === expectedRepairPrompt,
+  "Generated repair request prompt mismatch.");
+assert(repairPrompt.indexOf("【選んだ指摘と希望する動作】") >= 0 &&
+  repairPrompt.indexOf("（指摘の選択なし。追加の要望のみ）") >= 0,
+"Zero selected findings must keep the section and its explicit context.");
+
+["TARGET_ENVIRONMENT", "DIAGNOSIS", "SELECTED_FINDINGS"].forEach(
+  function (placeholder) {
+    var rejectedRepair = false;
+    try {
+      promptApi.buildRequestPrompt({
+        template: repairTemplate.replace("{{" + placeholder + "}}", ""),
+        requestText: "改修",
+        targetEnvironment: "環境",
+        diagnosis: "診断",
+        selectedFindings: "選択なし",
+        codeFileName: "source-code.md",
+        book: options.book,
+        modules: options.modules
+      });
+    } catch (error) {
+      rejectedRepair = error.message.indexOf(placeholder) >= 0;
+    }
+    assert(rejectedRepair,
+      "A repair template without " + placeholder + " must be rejected.");
+  });
 
 // The template frame carries no output rules of its own: they come
 // from the preset file, or the block is absent.

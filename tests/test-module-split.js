@@ -13,6 +13,7 @@
 var fs = require("fs");
 var path = require("path");
 var vm = require("vm");
+var contracts = require("./helpers/contracts");
 
 function assert(condition, message) {
   if (!condition) {
@@ -86,15 +87,17 @@ windowObject.hostBridge = {
     };
   }
 };
-[
+["icons.js",
   "diff.js",
   "diff-view.js",
   "vba-highlight.js",
   "preset-document.js",
   "prompt-template.js",
   "response-package.js",
+  "diagnosis-package.js",
   "screens.js",
   "state.js",
+  "screens/workflow.js",
   "app.js"
 ].forEach(function (name) {
   vm.runInContext(
@@ -109,9 +112,11 @@ var api = windowObject.MacroStudioResponse;
 var screens = windowObject.MacroStudioScreens;
 var state = windowObject.MacroStudioState;
 var app = windowObject.MacroStudioApp;
+var workflow = windowObject.MacroStudioWorkflow;
 
 var id = api.createRequestId();
 var other = api.createRequestId();
+var diagnosisId = "11111111-1111-4111-8111-111111111111";
 
 function part(requestId, index, total, module, options) {
   var settings = options || {};
@@ -179,6 +184,17 @@ assert(
   api.partLine(id, 0, 3) ===
     "'@MACROSTUDIO " + id + " PART 00 OF 03",
   "The part sentinel is written with two digit numbers.");
+
+["1.0", "01"].forEach(function (count) {
+  var invalid = api.parse(
+    part(id, 0, 3, main, { count: count }),
+    id);
+
+  assert(
+    !invalid.ok && invalid.validationId === "R1",
+    "COMPLETE " + count +
+      " must be refused while PART keeps its existing numbering.");
+});
 
 // A whole answer has no part sentinel at all.
 assert(
@@ -362,16 +378,16 @@ var seeded = api.addPart(
 
 // ---- the preset carries the rules for both ways of answering ----
 
-var presetDir = path.join(root, "presets");
+var presetDir = path.join(root, "presets", "02_改修");
 var presets = fs.readdirSync(presetDir).filter(function (name) {
   return path.extname(name).toLowerCase() === ".md";
 }).map(function (name) {
   return {
-    file: name,
+    file: path.join("02_改修", name),
     content: readUtf8(path.join(presetDir, name))
   };
 });
-var entries = presetApi.describeAll(presets);
+var entries = presetApi.describeAll(presets, "repair");
 var splitEntries = entries.filter(function (entry) {
   return entry.valid && entry.splitOutput !== null;
 });
@@ -383,7 +399,7 @@ splitEntries.forEach(function (entry) {
   var body = flatten(entry.splitOutput.body);
 
   assert(
-    entry.mode === "refactor",
+    entry.stage === "repair",
     "Only a preset that changes the workbook can split its answer: " +
       entry.file);
   assert(
@@ -476,7 +492,7 @@ var plainPreset = presetApi.parse([
   "",
   "## 出力指示",
   "出力"
-].join("\n"));
+].join("\n"), "repair");
 
 assert(
   plainPreset.valid && plainPreset.splitOutput === null,
@@ -492,7 +508,7 @@ assert(
     "出力",
     "",
     "## " + presetApi.splitOutputTitle
-  ].join("\n")).valid,
+  ].join("\n"), "repair").valid,
   "An empty split section is a mistake, not an option.");
 
 // ---- which rules the prompt carries ----
@@ -576,10 +592,24 @@ function attach() {
         attributes: ""
       }
     ]);
-  state.setMode("refactor");
-  state.setPurpose("sample.md", "ひな形", id, []);
-  state.setRequestText("整理してください。");
-  state.setOutputRules({ title: "出力指示", body: "まとめて返す。" });
+  state.setTargetEnvironment({displayName: "test", revision: "1"}, "ENV");
+  state.commitDiagnosisRequest({requestId: diagnosisId});
+  state.commitDiagnosis(contracts.diagnosis(
+    windowObject.MacroStudioDiagnosis,
+    {requestId: diagnosisId, modules: state.getState().modules}),
+  "diagnosis.md");
+  state.setRepairPreset({
+    file: "02_改修\\sample.md",
+    name: "ひな形",
+    content: "preset",
+    parsed: {
+      engine: "AI", questions: [], behaviorCandidates: [], preserveItems: [],
+      output: {title: "出力指示", body: "まとめて返す。"},
+      splitOutput: null
+    }
+  });
+  state.setExtraRequest("整理してください。");
+  state.commitRepairRequest({requestId: id});
 }
 
 attach();
@@ -600,40 +630,42 @@ state.setSplitOutputRules({
 assert(
   state.setSplitOutput(true) && state.getState().splitOutput === true,
   "A preset that carries the rules makes the option available.");
+assert(state.getState().repairRequestId === null,
+  "Changing answer shape must invalidate the old repair request.");
+state.commitRepairRequest({requestId: id});
 assert(
   screens.isSplitOutput(state.getState()),
   "The screens must see the chosen way of answering.");
 
-state.goTo(screens.intakeScreen, false);
+state.goTo(screens.repairIntakeScreen, false);
 assert(
-  !screens.canAdvance(state.getState(), screens.intakeScreen),
+  !screens.canAdvance(state.getState(), screens.repairIntakeScreen),
   "Nothing has arrived, so there is nothing to review.");
 
 var partial = api.addPart(
-  state.getState().intakeParts || api.createPartCollection(),
+  state.getState().repairIntakeParts || api.createPartCollection(),
   api.parse(part(id, 0, 2, main), id));
 
-state.setIntakeParts(partial.collection);
+state.setRepairIntakeParts(partial.collection);
 assert(
   screens.countIntakeParts(state.getState()) === 1 &&
     screens.getIntakePartTotal(state.getState()) === 2,
   "The screens must see how much of the answer is in.");
 assert(
-  !screens.canAdvance(state.getState(), screens.intakeScreen),
+  !screens.canAdvance(state.getState(), screens.repairIntakeScreen),
   "A missing module must hold the flow on the intake screen.");
 assert(
-  screens.describe(state.getState(), screens.intakeScreen)
-    .meta.indexOf("1 / 2") >= 0,
+  screens.countIntakeParts(state.getState()) === 1,
   "The intake screen must say how many parts are in.");
 
 var complete = api.addPart(
-  state.getState().intakeParts,
+  state.getState().repairIntakeParts,
   api.parse(part(id, 1, 2, added), id));
 
 assert(complete.complete, "Both parts make the whole answer.");
-state.setIntakeParts(complete.collection);
+state.setRepairIntakeParts(complete.collection);
 assert(
-  !screens.canAdvance(state.getState(), screens.intakeScreen),
+  !screens.canAdvance(state.getState(), screens.repairIntakeScreen),
   "Collecting the parts is not importing them.");
 
 var mergedPackage = api.mergeParts(complete.collection);
@@ -641,25 +673,12 @@ var described = api.describe(
   mergedPackage,
   state.getBookModules());
 
-state.importPackage(described.modules.map(function (item) {
-  return {
-    name: item.name,
-    code: item.code,
-    changedLineCount: 1,
-    lineCount: 2
-  };
-}));
-state.setIntakeResult({
-  total: described.total,
-  existing: described.existing,
-  added: described.added,
-  summary: described.summary || ""
-});
+state.importPackage(described);
 assert(
   screens.countImported(state.getState()) === 2,
   "The merged answer must come in as one package.");
 assert(
-  screens.canAdvance(state.getState(), screens.intakeScreen),
+  screens.canAdvance(state.getState(), screens.repairIntakeScreen),
   "A complete answer lets the flow reach the review.");
 assert(
   state.findModule("CompatHelpers").isNew === true &&
@@ -675,7 +694,7 @@ assert(
 state.setSplitOutput(false);
 assert(
   state.getState().splitOutput === false &&
-    state.getState().intakeParts === null &&
+    state.getState().repairIntakeParts === null &&
     screens.countImported(state.getState()) === 0,
   "Changing the way of answering must empty the intake.");
 
@@ -688,12 +707,13 @@ function startSplitRun() {
     body: "1つずつ返す。"
   });
   state.setSplitOutput(true);
-  state.goTo(screens.intakeScreen, false);
+  state.commitRepairRequest({requestId: id});
+  state.goTo(screens.repairIntakeScreen, false);
 }
 
 startSplitRun();
 assert(
-  app.applyResponsePackage(part(id, 0, 3, main, { summary: "要約" })),
+  workflow.applyRepairText(part(id, 0, 3, main, { summary: "要約" })),
   "The first part must be taken in.");
 assert(
   screens.countImported(state.getState()) === 0,
@@ -703,19 +723,19 @@ assert(
   "The first part must be kept.");
 
 assert(
-  !app.applyResponsePackage(part(id, 1, 4, helper)),
+  !workflow.applyRepairText(part(id, 1, 4, helper)),
   "A part that declares another total must be refused.");
 assert(
   screens.countIntakeParts(state.getState()) === 1,
   "A refused part must leave the collection as it was.");
 assert(
-  !app.applyResponsePackage(part(other, 1, 3, helper)),
+  !workflow.applyRepairText(part(other, 1, 3, helper)),
   "A part answering another request must be refused.");
 assert(
-  !app.applyResponsePackage(part(id, 1, 3, [helper, added])),
+  !workflow.applyRepairText(part(id, 1, 3, [helper, added])),
   "Two modules in one answer must be refused.");
 assert(
-  !app.applyResponsePackage(part(id, 0, 3, helper)),
+  !workflow.applyRepairText(part(id, 0, 3, helper)),
   "The same number with other content must be refused.");
 assert(
   screens.countIntakeParts(state.getState()) === 1 &&
@@ -723,23 +743,23 @@ assert(
   "No refusal may change what has been collected.");
 
 assert(
-  app.applyResponsePackage(part(id, 1, 3, helper)),
+  workflow.applyRepairText(part(id, 1, 3, helper)),
   "The second part must be taken in.");
 assert(
   screens.countImported(state.getState()) === 0,
   "Two parts of three are still not a package.");
 assert(
-  !screens.canAdvance(state.getState(), screens.intakeScreen),
+  !screens.canAdvance(state.getState(), screens.repairIntakeScreen),
   "An incomplete answer must not reach the review.");
 
 assert(
-  app.applyResponsePackage(part(id, 2, 3, added)),
+  workflow.applyRepairText(part(id, 2, 3, added)),
   "The last part completes the answer.");
 assert(
   screens.countImported(state.getState()) === 3,
   "A complete answer comes in as one package of three modules.");
 assert(
-  screens.canAdvance(state.getState(), screens.intakeScreen),
+  screens.canAdvance(state.getState(), screens.repairIntakeScreen),
   "A complete answer lets the flow continue.");
 assert(
   state.getState().intakeResult.summary === "要約",
@@ -752,13 +772,13 @@ assert(
   "Every module of the merged answer reaches the build payload.");
 
 // Starting over empties the collection, so module 00 can arrive again.
-assert(app.restartIntake(), "The intake must be able to start over.");
+assert(workflow.restartRepairIntake(), "The intake must be able to start over.");
 assert(
   screens.countImported(state.getState()) === 0 &&
-    state.getState().intakeParts === null,
+    state.getState().repairIntakeParts === null,
   "Starting over must leave nothing of the previous parts.");
 assert(
-  app.applyResponsePackage(part(id, 0, 2, main)),
+  workflow.applyRepairText(part(id, 0, 2, main)),
   "After starting over, module 00 is taken in again.");
 assert(
   screens.getIntakePartTotal(state.getState()) === 2,
@@ -769,9 +789,9 @@ assert(
 // With the option off a numbered part is refused instead of being taken
 // in as if it were the whole answer.
 attach();
-state.goTo(screens.intakeScreen, false);
+state.goTo(screens.repairIntakeScreen, false);
 assert(
-  !app.applyResponsePackage(part(id, 0, 3, main)),
+  !workflow.applyRepairText(part(id, 0, 3, main)),
   "A part must not pass as a whole answer.");
 assert(
   screens.countImported(state.getState()) === 0,
@@ -782,7 +802,7 @@ assert(
 
 // The default route is unchanged: one paste, every module at once.
 assert(
-  app.applyResponsePackage([
+  workflow.applyRepairText([
     api.beginLine(id, "standard", "Main"),
     main.code,
     api.endLine(id, "standard", "Main"),
@@ -794,7 +814,7 @@ assert(
   "The one-paste route must still take a whole answer in one press.");
 assert(
   screens.countImported(state.getState()) === 2 &&
-    screens.canAdvance(state.getState(), screens.intakeScreen),
+    screens.canAdvance(state.getState(), screens.repairIntakeScreen),
   "One paste must still be enough to reach the review.");
 
 console.log("test-module-split: PASS");

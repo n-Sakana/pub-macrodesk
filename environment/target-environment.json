@@ -1,0 +1,269 @@
+{
+  "schemaVersion": 1,
+  "profileId": "new-business-terminal",
+  "displayName": "新しい業務端末",
+  "revision": "2026-08-01",
+  "summary": "EDR / DLP 管理下の Windows 端末。ブックは SharePoint / OneDrive 上に置かれる。",
+  "sources": [
+    {
+      "id": "ms-preset-04",
+      "origin": "macrostudio@f9edca70034f4bb6192b90c71a38d3a43647e4d8",
+      "path": "presets/04_新しい端末で動くかを調べてもらう.md",
+      "readAt": "2026-08-01"
+    },
+    {
+      "id": "devkit-analyze-edr",
+      "origin": "pub/vba-devkit",
+      "path": "config/analyze.json#edr",
+      "readAt": "2026-08-01"
+    },
+    {
+      "id": "devkit-analyze-compat",
+      "origin": "pub/vba-devkit",
+      "path": "config/analyze.json#compat",
+      "readAt": "2026-08-01"
+    },
+    {
+      "id": "devkit-analyze-path",
+      "origin": "pub/vba-devkit",
+      "path": "config/analyze.json#path",
+      "readAt": "2026-08-01"
+    },
+    {
+      "id": "devkit-analyze-basis",
+      "origin": "pub/vba-devkit",
+      "path": "lib/Analyze.ps1",
+      "readAt": "2026-08-01"
+    },
+    {
+      "id": "datadesk-envtest",
+      "origin": "pub/datadesk",
+      "path": "envtest/modules",
+      "readAt": "2026-08-01"
+    }
+  ],
+  "constraints": [
+    {
+      "key": "WIN32API_BLOCKED",
+      "axis": "execution",
+      "effect": "blocked",
+      "basis": "declared",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-edr"],
+      "title": "Win32 API の Declare 呼び出しが実行できない",
+      "detail": "Declare / Declare PtrSafe による外部 DLL の呼び出しが止められる。宣言だけでなく、その API を呼んでいる箇所も動かない。",
+      "examples": ["Declare", "Declare PtrSafe", "Sleep", "GetTickCount"]
+    },
+    {
+      "key": "SHELL_EXEC_BLOCKED",
+      "axis": "execution",
+      "effect": "blocked",
+      "basis": "declared",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-edr"],
+      "title": "外部プログラムの起動が実行できない",
+      "detail": "Shell 関数、WScript.Shell、cmd /c による外部プロセスの起動が止められる。",
+      "examples": ["Shell", "WScript.Shell", "cmd /c"]
+    },
+    {
+      "key": "SCRIPT_HOST_BLOCKED",
+      "axis": "execution",
+      "effect": "blocked",
+      "basis": "declared",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-edr"],
+      "title": "スクリプトホストの起動が実行できない",
+      "detail": "PowerShell / pwsh / wscript / cscript / mshta の起動が止められる。",
+      "examples": ["powershell", "pwsh", "wscript", "cscript", "mshta"]
+    },
+    {
+      "key": "WMI_BLOCKED",
+      "axis": "execution",
+      "effect": "blocked",
+      "basis": "declared",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-edr"],
+      "title": "WMI 経由の操作が実行できない",
+      "detail": "CreateObject / GetObject を通した WMI への接続と、そこからのプロセス操作が止められる。"
+    },
+    {
+      "key": "DLL_LOAD_BLOCKED",
+      "axis": "execution",
+      "effect": "blocked",
+      "basis": "inferred",
+      "sourceIds": ["devkit-analyze-compat"],
+      "title": "実行時の DLL 読み込みができない",
+      "detail": "実行中に外部 DLL を読み込む処理は、読み込みの時点で止められる。"
+    },
+    {
+      "key": "BOOK_PATH_IS_URL",
+      "axis": "storage",
+      "effect": "changed",
+      "basis": "declared",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-path"],
+      "title": "ブックの場所が URL になる",
+      "detail": "ブックが SharePoint / OneDrive 上に置かれると ThisWorkbook.Path は https:// で始まる文字列を返す。これを起点にしたパスの組み立てはドライブ形式を前提にできない。",
+      "examples": ["ThisWorkbook.Path", "ActiveWorkbook.Path"]
+    },
+    {
+      "key": "FIXED_DRIVE_LETTER",
+      "axis": "storage",
+      "effect": "changed",
+      "basis": "inferred",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-path"],
+      "title": "固定のドライブ文字が解決できない",
+      "detail": "新しい端末に同じドライブ文字が割り当てられているとは限らない。"
+    },
+    {
+      "key": "UNC_PATH",
+      "axis": "storage",
+      "effect": "changed",
+      "basis": "inferred",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-path"],
+      "title": "固定の UNC パスが新環境で変わる",
+      "detail": "サーバ名・共有名が新環境で同じである保証がない。"
+    },
+    {
+      "key": "USER_PROFILE_PATH",
+      "axis": "storage",
+      "effect": "changed",
+      "basis": "inferred",
+      "sourceIds": ["devkit-analyze-path"],
+      "title": "ユーザーフォルダを含む固定パスが壊れる",
+      "detail": "C:\\Users\\<名前> を直接書いたパスは、利用者やプロファイルが変わると解決できない。"
+    },
+    {
+      "key": "KNOWN_FOLDER_PATH",
+      "axis": "storage",
+      "effect": "changed",
+      "basis": "inferred",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-path"],
+      "title": "デスクトップ・ドキュメントが OneDrive へ移る",
+      "detail": "既知フォルダのリダイレクトにより、デスクトップやドキュメントの実体が OneDrive 配下へ移動していることがある。"
+    },
+    {
+      "key": "APPDATA_PATH",
+      "axis": "storage",
+      "effect": "changed",
+      "basis": "inferred",
+      "sourceIds": ["devkit-analyze-path"],
+      "title": "固定の AppData パスが解決できない",
+      "detail": "AppData の位置を直接書いたパスは、端末や利用者が変わると解決できない。"
+    },
+    {
+      "key": "PROGRAM_FILES_PATH",
+      "axis": "storage",
+      "effect": "changed",
+      "basis": "inferred",
+      "sourceIds": ["devkit-analyze-path"],
+      "title": "固定の Program Files パスが解決できない",
+      "detail": "導入先や 32 / 64 ビットの別により、Program Files の位置は端末ごとに変わりうる。"
+    },
+    {
+      "key": "DIR_EXISTENCE_CHECK",
+      "axis": "storage",
+      "effect": "changed",
+      "basis": "inferred",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-path"],
+      "title": "Dir() による存在確認が URL パスでは機能しない",
+      "detail": "Dir 関数はファイルシステムのパスを前提とするため、https:// で始まる場所に対しては存在確認として働かない。",
+      "examples": ["Dir", "Dir$"]
+    },
+    {
+      "key": "PATH_CONCATENATION",
+      "axis": "storage",
+      "effect": "changed",
+      "basis": "inferred",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-path"],
+      "title": "文字列連結で組み立てたパスが成立しない",
+      "detail": "区切り文字を \\ と決め打ちしてパスを連結する処理は、起点が URL になると正しい場所を指さない。"
+    },
+    {
+      "key": "CURDIR_CHDIR",
+      "axis": "storage",
+      "effect": "changed",
+      "basis": "inferred",
+      "sourceIds": ["devkit-analyze-path"],
+      "title": "CurDir / ChDir が期待どおりに働かない",
+      "detail": "CurDir は同期フォルダ上で意図しない位置を返すことがあり、ChDir は URL パスに対して失敗する。",
+      "examples": ["CurDir", "ChDir", "ChDrive"]
+    },
+    {
+      "key": "EXTERNAL_WORKBOOK_LINK",
+      "axis": "storage",
+      "effect": "changed",
+      "basis": "inferred",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-path"],
+      "title": "外部ブックの参照と保存が場所の変更で失敗する",
+      "detail": "Workbooks.Open、SaveAs、外部ブックへのリンク、LinkSources / UpdateLink は、いずれも対象の場所が変わると失敗する。"
+    },
+    {
+      "key": "FIXED_PRINTER_NAME",
+      "axis": "host",
+      "effect": "uncertain",
+      "basis": "inferred",
+      "sourceIds": ["devkit-analyze-path"],
+      "title": "固定のプリンタ名が存在しない可能性がある",
+      "detail": "新しい端末に同じ名前のプリンタが登録されているかは、コードからは判断できない。"
+    },
+    {
+      "key": "FIXED_IP_ADDRESS",
+      "axis": "host",
+      "effect": "uncertain",
+      "basis": "inferred",
+      "sourceIds": ["devkit-analyze-path"],
+      "title": "固定 IP アドレスが変わる可能性がある",
+      "detail": "新しいネットワークで同じアドレスに同じ相手がいるかは、コードからは判断できない。"
+    },
+    {
+      "key": "FIXED_HOST_NAME",
+      "axis": "host",
+      "effect": "uncertain",
+      "basis": "inferred",
+      "sourceIds": ["devkit-analyze-path"],
+      "title": "固定の接続先ホスト名が変わる可能性がある",
+      "detail": "名前解決が新環境で同じ相手を指すかは、コードからは判断できない。"
+    },
+    {
+      "key": "CONNECTION_STRING",
+      "axis": "host",
+      "effect": "uncertain",
+      "basis": "inferred",
+      "sourceIds": ["devkit-analyze-path", "datadesk-envtest"],
+      "title": "接続文字列の接続先が変わる可能性がある",
+      "detail": "サーバ名・データベース名・ファイルの場所・認証方法のいずれかが新環境で変わりうる。"
+    },
+    {
+      "key": "DAO_UNAVAILABLE",
+      "axis": "components",
+      "effect": "uncertain",
+      "basis": "inferred",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-compat"],
+      "title": "DAO が使えない可能性がある",
+      "detail": "DAO の参照設定が新しい端末に入っているかは、コードからは判断できない。"
+    },
+    {
+      "key": "DDE_IE_UNAVAILABLE",
+      "axis": "components",
+      "effect": "blocked",
+      "basis": "inferred",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-compat"],
+      "title": "DDE と Internet Explorer の自動操作が使えない",
+      "detail": "どちらも提供が終了しており、新しい端末では動かない。"
+    },
+    {
+      "key": "LEGACY_UI_AUTOMATION",
+      "axis": "components",
+      "effect": "uncertain",
+      "basis": "inferred",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-compat"],
+      "title": "画面操作に頼る処理が期待どおり動かない可能性がある",
+      "detail": "SendKeys、AppActivate、旧式のコントロールは、相手の窓の状態に依存するため結果が変わりうる。"
+    },
+    {
+      "key": "POINTER_AND_32BIT",
+      "axis": "components",
+      "effect": "uncertain",
+      "basis": "inferred",
+      "sourceIds": ["ms-preset-04", "devkit-analyze-compat"],
+      "title": "32 ビットを前提にしたコードが動かない可能性がある",
+      "detail": "VarPtr / ObjPtr / StrPtr と、ハンドルを Long で受け渡すコードは、64 ビット版 Office では成立しない。"
+    }
+  ]
+}

@@ -13,6 +13,26 @@
 
 Win32 API を使っている箇所を、新しい端末でも動く書き方へ置き換えてもらいます。
 
+## エンジン
+
+AI
+
+## 推奨条件
+
+- WIN32API_BLOCKED
+
+## 希望動作の候補
+
+- 今までと同じ結果になるように直してほしい
+- 速さが落ちても、止まらずに終わるほうを優先してほしい
+- 置き換えられない箇所は、無理に直さず理由を返してほしい
+
+## 維持すること
+
+- 明示していない業務動作は変えない
+- 公開しているプロシージャ名・引数は変えない
+- 判断できないことは勝手に決めず、決める必要があることとして返す
+
 ## 改修指示
 
 Win32 API を利用できない端末でも、元のマクロと同じ機能・結果で動くように
@@ -70,17 +90,42 @@ Win32 API を利用できない端末でも、元のマクロと同じ機能・�
 '@MACROSTUDIO {{REQUEST_ID}} NOCHANGE <判断>
 '@MACROSTUDIO {{REQUEST_ID}} COMPLETE 0
 
-<判断> は次のどちらかです。
+<判断> は次の 3 つのどれかです。
 
 - UNNECESSARY … いまのままで依頼の内容を満たしているので、直す必要がない
 - IMPOSSIBLE … 直したほうがよいが、渡されたモジュールを書き換える形ではできない
+- NEEDDECISION … コードだけでは決められず、人が選ぶ必要がある
 
-この 4 行はすべて必要です。理由を書かずに NOCHANGE だけを返したり、
+NEEDDECISION のときは、SUMMARY END と NOCHANGE NEEDDECISION の間に、
+決める必要があることを 1 件以上、次の形で書いてください。
+
+'@MACROSTUDIO {{REQUEST_ID}} DECISION BEGIN 1
+'@MACROSTUDIO {{REQUEST_ID}} META FINDING=<指摘番号または-> MODULE=<モジュール名または->
+'@MACROSTUDIO {{REQUEST_ID}} TEXT BEGIN QUESTION
+（人が決める必要がある質問）
+'@MACROSTUDIO {{REQUEST_ID}} TEXT END QUESTION
+'@MACROSTUDIO {{REQUEST_ID}} TEXT BEGIN OPTIONS
+（考えられる選択肢と、それぞれの結果）
+'@MACROSTUDIO {{REQUEST_ID}} TEXT END OPTIONS
+'@MACROSTUDIO {{REQUEST_ID}} DECISION END 1
+'@MACROSTUDIO {{REQUEST_ID}} NOCHANGE NEEDDECISION
+'@MACROSTUDIO {{REQUEST_ID}} COMPLETE 0
+
+DECISION の番号は 1 から始め、2、3 と重複なく増やしてください。01 のように
+0 を付けません。FINDING は診断にある指摘番号、MODULE は対象モジュール名です。
+どちらにも結び付かないときだけ `-` にします。質問と選択肢は空にしません。
+
+UNNECESSARY / IMPOSSIBLE の 4 行と、NEEDDECISION の上記各行はすべて必要です。
+理由を書かずに NOCHANGE だけを返したり、
 COMPLETE 0 だけを返したりしないでください。何も返さないこと、
 返答を途中でやめることも、「変更なし」とは扱われません。
 
 守ってください:
 
+- 明示されていない業務動作は変えないでください。
+- 公開しているプロシージャ名・引数は変えないでください。
+- コードだけでは判断できないことは勝手に決めず、
+  決める必要があることとして返してください。
 - <種類> は standard / class / form / document のどれかです。
   既存モジュールの <種類> は、依頼文の【対象モジュール】に書かれた種別を
   次のとおり読み替えて書いてください。
@@ -145,17 +190,43 @@ PART の行は付けません。番号を待つ必要も、続きを出す必要
 '@MACROSTUDIO {{REQUEST_ID}} NOCHANGE <判断>
 '@MACROSTUDIO {{REQUEST_ID}} COMPLETE 0
 
-<判断> は次のどちらかです。
+<判断> は次の 3 つのどれかです。
 
 - UNNECESSARY … いまのままで依頼の内容を満たしているので、直す必要がない
 - IMPOSSIBLE … 直したほうがよいが、渡されたモジュールを書き換える形ではできない
 
-この 4 行はすべて必要です。理由を書かずに NOCHANGE だけを返したり、
+- NEEDDECISION … コードだけでは決められず、人が選ぶ必要がある
+
+NEEDDECISION のときは、SUMMARY END と NOCHANGE NEEDDECISION の間に、
+決める必要があることを 1 件以上、次の形で書いてください。
+
+'@MACROSTUDIO {{REQUEST_ID}} DECISION BEGIN 1
+'@MACROSTUDIO {{REQUEST_ID}} META FINDING=<指摘番号または-> MODULE=<モジュール名または->
+'@MACROSTUDIO {{REQUEST_ID}} TEXT BEGIN QUESTION
+（人が決める必要がある質問）
+'@MACROSTUDIO {{REQUEST_ID}} TEXT END QUESTION
+'@MACROSTUDIO {{REQUEST_ID}} TEXT BEGIN OPTIONS
+（考えられる選択肢と、それぞれの結果）
+'@MACROSTUDIO {{REQUEST_ID}} TEXT END OPTIONS
+'@MACROSTUDIO {{REQUEST_ID}} DECISION END 1
+'@MACROSTUDIO {{REQUEST_ID}} NOCHANGE NEEDDECISION
+'@MACROSTUDIO {{REQUEST_ID}} COMPLETE 0
+
+DECISION の番号は 1 から始め、2、3 と重複なく増やしてください。01 のように
+0 を付けません。FINDING は診断にある指摘番号、MODULE は対象モジュール名です。
+どちらにも結び付かないときだけ `-` にします。質問と選択肢は空にしません。
+
+UNNECESSARY / IMPOSSIBLE の 4 行と、NEEDDECISION の上記各行はすべて必要です。
+理由を書かずに NOCHANGE だけを返したり、
 COMPLETE 0 だけを返したりしないでください。何も返さないこと、
 返答を途中でやめることも、「変更なし」とは扱われません。
 
 守ってください:
 
+- 明示されていない業務動作は変えないでください。
+- 公開しているプロシージャ名・引数は変えないでください。
+- コードだけでは判断できないことは勝手に決めず、
+  決める必要があることとして返してください。
 - 1 回の返答に入れるモジュールは 1 つだけです。COMPLETE の数は毎回 1 です。
 - <合計> は最初に決めた数のまま、毎回同じ数を書いてください。
 - <番号> は 00、01、02 … と 1 つずつ増やします。飛ばしたり戻したりしないでください。

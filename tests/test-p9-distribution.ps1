@@ -151,6 +151,9 @@ $stageRoot = Join-Path $stageContainer 'distribution'
 $smokeBook = Join-Path $testdataRoot 'test_large.xlsm'
 $stagedScript = Join-Path $stageRoot 'macrostudio.ps1'
 $launchPath = Join-Path $stageRoot 'launch.vbs'
+$repairFolderName = '02_' + [char]0x6539 + [char]0x4FEE
+$stagedRepairPresetRoot = Join-Path (
+    Join-Path $stageRoot 'presets') $repairFolderName
 $stagedProcessId = 0
 $launcher = $null
 
@@ -165,6 +168,11 @@ try {
     $excludedNames = @{
         '.git' = $true
         'testdata' = $true
+        'public-release' = $true
+        'docs' = $true
+        'tests' = $true
+        '_audit' = $true
+        '.playwright-mcp' = $true
     }
     foreach ($item in Get-ChildItem -LiteralPath $repoRoot -Force) {
         if ($excludedNames.ContainsKey($item.Name)) {
@@ -184,11 +192,19 @@ try {
         $stagedScript,
         (Join-Path $stageRoot 'assets\index.html'),
         (Join-Path $stageRoot 'src\01_App.cs'),
-        (Join-Path $stageRoot 'templates\request-template.txt'),
+        (Join-Path $stageRoot 'templates\diagnose-template.txt'),
+        (Join-Path $stageRoot 'templates\repair-template.txt'),
+        (Join-Path $stageRoot 'environment\target-environment.json'),
         (Join-Path $stageRoot `
             'lib\Microsoft.Web.WebView2.Wpf.dll'))) {
         Assert-True ([IO.File]::Exists($requiredPath)) `
             "Staged distribution file is missing: $requiredPath"
+    }
+    foreach ($excludedName in $excludedNames.Keys) {
+        Assert-True (
+            -not [IO.Directory]::Exists((Join-Path $stageRoot $excludedName)) -and
+            -not [IO.File]::Exists((Join-Path $stageRoot $excludedName))) `
+            "Excluded development content entered the stage: $excludedName"
     }
 
     $runtimeTextFiles = @(
@@ -198,6 +214,8 @@ try {
             Join-Path $stageRoot 'assets') -Recurse -File
         Get-ChildItem -LiteralPath (
             Join-Path $stageRoot 'templates') -Recurse -File
+        Get-ChildItem -LiteralPath (
+            Join-Path $stageRoot 'environment') -Recurse -File
         Get-Item -LiteralPath $launchPath
         Get-Item -LiteralPath $stagedScript
         Get-Item -LiteralPath (Join-Path $stageRoot 'launch.bat')
@@ -220,7 +238,9 @@ try {
         'launch.vbs',
         'WebView2',
         '%LOCALAPPDATA%\MacroStudio\logs\',
-        'templates\request-template.txt',
+        'templates\diagnose-template.txt',
+        'templates\repair-template.txt',
+        'environment\target-environment.json',
         '.xlsm',
         '.xlam',
         '.xlsb')) {
@@ -256,11 +276,12 @@ try {
         'Initial staged preset probe returned no JSON.'
     $initialPresets = [string]$initialJson[0] | ConvertFrom-Json
     $diskPresetCount = @(
-        Get-ChildItem -LiteralPath (
-            Join-Path $stageRoot 'presets') -Filter '*.md' -File
+        Get-ChildItem -LiteralPath (Join-Path $stageRoot 'presets') `
+            -Filter '*.md' -File -Recurse
     ).Count
     Assert-True (
-        $initialPresets.stateCount -eq $diskPresetCount) `
+        ($initialPresets.stateCount + $initialPresets.diagnoseCount) -eq
+            $diskPresetCount) `
         'Initial preset count does not match staged files.'
 
     $launchText = [IO.File]::ReadAllText(
@@ -425,8 +446,7 @@ try {
         'Staged flow WebView smoke did not report PASS.'
 
     $addedPresetName = 'p9-added.md'
-    $addedPresetPath = Join-Path (
-        Join-Path $stageRoot 'presets') $addedPresetName
+    $addedPresetPath = Join-Path $stagedRepairPresetRoot $addedPresetName
     $addedPresetTitle = 'P9 Added Preset'
     # The section headings are part of the preset contract, so they are
     # written by code point to keep this script ASCII.
@@ -437,8 +457,7 @@ try {
         '',
         [char[]](0x51FA, 0x529B, 0x6307, 0x793A))
     $brokenPresetName = 'p9-broken.md'
-    $brokenPresetPath = Join-Path (
-        Join-Path $stageRoot 'presets') $brokenPresetName
+    $brokenPresetPath = Join-Path $stagedRepairPresetRoot $brokenPresetName
     Assert-True (-not [IO.File]::Exists($addedPresetPath)) `
         "Temporary P9 preset already exists: $addedPresetPath"
     Assert-True (-not [IO.File]::Exists($brokenPresetPath)) `
@@ -476,14 +495,14 @@ try {
         'Preset count did not increase after restart.'
     Assert-True (
         @($restartedPresets.files) -contains
-        $addedPresetName) `
+        (Join-Path $repairFolderName $addedPresetName)) `
         'The added preset is missing after restart.'
     Assert-True (
         @($restartedPresets.labels) -contains $addedPresetTitle) `
         'The added preset does not show its H1 name.'
     Assert-True (
         @($restartedPresets.invalidFiles) -contains
-        $brokenPresetName) `
+        (Join-Path $repairFolderName $brokenPresetName)) `
         'The unusable preset is not listed with its reason.'
     Assert-True (
         -not (@($restartedPresets.names) -contains

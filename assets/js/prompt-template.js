@@ -12,7 +12,10 @@
     "MODULE_COUNT",
     "TOTAL_LINE_COUNT",
     "MODULE_LIST",
-    "CODE_FILE_NAME"
+    "CODE_FILE_NAME",
+    "TARGET_ENVIRONMENT",
+    "DIAGNOSIS",
+    "SELECTED_FINDINGS"
   ];
   var REQUIRED_PLACEHOLDER_NAMES = [
     "REQUEST_TEXT"
@@ -209,7 +212,7 @@
     return lines.join(CRLF).replace(/(?:\r\n)+$/, "") + CRLF;
   }
 
-  function validateTemplate(template) {
+  function validateTemplate(template, requiredNames) {
     var placeholderPattern = /\{\{([^{}\r\n]*)\}\}/g;
     var seen = {};
     var match;
@@ -238,7 +241,7 @@
       throw new Error("The request template has a malformed placeholder.");
     }
 
-    REQUIRED_PLACEHOLDER_NAMES.forEach(function (name) {
+    requiredNames.forEach(function (name) {
       if (!seen[name]) {
         throw new Error(
           "The request template is missing {{" + name + "}}.");
@@ -286,6 +289,7 @@
     var book;
     var modules;
     var variables;
+    var requiredNames = REQUIRED_PLACEHOLDER_NAMES.slice();
 
     if (!options || !options.book ||
         !Array.isArray(options.modules)) {
@@ -295,7 +299,20 @@
     template = requireString(
       options.template,
       "Request template");
-    validateTemplate(template);
+    if (Object.prototype.hasOwnProperty.call(
+      options,
+      "targetEnvironment")) {
+      requiredNames.push("TARGET_ENVIRONMENT");
+    }
+    if (Object.prototype.hasOwnProperty.call(options, "diagnosis")) {
+      requiredNames.push("DIAGNOSIS");
+    }
+    if (Object.prototype.hasOwnProperty.call(
+      options,
+      "selectedFindings")) {
+      requiredNames.push("SELECTED_FINDINGS");
+    }
+    validateTemplate(template, requiredNames);
     requestText = normalizeCrLf(
       requireString(options.requestText, "Request text"));
     book = options.book;
@@ -313,7 +330,25 @@
       MODULE_LIST: buildModuleList(modules),
       CODE_FILE_NAME: requireString(
         options.codeFileName,
-        "Code file name")
+        "Code file name"),
+      TARGET_ENVIRONMENT:
+        Object.prototype.hasOwnProperty.call(
+          options,
+          "targetEnvironment")
+          ? requireString(
+            options.targetEnvironment,
+            "Target environment")
+          : "",
+      DIAGNOSIS:
+        Object.prototype.hasOwnProperty.call(options, "diagnosis")
+          ? requireString(options.diagnosis, "Diagnosis")
+          : "",
+      SELECTED_FINDINGS:
+        Object.prototype.hasOwnProperty.call(options, "selectedFindings")
+          ? requireString(
+            options.selectedFindings,
+            "Selected findings")
+          : ""
     };
 
     return renderTemplate(template, variables);

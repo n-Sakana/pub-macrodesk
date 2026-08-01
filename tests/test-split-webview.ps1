@@ -87,6 +87,7 @@ $body = $combined -replace $usingPattern, ''
 $source = ($usings -join "`n") + "`n`n" + $body
 
 $references = @(
+    'System.Collections'
     [System.Windows.Window].Assembly.Location
     [System.Windows.UIElement].Assembly.Location
     [System.Windows.DependencyObject].Assembly.Location
@@ -105,6 +106,8 @@ Add-Type -TypeDefinition $source `
     -Language CSharp
 
 $runFolder = ''
+$sourceHash = (Get-FileHash -LiteralPath $resolvedBookPath `
+    -Algorithm SHA256).Hash
 try {
     try {
         $rawResult = [MacroStudio.Tests.SplitOutputSmoke]::Run(
@@ -120,10 +123,21 @@ try {
     $first = $result.afterFirstPart | ConvertFrom-Json
     $last = $result.afterLastPart | ConvertFrom-Json
     $whole = $result.afterWholeAnswer | ConvertFrom-Json
+    $diagnosisTaken = $result.diagnosisTaken | ConvertFrom-Json
 
-    # ---- the work is chosen before the workbook, and survives it ----
-    Assert-True ($result.modeKept -eq $true) `
-        'Reading a workbook dropped the work that was already chosen.'
+    # ---- both AI stages use the single beta 2 entrance ----
+    Assert-True ($result.singleEntrance -eq $true) `
+        'The split route restored a removed mode or purpose entrance.'
+    # A diagnosis is prose about the macro and arrives in one reply, so the
+    # screen no longer offers to split it. Splitting stays where the reply
+    # is code.
+    Assert-True ($result.diagnosisOptionGone -eq $true) `
+        'The diagnosis screen must not offer a split reply any more.'
+    Assert-True (
+        $diagnosisTaken.findings -eq 2 -and
+        $diagnosisTaken.partsUnused -and
+        $diagnosisTaken.recorded
+    ) 'The whole diagnosis must be taken in and recorded from one reply.'
 
     # ---- the option is on the request screen and starts off ----
     Assert-True ($result.presetFile.Length -gt 0) `
@@ -142,16 +156,18 @@ try {
         'The written request does not ask for one module per answer.'
     Assert-InsideDirectory $runFolder $testdataRoot
     Assert-True (
-        [IO.File]::Exists((Join-Path $runFolder 'request.md')) -and
+        [IO.File]::Exists((Join-Path $runFolder 'diagnose-request.md')) -and
+        [IO.File]::Exists((Join-Path $runFolder 'diagnosis.md')) -and
+        [IO.File]::Exists((Join-Path $runFolder 'repair-request.md')) -and
         [IO.File]::Exists((Join-Path $runFolder 'source-code.md'))) `
-        'The run folder is missing the request or the code file.'
+        'The run folder is missing a two-AI split artifact.'
     $requestText = [IO.File]::ReadAllText(
-        (Join-Path $runFolder 'request.md'),
+        (Join-Path $runFolder 'repair-request.md'),
         [Text.Encoding]::UTF8)
     Assert-True ($requestText.Contains(' PART ')) `
-        'request.md does not carry the part sentinel.'
+        'repair-request.md does not carry the part sentinel.'
     Assert-True ($requestText.Contains('{{') -eq $false) `
-        'request.md still carries a placeholder.'
+        'repair-request.md still carries a placeholder.'
 
     # ---- the parts arrive one at a time ----
     Assert-True ($first.parts -eq 1 -and $first.total -eq 2) `
@@ -189,6 +205,11 @@ try {
         'After a package came in, the intake button must stay reachable.'
     Assert-True ($whole.horizontal -eq $false) `
         'The intake screen scrolls horizontally at 1366x768.'
+
+    $afterHash = (Get-FileHash -LiteralPath $resolvedBookPath `
+        -Algorithm SHA256).Hash
+    Assert-True ($afterHash -ceq $sourceHash) `
+        'The split intake flow modified the source workbook.'
 } finally {
     if (-not [string]::IsNullOrEmpty($runFolder)) {
         Assert-InsideDirectory $runFolder $testdataRoot

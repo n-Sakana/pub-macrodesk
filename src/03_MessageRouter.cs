@@ -146,6 +146,8 @@ namespace MacroStudio
             {
                 case "getAppInfo":
                     return services.GetAppInfo();
+                case "getTargetEnvironment":
+                    return services.GetTargetEnvironment();
                 case "pickBook":
                     return services.PickBook();
                 case "attachBook":
@@ -155,12 +157,18 @@ namespace MacroStudio
                     return services.ReadPreset(
                         GetString(parameters, "file"));
                 case "readRequestTemplate":
-                    return services.ReadRequestTemplate();
+                    return services.ReadRequestTemplate(
+                        GetString(parameters, "name"));
                 case "writeRequestFiles":
                     return services.WriteRequestFiles(
+                        GetString(parameters, "stage"),
                         GetString(parameters, "outputTimestamp"),
                         GetString(parameters, "request"),
                         GetString(parameters, "code"));
+                case "writeDiagnosisFile":
+                    return services.WriteDiagnosisFile(
+                        GetString(parameters, "outputTimestamp"),
+                        GetString(parameters, "markdown"));
                 case "writeClipboard":
                     return services.WriteClipboard(
                         GetString(parameters, "text"));

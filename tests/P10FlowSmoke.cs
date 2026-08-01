@@ -12,7 +12,7 @@ using Microsoft.Web.WebView2.Wpf;
 
 namespace MacroStudio.Tests
 {
-    // Walks the ten screens against the real host: one workbook in,
+    // Walks the eleven screens against the real host: one workbook in,
     // one run folder out.
     public static class P10FlowSmoke
     {
@@ -23,12 +23,67 @@ namespace MacroStudio.Tests
             string lightScreenshot,
             string darkScreenshot)
         {
+            return RunCore(
+                baseDir,
+                bookPath,
+                cacheDir,
+                lightScreenshot,
+                darkScreenshot,
+                false,
+                false);
+        }
+
+        internal static string RunDiagnosisOnly(
+            string baseDir,
+            string bookPath,
+            string cacheDir,
+            string lightScreenshot,
+            string darkScreenshot)
+        {
+            return RunCore(
+                baseDir,
+                bookPath,
+                cacheDir,
+                lightScreenshot,
+                darkScreenshot,
+                true,
+                false);
+        }
+
+        internal static string RunPathMap(
+            string baseDir,
+            string bookPath,
+            string cacheDir,
+            string lightScreenshot,
+            string darkScreenshot)
+        {
+            return RunCore(
+                baseDir,
+                bookPath,
+                cacheDir,
+                lightScreenshot,
+                darkScreenshot,
+                false,
+                true);
+        }
+
+        private static string RunCore(
+            string baseDir,
+            string bookPath,
+            string cacheDir,
+            string lightScreenshot,
+            string darkScreenshot,
+            bool diagnosisOnly,
+            bool pathMap)
+        {
             SmokeRunner runner = new SmokeRunner(
                 baseDir,
                 bookPath,
                 cacheDir,
                 lightScreenshot,
-                darkScreenshot);
+                darkScreenshot,
+                diagnosisOnly,
+                pathMap);
             Thread thread = new Thread(runner.Run);
             thread.IsBackground = true;
             thread.SetApartmentState(ApartmentState.STA);
@@ -55,6 +110,8 @@ namespace MacroStudio.Tests
             private readonly string cacheDir;
             private readonly string lightScreenshot;
             private readonly string darkScreenshot;
+            private readonly bool diagnosisOnly;
+            private readonly bool pathMap;
 
             private Application application;
             private Window window;
@@ -64,6 +121,11 @@ namespace MacroStudio.Tests
             private JavaScriptSerializer serializer;
             private IDataObject originalClipboard;
             private bool clipboardCaptured;
+            private int clipboardRetryCount;
+            private const int AiHandoffYieldMilliseconds = 1000;
+            private const int ClipboardPublishYieldMilliseconds = 250;
+            private readonly List<string> clipboardOwners =
+                new List<string>();
 
             public string Result;
             public Exception Error;
@@ -73,13 +135,17 @@ namespace MacroStudio.Tests
                 string bookPath,
                 string cacheDir,
                 string lightScreenshot,
-                string darkScreenshot)
+                string darkScreenshot,
+                bool diagnosisOnly,
+                bool pathMap)
             {
                 this.baseDir = Path.GetFullPath(baseDir);
                 this.bookPath = Path.GetFullPath(bookPath);
                 this.cacheDir = Path.GetFullPath(cacheDir);
                 this.lightScreenshot = Path.GetFullPath(lightScreenshot);
                 this.darkScreenshot = Path.GetFullPath(darkScreenshot);
+                this.diagnosisOnly = diagnosisOnly;
+                this.pathMap = pathMap;
                 serializer = new JavaScriptSerializer();
                 serializer.MaxJsonLength = int.MaxValue;
                 Result = string.Empty;
@@ -175,301 +241,410 @@ namespace MacroStudio.Tests
                 {
                     Dictionary<string, object> result =
                         new Dictionary<string, object>();
+                    Dictionary<string, object> eventData =
+                        new Dictionary<string, object>();
+                    string repairId = null;
+                    string repairPrompt = null;
 
                     await WaitFor(
                         "MacroStudioState.getState().appInfo !== null");
-                    result.Add("start", await ReadShell());
-
-                    // The work is the first decision, before any workbook.
-                    // The whole screen's text is read as well: nothing on
-                    // it may point at a workbook that has not been read.
-                    result.Add("mode", await ReadJson(
+                    result.Add("initial", await ReadJson(
                         "({" +
                         "screen:MacroStudioState.getState().screen," +
-                        "title:document.querySelector(" +
-                        "'.screen-title').textContent," +
-                        "text:document.querySelector('#main-content')" +
-                        ".textContent," +
-                        "cards:Array.prototype.map.call(" +
-                        "document.querySelectorAll('.choice-title')," +
-                        "function(node){return node.textContent;})," +
+                        "book:MacroStudioState.getState().book !== null," +
                         "nextReady:!document.querySelector(" +
                         "'[data-action=\"go-next\"]').disabled," +
-                        "backDisabled:document.querySelector(" +
-                        "'[data-action=\"go-back\"]').disabled" +
+                        "visibleEntries:document.querySelectorAll(" +
+                        "'[data-action=\"select-mode\"]," +
+                        "[data-action=\"select-purpose\"]').length" +
                         "})"));
-                    await Execute(
-                        "document.querySelector(" +
-                        "'[data-action=\"select-mode\"]" +
-                        "[data-mode=\"refactor\"]').click();");
-                    await WaitFor(
-                        "MacroStudioState.getState().mode === 'refactor'");
-                    result.Add("modeChosen", await ReadJson(
-                        "({" +
-                        "stillHere:MacroStudioState.getState().screen," +
-                        "steps:document.querySelectorAll(" +
-                        "'.progress-step').length," +
-                        "nextReady:!document.querySelector(" +
-                        "'[data-action=\"go-next\"]').disabled" +
-                        "})"));
+                    result.Add("startShell", await ReadShell());
 
-                    await Next();
-                    await WaitForScreen(1);
-                    result.Add("dropScreen", await ReadJson(
-                        "({" +
-                        "screen:MacroStudioState.getState().screen," +
-                        "title:document.querySelector(" +
-                        "'.screen-title').textContent," +
-                        "nextReady:!document.querySelector(" +
-                        "'[data-action=\"go-next\"]').disabled," +
-                        "backDisabled:document.querySelector(" +
-                        "'[data-action=\"go-back\"]').disabled" +
-                        "})"));
-
-                    Dictionary<string, object> eventData =
-                        new Dictionary<string, object>();
                     eventData.Add("path", bookPath);
                     router.PushEvent("bookDropped", eventData);
                     await WaitFor(
                         "MacroStudioState.getState().book !== null && " +
                         "MacroStudioState.getState().busyAction === null");
-                    result.Add("attached", await ReadJson(
-                        "({" +
-                        "screen:MacroStudioState.getState().screen," +
-                        "mode:MacroStudioState.getState().mode," +
-                        "modules:MacroStudioState.getState()" +
-                        ".modules.length," +
-                        "nextReady:!document.querySelector(" +
-                        "'[data-action=\"go-next\"]').disabled," +
-                        "backDisabled:document.querySelector(" +
-                        "'[data-action=\"go-back\"]').disabled" +
-                        "})"));
-
-                    await Next();
-                    await WaitForScreen(2);
                     result.Add("book", await ReadJson(
                         "({" +
                         "screen:MacroStudioState.getState().screen," +
-                        "stats:Array.prototype.map.call(" +
-                        "document.querySelectorAll('.stat-value')," +
-                        "function(node){return node.textContent;})," +
-                        "chips:document.querySelectorAll(" +
-                        "'.module-chip').length" +
+                        "modules:MacroStudioState.getState().modules.length," +
+                        "nextReady:!document.querySelector(" +
+                        "'[data-action=\"go-next\"]').disabled," +
+                        "readDisclosure:document.querySelectorAll(" +
+                        "'[data-disclosure-key=\"book-read-result\"]')" +
+                        ".length" +
                         "})"));
 
-                    // Back from the read result returns to the workbook,
-                    // and from there to the work choice.
-                    await Back();
-                    await WaitForScreen(1);
-                    await Back();
-                    await WaitForScreen(0);
-                    result.Add("backToStart", await ReadJson(
+                    await Next();
+                    await WaitFor(
+                        "MacroStudioState.getState().screen === 1 && " +
+                        "MacroStudioState.getState().diagnosisRequestId !== null && " +
+                        "MacroStudioState.getState().targetEnvironment !== null && " +
+                        "MacroStudioState.getState().busyAction === null");
+                    string diagnosisId = serializer.Deserialize<string>(
+                        await ReadJson(
+                            "MacroStudioState.getState().diagnosisRequestId"));
+                    string runFolder = serializer.Deserialize<string>(
+                        await ReadJson(
+                            "MacroStudioState.getState().runFolder"));
+                    result.Add("diagnosisId", diagnosisId);
+                    result.Add("runFolder", runFolder);
+                    result.Add("diagnoseRequest", await ReadJson(
                         "({" +
                         "screen:MacroStudioState.getState().screen," +
-                        "mode:MacroStudioState.getState().mode," +
-                        "book:MacroStudioState.getState().book !== null" +
-                        "})"));
-
-                    // The other route's purpose screen is rendered by the
-                    // same card builder, so its declared lines are read
-                    // here before the run goes on as a refactoring.
-                    await Execute(
-                        "document.querySelector('[data-action=\"select-mode\"]" +
-                        "[data-mode=\"diagnose\"]').click();");
-                    await WaitFor(
-                        "MacroStudioState.getState().mode === 'diagnose'");
-                    await Next();
-                    await WaitForScreen(1);
-                    await Next();
-                    await WaitForScreen(2);
-                    await Next();
-                    await WaitForScreen(3);
-                    result.Add("diagnosePurpose", await ReadJson(
-                        "({" +
-                        "cards:document.querySelectorAll(" +
-                        "'[data-action=\"select-purpose\"]').length," +
-                        "descriptions:Array.prototype.map.call(" +
-                        "document.querySelectorAll('.choice-description')," +
-                        "function(node){return node.textContent;})" +
-                        "})"));
-                    await Back();
-                    await WaitForScreen(2);
-                    await Back();
-                    await WaitForScreen(1);
-                    await Back();
-                    await WaitForScreen(0);
-                    await Execute(
-                        "document.querySelector('[data-action=\"select-mode\"]" +
-                        "[data-mode=\"refactor\"]').click();");
-                    await WaitFor(
-                        "MacroStudioState.getState().mode === 'refactor'");
-
-                    await Next();
-                    await WaitForScreen(1);
-                    await Next();
-                    await WaitForScreen(2);
-
-                    await Next();
-                    await WaitForScreen(3);
-                    // The line under each name is read as rendered, to be
-                    // compared with the description section of the preset
-                    // file it came from.
-                    result.Add("purpose", await ReadJson(
-                        "({" +
-                        "cards:document.querySelectorAll(" +
-                        "'[data-action=\"select-purpose\"]').length," +
-                        "descriptions:Array.prototype.map.call(" +
-                        "document.querySelectorAll('.choice-description')," +
-                        "function(node){return node.textContent;})," +
+                        "environment:document.querySelectorAll(" +
+                        "'[data-disclosure-box=\"diagnose-environment\"]')" +
+                        ".length," +
+                        "copy:document.querySelectorAll(" +
+                        "'[data-action=\"copy-diagnosis-prompt\"]').length," +
+                        "open:document.querySelectorAll(" +
+                        "'[data-action=\"open-diagnosis-folder\"]').length," +
+                        "importAction:document.querySelectorAll(" +
+                        "'[data-action=\"import-diagnosis\"]').length," +
+                        "splitOption:document.querySelectorAll(" +
+                        "'[data-workflow-input=\"diagnosis-split\"]').length," +
+                        "requestFile:document.body.textContent" +
+                        ".indexOf('source-code.md') >= 0," +
                         "nextReady:!document.querySelector(" +
                         "'[data-action=\"go-next\"]').disabled" +
                         "})"));
-                    await Execute(
-                        "document.querySelector(" +
-                        "'[data-action=\"select-purpose\"]').click();");
-                    await WaitFor(
-                        "MacroStudioState.getState().presetFile !== null " +
-                        "&& MacroStudioState.getState().requestId !== null " +
-                        "&& MacroStudioState.getState()" +
-                        ".busyAction === null");
-                    result.Add("purposeChosen", await ReadJson(
-                        "({" +
-                        "stillHere:MacroStudioState.getState().screen," +
-                        "selected:document.querySelectorAll(" +
-                        "'.choice-card.is-selected').length," +
-                        "requestChars:MacroStudioState.getState()" +
-                        ".requestText.length," +
-                        "outputRules:MacroStudioState.getState()" +
-                        ".outputRules !== null," +
-                        "placeholderLeft:MacroStudioState.getState()" +
-                        ".outputRules.body.indexOf('{{') >= 0," +
-                        "nextReady:!document.querySelector(" +
-                        "'[data-action=\"go-next\"]').disabled" +
-                        "})"));
-
-                    string requestId =
-                        serializer.Deserialize<string>(
-                            await ReadJson(
-                                "MacroStudioState.getState().requestId"));
-                    result.Add("requestId", requestId);
-
-                    await Next();
-                    await WaitForScreen(5);
-                    // The request text is disclosed, not forced on screen.
-                    result.Add("request", await ReadJson(
-                        "({" +
-                        "closed:document.querySelector(" +
-                        "'[data-disclosure-box=\"request-editor\"]')" +
-                        ".getAttribute('data-open')," +
-                        "trigger:document.querySelector(" +
-                        "'.disclosure-trigger').textContent," +
-                        "nextReady:!document.querySelector(" +
-                        "'[data-action=\"go-next\"]').disabled" +
-                        "})"));
-                    await Execute(
-                        "document.querySelector(" +
-                        "'[data-action=\"toggle-disclosure\"]').click();");
-                    await WaitFor(
-                        "document.querySelector(" +
-                        "'[data-disclosure-box=\"request-editor\"]')" +
-                        ".getAttribute('data-open') === 'true'");
-                    result.Add("requestOpen", await ReadJson(
-                        "({" +
-                        "editor:document.getElementById(" +
-                        "'request-text') !== null," +
-                        "chars:document.getElementById(" +
-                        "'request-text').value.length" +
-                        "})"));
-
-                    await Next();
-                    await WaitFor(
-                        "MacroStudioState.getState().screen === 6 && " +
-                        "MacroStudioState.getState().runFolder !== null");
                     await Capture(lightScreenshot);
-                    string runFolder =
-                        serializer.Deserialize<string>(
-                            await ReadJson(
-                                "MacroStudioState.getState().runFolder"));
-                    result.Add("runFolder", runFolder);
-                    result.Add("handoff", await ReadJson(
-                        "({" +
-                        "cards:document.querySelectorAll(" +
-                        "'.handoff-card').length," +
-                        "chips:Array.prototype.map.call(" +
-                        "document.querySelectorAll('.artifact-chip')," +
-                        "function(node){return node.textContent;})," +
-                        "nextReady:!document.querySelector(" +
-                        "'[data-action=\"go-next\"]').disabled" +
-                        "})"));
 
                     CaptureClipboard();
                     await Execute(
                         "document.querySelector(" +
-                        "'[data-action=\"copy-request-prompt\"]')" +
+                        "'[data-action=\"copy-diagnosis-prompt\"]')" +
                         ".click();");
                     await WaitFor(
-                        "MacroStudioState.getState().promptCopied === true");
-                    string clipboardPrompt = Clipboard.GetText();
-                    await Execute(
-                        "MacroStudioState.setHandoffProgress(null,true);");
-                    await WaitFor(
                         "MacroStudioState.getState()" +
-                        ".codeFolderOpened === true");
-                    result.Add("handoffReady", await ReadJson(
-                        "({" +
-                        "nextReady:!document.querySelector(" +
-                        "'[data-action=\"go-next\"]').disabled," +
-                        "copyDone:document.querySelectorAll(" +
-                        "'.handoff-card.is-done').length" +
-                        "})"));
-                    result.Add(
-                        "clipboardIsPrompt",
-                        clipboardPrompt ==
-                            serializer.Deserialize<string>(
-                                await ReadJson(
-                                    "MacroStudioState.getState()" +
-                                    ".requestPrompt")));
-                    result.Add(
-                        "promptCarriesRequestId",
-                        clipboardPrompt != null &&
-                            clipboardPrompt.IndexOf(
-                                "'@MACROSTUDIO " + requestId,
-                                StringComparison.Ordinal) >= 0);
+                        ".diagnosisPromptCopied === true");
+                    string diagnosisPrompt = ReadClipboardText();
+                    await Execute(
+                        "MacroStudioState.setDiagnosisHandoffProgress(" +
+                        "null,true);");
+                    // Handing the request over is not a screen of its own
+                    // any more. The same screen takes the reply back, and
+                    // [次へ] stays closed until a diagnosis has arrived.
+                    await WaitFor(
+                        "document.querySelector(" +
+                        "'[data-action=\"go-next\"]').disabled");
+                    await WaitForScreen(1);
 
-                    // ---- one press takes the whole answer in --------
-                    await Next();
-                    await WaitForScreen(7);
-                    result.Add("intakeScreen", await ReadJson(
-                        "({" +
-                        "actions:Array.prototype.map.call(" +
-                        "document.querySelectorAll('main [data-action]')," +
-                        "function(node){" +
-                        "return node.getAttribute('data-action');})," +
-                        "moduleLists:document.querySelectorAll(" +
-                        "'.module-pane,.module-list').length," +
-                        "textareas:document.querySelectorAll(" +
-                        "'main textarea').length" +
-                        "})"));
-
-                    string firstModule =
-                        serializer.Deserialize<string>(
-                            await ReadJson(
-                                "MacroStudioState.getState()" +
-                                ".modules[0].name"));
-                    string firstKind =
-                        serializer.Deserialize<string>(
-                            await ReadJson(
-                                "MacroStudioState.getState()" +
-                                ".modules[0].type"));
-
-                    // A foreign answer must not be applied, and must not
-                    // say anything the user cannot act on.
-                    SetClipboard(
-                        "Option Explicit\r\n" +
-                        "Public Sub Stray()\r\nEnd Sub\r\n");
+                    string marker = "'@MACROSTUDIO " + diagnosisId + " ";
+                    string diagnosisResponse;
+                    if (pathMap)
+                    {
+                        diagnosisResponse =
+                            marker + "DIAG BEGIN 1\r\n" +
+                            marker + "SECTION BEGIN PURPOSE\r\n" +
+                            "The workbook exposes a monthly report.\r\n" +
+                            marker + "SECTION END PURPOSE\r\n" +
+                            marker + "SECTION BEGIN FLOW\r\n" +
+                            "The report reads source sheets and writes reports.\r\n" +
+                            marker + "SECTION END FLOW\r\n" +
+                            marker + "SECTION BEGIN DEPENDENCY\r\n" +
+                            "No repair finding is needed for this route.\r\n" +
+                            marker + "SECTION END DEPENDENCY\r\n" +
+                            marker + "SECTION BEGIN ENVIRONMENT\r\n" +
+                            "The attached source was inspected.\r\n" +
+                            marker + "SECTION END ENVIRONMENT\r\n" +
+                            marker + "DIAG NOFINDING SCOPE_CLEAR\r\n" +
+                            marker + "DIAG COMPLETE 0\r\n" +
+                            marker + "DIAG END\r\n";
+                    }
+                    else
+                    {
+                        diagnosisResponse =
+                        marker + "DIAG BEGIN 1\r\n" +
+                        marker + "SECTION BEGIN PURPOSE\r\n" +
+                        "The workbook exposes one test entry point.\r\n" +
+                        marker + "SECTION END PURPOSE\r\n" +
+                        marker + "SECTION BEGIN FLOW\r\n" +
+                        "AppController.Test is the visible flow.\r\n" +
+                        marker + "SECTION END FLOW\r\n" +
+                        marker + "SECTION BEGIN DEPENDENCY\r\n" +
+                        "No external dependency is needed for this fixture.\r\n" +
+                        marker + "SECTION END DEPENDENCY\r\n" +
+                        marker + "SECTION BEGIN ENVIRONMENT\r\n" +
+                        "The finding is based on the attached source.\r\n" +
+                        marker + "SECTION END ENVIRONMENT\r\n" +
+                        marker + "FINDING BEGIN 1\r\n" +
+                        marker + "META CLASS=DEFECT CONFIDENCE=CONFIRMED " +
+                        "MODULE=AppController PROC=Test LINES=2 ENVKEY=-\r\n" +
+                        marker + "TEXT BEGIN TITLE\r\n" +
+                        "Finding for flow smoke\r\n" +
+                        marker + "TEXT END TITLE\r\n" +
+                        marker + "TEXT BEGIN CONDITION\r\n" +
+                        "The Test entry point is run.\r\n" +
+                        marker + "TEXT END CONDITION\r\n" +
+                        marker + "TEXT BEGIN IMPACT\r\n" +
+                        "The requested visible effect is absent.\r\n" +
+                        marker + "TEXT END IMPACT\r\n" +
+                        marker + "TEXT BEGIN EVIDENCE\r\n" +
+                        "The procedure body is empty on line 2.\r\n" +
+                        marker + "TEXT END EVIDENCE\r\n" +
+                        marker + "FINDING END 1\r\n" +
+                        marker + "DIAG COMPLETE 1\r\n" +
+                        marker + "DIAG END\r\n";
+                    }
+                    await SetClipboardAfterHandoff(diagnosisResponse);
                     await Execute(
                         "document.querySelector(" +
-                        "'[data-action=\"import-response\"]').click();");
+                        "'[data-action=\"import-diagnosis\"]').click();");
+                    await WaitFor(
+                        "MacroStudioState.getState().diagnosis !== null && " +
+                        "MacroStudioState.getState().busyAction === null");
+                    result.Add("diagnosis", await ReadJson(
+                        "({" +
+                        "screen:MacroStudioState.getState().screen," +
+                        "findings:MacroStudioState.getState()" +
+                        ".diagnosis.findings.length," +
+                        "version:MacroStudioState.getState()" +
+                        ".diagnosisVersion," +
+                        "recorded:MacroStudioState.getState()" +
+                        ".diagnosisFilePath !== null," +
+                        "nextReady:!document.querySelector(" +
+                        "'[data-action=\"go-next\"]').disabled" +
+                        "})"));
+
+                    await Next();
+                    await WaitForScreen(2);
+                    result.Add("findings", await ReadJson(
+                        "({" +
+                        "screen:MacroStudioState.getState().screen," +
+                        "findingRows:document.querySelectorAll(" +
+                        "'.finding-row').length," +
+                        "presetCards:document.querySelectorAll(" +
+                        "'[data-action=\"select-repair-preset\"]').length," +
+                        "oldEntries:document.querySelectorAll(" +
+                        "'[data-action=\"select-mode\"]," +
+                        "[data-action=\"select-purpose\"]').length," +
+                        "nextReady:!document.querySelector(" +
+                        "'[data-action=\"go-next\"]').disabled" +
+                        "})"));
+                    // Reading the diagnosis and choosing the work are two
+                    // pages now.
+                    await Next();
+                    await WaitForScreen(3);
+                    await WaitFor(
+                        "document.querySelector(" +
+                        "'[data-action=\"select-repair-preset\"]') !== null");
+                    result.Add("nextStep", await ReadJson(
+                        "(function(){" +
+                        "var cards=document.querySelectorAll(" +
+                        "'[data-action=\"select-repair-preset\"]');" +
+                        "return {" +
+                        "screen:MacroStudioState.getState().screen," +
+                        "presetCards:cards.length," +
+                        "recommended:document.querySelectorAll(" +
+                        "'.choice-card.is-recommended').length," +
+                        "firstCard:cards.length ? cards[0]" +
+                        ".getAttribute('data-preset-file') : ''," +
+                        "nextReady:!document.querySelector(" +
+                        "'[data-action=\"go-next\"]').disabled};}())"));
+                    if (pathMap)
+                    {
+                        await Execute(
+                            "(function(){" +
+                            "var state=MacroStudioState.getState();" +
+                            "var entries=MacroStudioPreset.describeAll(" +
+                            "state.appInfo.presets.repair,'repair');" +
+                            "var fixed=entries.filter(function(entry){" +
+                            "return entry.valid&&entry.engine!=='AI';})[0];" +
+                            "var cards=Array.prototype.slice.call(" +
+                            "document.querySelectorAll(" +
+                            "'[data-action=\"select-repair-preset\"]'));" +
+                            "cards.filter(function(card){return " +
+                            "card.getAttribute('data-preset-file')===" +
+                            "fixed.file;})[0].click();}())");
+                    }
+                    else
+                    {
+                        await Execute(
+                            "document.querySelector(" +
+                            "'[data-action=\"select-repair-preset\"]')" +
+                            ".click();");
+                    }
+                    await WaitFor(
+                        "MacroStudioState.getState().presetFile !== null && " +
+                        "MacroStudioState.getState().busyAction === null");
+                    result.Add("preset", await ReadJson(
+                        "({" +
+                        "selected:document.querySelectorAll(" +
+                        "'.choice-card.is-selected').length," +
+                        "engine:MacroStudioState.getState().presetEngine," +
+                        "nextReady:!document.querySelector(" +
+                        "'[data-action=\"go-next\"]').disabled" +
+                        "})"));
+
+                    await Next();
+                    await WaitForScreen(4);
+                    if (pathMap)
+                    {
+                        result.Add("pathMapInitial", await ReadJson(
+                            "(function(){" +
+                            "var state=MacroStudioState.getState();" +
+                            "return {" +
+                            "screen:state.screen," +
+                            "rows:state.pathMap.rows.length," +
+                            "occurrences:MacroStudioPathMap" +
+                            ".countOccurrences(state.pathMap)," +
+                            "allUnapplied:state.pathMap.rows.every(" +
+                            "function(row){return !row.applied;})," +
+                            "includeChecks:document.querySelectorAll(" +
+                            "'[data-workflow-input=\"path-map-include\"]')" +
+                            ".length," +
+                            "targetInputs:document.querySelectorAll(" +
+                            "'[data-workflow-input=\"path-map-to\"]')" +
+                            ".length," +
+                            "nextReady:!document.querySelector(" +
+                            "'[data-action=\"go-next\"]').disabled};}())"));
+                        await Execute(
+                            "document.querySelector(" +
+                            "'[data-workflow-input=\"path-map-include\"]')" +
+                            ".click();");
+                        await WaitFor(
+                            "document.querySelector(" +
+                            "'[data-workflow-input=\"path-map-to\"]')" +
+                            " !== null");
+                        await Execute(
+                            "(function(){" +
+                            "var input=document.querySelector(" +
+                            "'[data-workflow-input=\"path-map-to\"]');" +
+                            "input.value='mapped/';" +
+                            "input.dispatchEvent(new Event(" +
+                            "'input',{bubbles:true}));}())");
+                        await WaitFor(
+                            "MacroStudioPathMap.canApply(" +
+                            "MacroStudioState.getState().pathMap) && " +
+                            "!document.querySelector(" +
+                            "'[data-action=\"go-next\"]').disabled");
+                        result.Add("pathMapReady", await ReadJson(
+                            "(function(){" +
+                            "var state=MacroStudioState.getState();" +
+                            "var applied=state.pathMap.rows.filter(" +
+                            "function(row){return row.applied;});" +
+                            "return {applied:applied.length," +
+                            "target:applied[0].to," +
+                            "valid:applied[0].valid," +
+                            "confirmed:applied[0]" +
+                            ".locationShapeConfirmed," +
+                            "nextReady:!document.querySelector(" +
+                            "'[data-action=\"go-next\"]').disabled};}())"));
+                        await Next();
+                        await WaitFor(
+                            "MacroStudioState.getState().screen === 6 && " +
+                            "MacroStudioState.getState().intakeResult && " +
+                            "MacroStudioState.getState().intakeResult" +
+                            ".mapping.rows.length === 1");
+                        result.Add("pathApplied", await ReadJson(
+                            "(function(){" +
+                            "var state=MacroStudioState.getState();" +
+                            "return {" +
+                            "screen:state.screen," +
+                            "mappingRows:state.intakeResult.mapping.rows.length," +
+                            "repairRequest:state.repairRequestId," +
+                            "changed:MacroStudioState" +
+                            ".getAcceptedModuleCount()};}())"));
+                    }
+                    else
+                    {
+                    // A blocking finding starts selected, so this screen
+                    // opens ready. Nothing further is asked per finding.
+                    result.Add("repairInputEmpty", await ReadJson(
+                        "({" +
+                        "screen:MacroStudioState.getState().screen," +
+                        "findingChecks:document.querySelectorAll(" +
+                        "'[data-workflow-input=\"finding-select\"]').length," +
+                        "preselected:MacroStudioState.getState()" +
+                        ".selectedFindings.length," +
+                        "removedForms:document.querySelectorAll(" +
+                        "'[data-workflow-input=\"desired-behaviour\"]," +
+                        "[data-workflow-input=\"finding-supplement\"]," +
+                        "[data-action=\"choose-behaviour-candidate\"]')" +
+                        ".length," +
+                        "requestFiles:document.querySelectorAll(" +
+                        "'[data-disclosure-box=\"repair-files\"]').length," +
+                        "preserveItems:document.querySelectorAll(" +
+                        "'.preserve-items').length," +
+                        "nextReady:!document.querySelector(" +
+                        "'[data-action=\"go-next\"]').disabled" +
+                        "})"));
+                    result.Add("repairInput", await ReadJson(
+                        "({" +
+                        "selected:MacroStudioState.getState()" +
+                        ".selectedFindings.length," +
+                        "nextReady:!document.querySelector(" +
+                        "'[data-action=\"go-next\"]').disabled" +
+                        "})"));
+
+                    await Next();
+                    await WaitFor(
+                        "MacroStudioState.getState().screen === 5 && " +
+                        "MacroStudioState.getState().repairRequestId !== null && " +
+                        "MacroStudioState.getState().busyAction === null");
+                    repairId = serializer.Deserialize<string>(
+                        await ReadJson(
+                            "MacroStudioState.getState().repairRequestId"));
+                    result.Add("repairId", repairId);
+                    result.Add("repairRequest", await ReadJson(
+                        "({" +
+                        "screen:MacroStudioState.getState().screen," +
+                        "copy:document.querySelectorAll(" +
+                        "'[data-action=\"copy-repair-prompt\"]').length," +
+                        "requestFile:document.body.textContent" +
+                        ".indexOf('source-code.md') >= 0," +
+                        "nextReady:!document.querySelector(" +
+                        "'[data-action=\"go-next\"]').disabled" +
+                        "})"));
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"copy-repair-prompt\"]').click();");
+                    await WaitFor(
+                        "MacroStudioState.getState()" +
+                        ".repairPromptCopied === true");
+                    repairPrompt = ReadClipboardText();
+                    if (diagnosisOnly)
+                    {
+                        await Task.Delay(AiHandoffYieldMilliseconds);
+                        result.Add("repairShell", await ReadShell());
+                        await Capture(darkScreenshot, true);
+                        result.Add("diagnosisPromptReady",
+                            diagnosisPrompt.Contains(diagnosisId) &&
+                            diagnosisPrompt.Contains("source-code.md"));
+                        result.Add("repairPromptReady",
+                            repairPrompt.Contains(repairId) &&
+                            repairPrompt.Contains(
+                                "Finding for flow smoke"));
+                        result.Add("idsDistinct",
+                            !string.Equals(
+                                diagnosisId,
+                                repairId,
+                                StringComparison.Ordinal));
+                        result.Add(
+                            "clipboardRetries",
+                            clipboardRetryCount);
+                        result.Add("clipboardOwners", clipboardOwners);
+                        Result = serializer.Serialize(result);
+                        Stop();
+                        return;
+                    }
+                    await Execute(
+                        "MacroStudioState.setRepairHandoffProgress(" +
+                        "null,true);");
+                    // As with the diagnosis, the repair hand-off and the
+                    // import share one screen: [次へ] opens on the answer
+                    // arriving, not on the request going out.
+                    await WaitFor(
+                        "document.querySelector(" +
+                        "'[data-action=\"go-next\"]').disabled");
+                    await WaitForScreen(5);
+                    await SetClipboardAfterHandoff(
+                        "not a MacroStudio answer");
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"import-repair\"]').click();");
                     await WaitFor(
                         "MacroStudioState.getState().lastError !== null && " +
                         "MacroStudioState.getState().busyAction === null");
@@ -477,89 +652,76 @@ namespace MacroStudio.Tests
                         "({" +
                         "imported:MacroStudioScreens.countImported(" +
                         "MacroStudioState.getState())," +
-                        "message:MacroStudioState.getState()" +
-                        ".lastError.message," +
                         "nextReady:!document.querySelector(" +
-                        "'[data-action=\"go-next\"]').disabled" +
+                        "'[data-action=\"go-next\"]').disabled," +
+                        "code:MacroStudioState.getState().lastError.code" +
                         "})"));
 
-                    SetClipboard(
-                        "```vb\r\n" +
-                        "'@MACROSTUDIO " + requestId + " SUMMARY BEGIN\r\n" +
-                        "FlowSmoke: entry point rewritten.\r\n" +
-                        "FlowSmokeHelpers: new helper module.\r\n" +
-                        "'@MACROSTUDIO " + requestId + " SUMMARY END\r\n" +
-                        "'@MACROSTUDIO " + requestId + " BEGIN " +
-                        firstKind + " " + firstModule + "\r\n" +
+                    marker = "'@MACROSTUDIO " + repairId + " ";
+                    string repairResponse =
+                        marker + "SUMMARY BEGIN\r\n" +
+                        "AppController now has a visible test effect.\r\n" +
+                        "FlowSmokeHelpers was added for the flow smoke.\r\n" +
+                        marker + "SUMMARY END\r\n" +
+                        marker + "BEGIN standard AppController\r\n" +
                         "Option Explicit\r\n" +
-                        "Public Sub FlowSmoke()\r\n" +
-                        "    Debug.Print \"flow\"\r\n" +
-                        "End Sub\r\n" +
-                        "'@MACROSTUDIO " + requestId + " END " +
-                        firstKind + " " + firstModule + "\r\n" +
-                        "'@MACROSTUDIO " + requestId +
-                        " BEGIN standard FlowSmokeHelpers\r\n" +
+                        "Public Sub Test(): Beep: End Sub\r\n" +
+                        marker + "END standard AppController\r\n" +
+                        marker + "BEGIN standard FlowSmokeHelpers\r\n" +
                         "Option Explicit\r\n" +
-                        "Public Function FlowSmokeTag() As String\r\n" +
-                        "    FlowSmokeTag = \"macrostudio\"\r\n" +
-                        "End Function\r\n" +
-                        "'@MACROSTUDIO " + requestId +
-                        " END standard FlowSmokeHelpers\r\n" +
-                        "'@MACROSTUDIO " + requestId + " COMPLETE 2\r\n" +
-                        "```\r\n");
+                        "Public Sub Touch(): Debug.Print \"flow\": End Sub\r\n" +
+                        marker + "END standard FlowSmokeHelpers\r\n" +
+                        marker + "COMPLETE 2\r\n";
+                    await SetClipboardAfterHandoff(repairResponse);
                     await Execute(
                         "document.querySelector(" +
-                        "'[data-action=\"import-response\"]').click();");
+                        "'[data-action=\"import-repair\"]').click();");
                     await WaitFor(
-                        "MacroStudioState.getState().intakeResult !== null " +
-                        "&& MacroStudioState.getState()" +
-                        ".busyAction === null");
+                        "MacroStudioScreens.countImported(" +
+                        "MacroStudioState.getState()) === 2 && " +
+                        "MacroStudioState.getState().busyAction === null");
                     result.Add("intake", await ReadJson(
                         "({" +
-                        "module:MacroStudioState.getState()" +
-                        ".modules[0].name," +
-                        "result:MacroStudioState.getState().intakeResult," +
+                        "screen:MacroStudioState.getState().screen," +
                         "imported:MacroStudioScreens.countImported(" +
                         "MacroStudioState.getState())," +
-                        "added:MacroStudioState.getState().modules.filter(" +
-                        "function(m){return m.isNew === true;}).length," +
-                        "summary:MacroStudioState.getState()" +
-                        ".intakeResult.summary," +
-                        "summaryClosed:document.querySelector(" +
-                        "'[data-disclosure-box=\"intake-summary\"]')" +
-                        ".getAttribute('data-open')," +
+                        "accepted:MacroStudioState" +
+                        ".getAcceptedModuleCount()," +
+                        "total:MacroStudioState.getState()" +
+                        ".intakeResult.total," +
+                        "existing:MacroStudioState.getState()" +
+                        ".intakeResult.existing," +
+                        "added:MacroStudioState.getState()" +
+                        ".intakeResult.added," +
                         "nextReady:!document.querySelector(" +
                         "'[data-action=\"go-next\"]').disabled" +
                         "})"));
 
-                    // ---- the review screen shows a summary first ----
                     await Next();
-                    await WaitForScreen(8);
+                    await WaitForScreen(6);
+                    }
                     result.Add("review", await ReadJson(
                         "({" +
+                        "screen:MacroStudioState.getState().screen," +
                         "headline:document.querySelector(" +
-                        "'.headline-text').textContent," +
+                        "'.headline-card').textContent," +
                         "closed:document.querySelector(" +
                         "'[data-disclosure-box=\"change-detail\"]')" +
                         ".getAttribute('data-open')," +
-                        "trigger:document.querySelector(" +
-                        "'.disclosure-trigger').textContent," +
-                        "decide:document.querySelectorAll(" +
-                        "'[data-action=\"accept-package\"]," +
-                        "[data-action=\"reject-package\"]').length," +
-                        "accepted:MacroStudioScreens.countAccepted(" +
-                        "MacroStudioState.getState())," +
+                        "accepted:MacroStudioState" +
+                        ".getAcceptedModuleCount()," +
                         "nextReady:!document.querySelector(" +
                         "'[data-action=\"go-next\"]').disabled" +
                         "})"));
-
                     await Execute(
                         "document.querySelector(" +
-                        "'[data-action=\"toggle-disclosure\"]').click();");
+                        "'[data-action=\"toggle-disclosure\"]" +
+                        "[data-disclosure=\"change-detail\"]').click();");
                     await WaitFor(
                         "document.querySelector(" +
                         "'[data-disclosure-box=\"change-detail\"]')" +
-                        ".getAttribute('data-open') === 'true'");
+                        ".getAttribute('data-open') === 'true' && " +
+                        "document.querySelectorAll('.diff-row').length > 0");
                     result.Add("diff", await ReadJson(
                         "({" +
                         "tree:document.querySelectorAll(" +
@@ -567,75 +729,40 @@ namespace MacroStudio.Tests
                         ".length," +
                         "groups:document.querySelectorAll(" +
                         "'.module-group-title').length," +
-                        "columns:document.querySelectorAll(" +
-                        "'.diff-table colgroup col').length," +
                         "markers:document.querySelectorAll(" +
                         "'.diff-marker').length," +
-                        "removed:document.querySelectorAll(" +
-                        "'.diff-row--removed').length," +
-                        "added:document.querySelectorAll(" +
-                        "'.diff-row--added').length," +
+                        "rows:document.querySelectorAll('.diff-row').length," +
                         "twoColumn:document.querySelectorAll(" +
-                        "'.diff-code--left,.diff-code--right').length," +
-                        "toolbar:document.querySelectorAll(" +
-                        "'.diff-toolbar [data-action]').length," +
-                        "scrollsInside:(function(){" +
-                        "var s=document.querySelector(" +
-                        "'.diff-table-scroller');" +
-                        "return s !== null && " +
-                        "getComputedStyle(s).overflowY === 'auto';}())" +
+                        "'.diff-code--left,.diff-code--right').length" +
                         "})"));
-
                     await Capture(darkScreenshot, true);
-                    result.Add("accepted", await ReadJson(
-                        "({" +
-                        "nextReady:!document.querySelector(" +
-                        "'[data-action=\"go-next\"]').disabled," +
-                        "accepted:MacroStudioState" +
-                        ".getAcceptedModuleCount()" +
-                        "})"));
 
                     await Next();
-                    await WaitForScreen(9);
-                    result.Add("summary", await ReadJson(
+                    await WaitForScreen(7);
+                    result.Add("output", await ReadJson(
                         "({" +
-                        "values:Array.prototype.map.call(" +
-                        "document.querySelectorAll('.stat-value')," +
-                        "function(node){return node.textContent;})," +
+                        "screen:MacroStudioState.getState().screen," +
+                        "name:document.getElementById('output-name').value," +
                         "files:Array.prototype.map.call(" +
                         "document.querySelectorAll('.artifact-chip')," +
-                        "function(node){return node.textContent;})" +
+                        "function(node){return node.textContent;})," +
+                        "nextReady:!document.querySelector(" +
+                        "'[data-action=\"go-next\"]').disabled" +
                         "})"));
-                    string outputName =
-                        serializer.Deserialize<string>(
-                            await ReadJson(
-                                "document.getElementById(" +
-                                "'output-name').value"));
-                    await Execute(
-                        "(function(){var f=document.getElementById(" +
-                        "'output-name');f.value='broken.txt';" +
-                        "f.dispatchEvent(new Event('input'," +
-                        "{bubbles:true}));}());");
-                    await WaitFor(
-                        "document.querySelector(" +
-                        "'[data-action=\"go-next\"]').disabled");
-                    await Execute(
-                        "(function(){var f=document.getElementById(" +
-                        "'output-name');f.value=" +
-                        serializer.Serialize(outputName) + ";" +
-                        "f.dispatchEvent(new Event('input'," +
-                        "{bubbles:true}));}());");
-                    await WaitFor(
-                        "!document.querySelector(" +
-                        "'[data-action=\"go-next\"]').disabled");
-                    result.Add("output", outputName);
+                    string outputName = serializer.Deserialize<string>(
+                        await ReadJson(
+                            "document.getElementById('output-name').value"));
+                    result.Add("outputName", outputName);
 
                     await Next();
                     await WaitFor(
-                        "MacroStudioState.getState().screen === 11 && " +
+                        "MacroStudioState.getState().screen === 9 && " +
                         "MacroStudioState.getState().busyAction === null");
                     result.Add("done", await ReadJson(
                         "({" +
+                        "screen:MacroStudioState.getState().screen," +
+                        "status:MacroStudioState.getState()" +
+                        ".buildResult.status," +
                         "outputPath:MacroStudioState.getState()" +
                         ".buildResult.outputPath," +
                         "diffPath:MacroStudioState.getState()" +
@@ -646,52 +773,96 @@ namespace MacroStudio.Tests
                         "document.querySelectorAll('.result-row code')," +
                         "function(node){return node.textContent;})," +
                         "openButtons:document.querySelectorAll(" +
-                        "'[data-action=\"open-run-folder\"]').length," +
-                        "copyButtons:document.querySelectorAll(" +
-                        "'[data-action=\"copy-text\"]').length" +
+                        "'[data-action=\"open-run-folder\"]').length" +
+                        "})"));
+                    // The button is pressed, not merely counted. It was
+                    // wired to nothing and its handler called a state
+                    // function that no longer exists, and neither the
+                    // count nor a screenshot could show that.
+                    //
+                    // The request is recorded instead of performed. The
+                    // host's own RevealPath is covered by
+                    // test-hostservices.ps1, and letting it run here opens
+                    // Explorer on a folder this test deletes on the way
+                    // out, which leaves the reader an OS error box.
+                    await Execute(
+                        "(function(){window.__revealed=null;" +
+                        "var real=window.hostBridge.request;" +
+                        "window.hostBridge.request=function(action,params){" +
+                        "if(action==='revealPath'){" +
+                        "window.__revealed=params.path;" +
+                        "return Promise.resolve({});}" +
+                        "return real.call(this,action,params);};}());");
+                    await Execute(
+                        "document.querySelector(" +
+                        "'[data-action=\"open-run-folder\"]').click();");
+                    await WaitFor(
+                        "MacroStudioState.getState().busyAction === null && " +
+                        "window.__revealed !== null");
+                    result.Add("openFolder", await ReadJson(
+                        "({" +
+                        "error:MacroStudioState.getState().lastError," +
+                        "revealed:window.__revealed," +
+                        "stillEnabled:!document.querySelector(" +
+                        "'[data-action=\"open-run-folder\"]').disabled" +
                         "})"));
                     result.Add("finalShell", await ReadShell());
-                    result.Add("finish", await ReadJson(
-                        "({" +
-                        "label:document.querySelector(" +
-                        "'#footer-actions [data-action=\"finish\"]')" +
-                        ".textContent," +
-                        "nextButtons:document.querySelectorAll(" +
-                        "'#footer-actions [data-action=\"go-next\"]')" +
-                        ".length" +
-                        "})"));
+                    if (pathMap)
+                    {
+                        result.Add("pathBuildContract", await ReadJson(
+                            "(function(){" +
+                            "var state=MacroStudioState.getState();" +
+                            "var rows=state.intakeResult.mapping.rows;" +
+                            "return {" +
+                            "mappingRows:rows.length," +
+                            "targetMapped:rows[0].to==='mapped/'," +
+                            "count:rows[0].count," +
+                            "locations:rows[0].occurrences.length," +
+                            "repairRequestCreated:" +
+                            "state.repairRequestId!==null," +
+                            "repairRequestFile:" +
+                            "state.repairRequestFilePath!==null," +
+                            "engineIsAi:state.repairResultEngine==='AI'" +
+                            "};}())"));
+                    }
 
-                    // The report the build wrote must open on its own.
-                    string diffPath =
-                        serializer.Deserialize<string>(
-                            await ReadJson(
-                                "MacroStudioState.getState()" +
-                                ".buildResult.diffPath"));
+                    string diffPath = serializer.Deserialize<string>(
+                        await ReadJson(
+                            "MacroStudioState.getState()" +
+                            ".buildResult.diffPath"));
                     await NavigateTo(diffPath);
-                    // The report renders itself with the app's own diff
-                    // code, so the rows appear only if that bundle ran.
                     await WaitFor(
                         "document.readyState === 'complete' && " +
-                        "document.querySelectorAll(" +
-                        "'.diff-row').length > 0");
+                        "document.querySelectorAll('.diff-row').length > 0");
                     result.Add("report", await ReadJson(
                         "({" +
                         "modules:document.querySelectorAll(" +
                         "'.module-item').length," +
                         "markers:document.querySelectorAll(" +
                         "'.diff-marker').length," +
-                        "toolbar:document.querySelectorAll(" +
-                        "'.diff-toolbar .button').length," +
-                        "theme:document.documentElement.getAttribute(" +
-                        "'data-theme')," +
                         "editable:document.querySelectorAll(" +
                         "'textarea,input,[contenteditable]').length," +
                         "external:document.querySelectorAll(" +
-                        "'link[href],script[src],img[src]').length," +
-                        "horizontal:document.documentElement" +
-                        ".scrollWidth>innerWidth" +
+                        "'link[href],script[src],img[src]').length" +
                         "})"));
 
+                    result.Add("diagnosisPromptReady",
+                        diagnosisPrompt.Contains(diagnosisId) &&
+                        diagnosisPrompt.Contains("source-code.md"));
+                    if (!pathMap)
+                    {
+                        result.Add("repairPromptReady",
+                            repairPrompt.Contains(repairId) &&
+                            repairPrompt.Contains(
+                                "Finding for flow smoke"));
+                        result.Add("idsDistinct",
+                            !string.Equals(
+                                diagnosisId,
+                                repairId,
+                                StringComparison.Ordinal));
+                    }
+                    result.Add("clipboardRetries", clipboardRetryCount);
+                    result.Add("clipboardOwners", clipboardOwners);
                     Result = serializer.Serialize(result);
                     Stop();
                 }
@@ -779,21 +950,106 @@ namespace MacroStudio.Tests
                 {
                     return;
                 }
+                RunClipboardOperation(
+                    "The flow test clipboard could not be captured.",
+                    delegate()
+                    {
+                        originalClipboard = MaterializeClipboard(
+                            Clipboard.GetDataObject());
+                    });
+                clipboardCaptured = true;
+            }
+
+            private static IDataObject MaterializeClipboard(
+                IDataObject source)
+            {
+                if (source == null)
+                {
+                    return null;
+                }
+                DataObject snapshot = new DataObject();
+                string[] formats = source.GetFormats(false);
+                foreach (string format in formats)
+                {
+                    object value = source.GetData(format, false);
+                    if (value != null)
+                    {
+                        snapshot.SetData(format, value, false);
+                    }
+                }
+                return snapshot;
+            }
+
+            private string ReadClipboardText()
+            {
+                string text = null;
+                RunClipboardOperation(
+                    "The flow test clipboard could not be read.",
+                    delegate()
+                    {
+                        text = Clipboard.GetText();
+                    });
+                return text;
+            }
+
+            private void RunClipboardOperation(
+                string errorMessage,
+                Action operation)
+            {
+                List<string> operationOwners = new List<string>();
                 try
                 {
-                    originalClipboard = Clipboard.GetDataObject();
+                    ClipboardRetry.Execute(
+                        "E-TEST",
+                        errorMessage,
+                        operation,
+                        Thread.Sleep,
+                        ClipboardRetry.InspectOpenClipboardOwner,
+                        delegate(
+                            int retryCount,
+                            bool succeeded,
+                            IList<string> owners)
+                        {
+                            clipboardRetryCount += retryCount;
+                            operationOwners.AddRange(owners);
+                            clipboardOwners.AddRange(owners);
+                        });
                 }
-                catch
+                catch (HostActionException ex)
                 {
-                    originalClipboard = null;
+                    throw new HostActionException(
+                        "E-TEST",
+                        errorMessage + " Owners: " +
+                        (operationOwners.Count == 0
+                            ? "none observed"
+                            : string.Join(", ", operationOwners)),
+                        null,
+                        ex.InnerException == null
+                            ? ex
+                            : ex.InnerException);
                 }
-                clipboardCaptured = true;
             }
 
             private void SetClipboard(string text)
             {
                 CaptureClipboard();
-                Clipboard.SetText(text);
+                RunClipboardOperation(
+                    "The flow test clipboard could not be updated.",
+                    delegate()
+                    {
+                        Clipboard.SetText(text);
+                    });
+            }
+
+            private async Task SetClipboardAfterHandoff(string text)
+            {
+                // A real AI handoff yields the UI thread between the previous
+                // prompt copy and the next answer copy. Let clipboard history
+                // materialize that data without extending the bounded retry
+                // contract used by either clipboard operation.
+                await Task.Delay(AiHandoffYieldMilliseconds);
+                SetClipboard(text);
+                await Task.Delay(ClipboardPublishYieldMilliseconds);
             }
 
             private void RestoreClipboard()
@@ -802,21 +1058,30 @@ namespace MacroStudio.Tests
                 {
                     return;
                 }
-                try
-                {
-                    if (originalClipboard != null)
+                RunClipboardOperation(
+                    "The flow test clipboard could not be restored.",
+                    delegate()
                     {
-                        Clipboard.SetDataObject(originalClipboard, true);
-                    }
-                    else
-                    {
-                        Clipboard.Clear();
-                    }
-                }
-                catch
-                {
-                }
+                        if (originalClipboard != null)
+                        {
+                            Clipboard.SetDataObject(
+                                originalClipboard,
+                                true);
+                        }
+                        else
+                        {
+                            Clipboard.Clear();
+                        }
+                    });
                 clipboardCaptured = false;
+            }
+
+            private void CaptureClipboardRetryFailure(Exception error)
+            {
+                if (Error == null)
+                {
+                    Error = error;
+                }
             }
 
             private async Task Capture(string path, bool dark)
@@ -897,7 +1162,14 @@ namespace MacroStudio.Tests
 
             private void Stop()
             {
-                RestoreClipboard();
+                try
+                {
+                    RestoreClipboard();
+                }
+                catch (Exception ex)
+                {
+                    CaptureClipboardRetryFailure(ex);
+                }
                 try
                 {
                     if (timeoutTimer != null)

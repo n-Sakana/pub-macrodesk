@@ -3,6 +3,7 @@
 var fs = require("fs");
 var path = require("path");
 var vm = require("vm");
+var contracts = require("./helpers/contracts");
 
 function assert(condition, message) {
   if (!condition) {
@@ -12,454 +13,377 @@ function assert(condition, message) {
 
 var root = path.resolve(__dirname, "..");
 var windowObject = {};
-var context = vm.createContext({
-  window: windowObject
-});
+var context = vm.createContext({window: windowObject});
 windowObject.window = windowObject;
 
-[
-  "preset-document.js",
-  "response-package.js",
-  "screens.js",
-  "state.js"
-].forEach(function (name) {
+["response-package.js", "diagnosis-package.js", "vba-lexer.js",
+  "path-map.js", "screens.js", "state.js"]
+  .forEach(function (name) {
   vm.runInContext(
-    fs.readFileSync(
-      path.join(root, "assets", "js", name),
-      "utf8"),
+    fs.readFileSync(path.join(root, "assets", "js", name), "utf8"),
     context,
-    { filename: name });
+    {filename: name});
 });
 
 var screens = windowObject.MacroStudioScreens;
-var state = windowObject.MacroStudioState;
+var store = windowObject.MacroStudioState;
+var DIAGNOSIS_ID_1 = "11111111-1111-4111-8111-111111111111";
+var DIAGNOSIS_ID_2 = "22222222-2222-4222-8222-222222222222";
+var REPAIR_ID_1 = "33333333-3333-4333-8333-333333333333";
+var REPAIR_ID_2 = "44444444-4444-4444-8444-444444444444";
 
-function currentScreen() {
-  return state.getState().screen;
+function current() {
+  return store.getState();
 }
 
-// The work is chosen before the workbook is read, so a run that has a
-// workbook always has a mode as well.
-function attach(mode) {
-  state.reset();
-  state.setMode(mode || "refactor");
-  state.setBook(
-    {
-      name: "受注管理.xlsm",
-      path: "C:\\work\\受注管理.xlsm",
-      ext: ".xlsm",
-      totalLines: 12
-    },
-    [
-      {
-        name: "Main",
-        type: "standard",
-        typeLabel: "標準モジュール",
-        ext: "bas",
-        lineCount: 8,
-        code: "Option Explicit\r\nSub A(): End Sub\r\n",
-        attributes: ""
-      },
-      {
-        name: "OrderRecord",
-        type: "class",
-        typeLabel: "クラスモジュール",
-        ext: "cls",
-        lineCount: 4,
-        code: "Option Explicit\r\n",
-        attributes: "Attribute VB_Name = \"OrderRecord\"\r\n"
-      }
-    ]);
-}
-
-function choosePurpose(questions) {
-  state.setPurpose(
-    "01_refactor.md",
-    "VBAリファクター",
-    "3f1c9c7a-2b64-4a1e-9f52-0b5a4d2e77c1",
-    questions || []);
-  state.setRequestBase("動きを変えずに整理してください。");
-  state.setRequestText("動きを変えずに整理してください。");
-  state.setOutputRules({
-    presetFile: "01_refactor.md",
-    presetName: "VBAリファクター",
-    title: "出力指示",
-    body: "ひとつのコードブロックで返してください。"
-  });
-}
-
-// ---- the table itself ----
-
-assert(screens.count === 12, "The flow must have twelve screens.");
-assert(
-  screens.majors.length === 4,
-  "The progress bar must have four steps.");
-assert(
-  screens.describe({ mode: "refactor" }, 0).major === 1 &&
-    screens.describe({ mode: "refactor" }, 11).major === 4,
-  "The first and last screens belong to the first and last steps.");
-// The work is the first decision, then the workbook. Everything from the
-// purpose screen on keeps the position it had.
-assert(
-  screens.modeScreen === 0 &&
-  screens.bookScreen === 1 &&
-  screens.readScreen === 2 &&
-  screens.purposeScreen === 3 &&
-  screens.questionScreen === 4 &&
-  screens.requestScreen === 5 &&
-  screens.handoffScreen === 6 &&
-  screens.intakeScreen === 7 &&
-  screens.reviewScreen === 8 &&
-  screens.buildScreen === 10 &&
-  screens.doneScreen === 11,
-  "The named screens must match the table.");
-assert(
-  screens.describe({ mode: null }, screens.modeScreen).title ===
-    "作業を選んでください",
-  "The opening screen asks what the work is.");
-assert(
-  screens.describe(
-    { mode: "refactor", questions: [] },
-    screens.purposeScreen).title === "目的を選んでください",
-  "The refactoring route asks for the purpose next.");
-assert(
-  screens.getMajors({ mode: null }).length === 1 &&
-    screens.getMajors({ mode: "refactor" })[0] === "作業とブックを選ぶ",
-  "The first step covers choosing the work and the workbook.");
-
-// A refactoring run without questions walks straight through.
-var index;
-var plain = { mode: "refactor", questions: [] };
-for (index = screens.purposeScreen; index < screens.doneScreen; index += 1) {
-  assert(
-    screens.nextIndex(plain, index) ===
-      (index === screens.purposeScreen ? screens.requestScreen : index + 1),
-    "Screen " + index + " leads to the wrong screen.");
-}
-
-// ---- nothing advances before its own condition is met ----
-
-state.reset();
-assert(
-  currentScreen() === screens.modeScreen,
-  "The flow opens on the work choice.");
-assert(
-  !state.canGoNext(),
-  "What the run is for must be chosen before advancing.");
-assert(
-  !state.canGoBack(),
-  "The first screen has nothing to go back to.");
-
-// ---- the two things this app can be used for ----
-
-assert(state.setMode("diagnose"), "Diagnosis must be selectable.");
-assert(
-  screens.isDiagnose(state.getState()) &&
-    screens.isChatOnly(state.getState()),
-  "A diagnosis run never reaches the build.");
-assert(
-  screens.getMajors(state.getState()).length === 2,
-  "A chat-only run shows two steps, not four.");
-assert(state.setMode("refactor"), "Refactoring must be selectable.");
-assert(
-  screens.getMajors(state.getState()).length === 4,
-  "A refactoring run shows all four steps.");
-assert(state.canGoNext(), "A chosen mode enables next.");
-assert(
-  state.goNext() && currentScreen() === screens.bookScreen,
-  "The work choice leads to the workbook.");
-assert(
-  !state.canGoNext(),
-  "Without a workbook the flow must not advance.");
-assert(state.canGoBack(), "The workbook screen can go back.");
-
-// Reading a workbook keeps the work that was already chosen.
-attach("refactor");
-assert(
-  currentScreen() === screens.bookScreen,
-  "Reading a workbook stays on the workbook screen.");
-assert(
-  state.getState().mode === "refactor",
-  "Reading a workbook must not drop the chosen work.");
-assert(state.canGoNext(), "An attached workbook enables next.");
-assert(
-  state.goNext() && currentScreen() === screens.readScreen,
-  "The workbook screen leads to the read result.");
-assert(state.canGoNext(), "A read workbook can be confirmed.");
-assert(
-  state.goNext() && currentScreen() === screens.purposeScreen,
-  "The read result leads to the purpose.");
-assert(
-  !state.canGoNext(),
-  "A purpose must be chosen before advancing.");
-
-choosePurpose();
-assert(
-  state.getState().requestId.length > 0,
-  "Choosing a purpose must mint a request id.");
-assert(state.canGoNext(), "A chosen purpose enables next.");
-assert(
-  state.goNext() && currentScreen() === screens.requestScreen,
-  "A preset without questions skips the form.");
-assert(state.canGoNext(), "A prepared request enables next.");
-
-state.setRequestText("   ");
-assert(
-  !state.canGoNext(),
-  "An emptied request must not advance.");
-state.setRequestText("動きを変えずに整理してください。");
-
-assert(
-  state.goNext() && currentScreen() === screens.handoffScreen,
-  "The request screen leads to the hand-off.");
-assert(
-  !state.canGoNext(),
-  "The hand-off needs both the copy and the folder.");
-state.setHandoffProgress(true, null);
-assert(
-  !state.canGoNext(),
-  "Copying alone is not enough to advance.");
-state.setHandoffProgress(null, true);
-assert(
-  state.canGoNext(),
-  "Copying and opening the folder together enable next.");
-
-// ---- bulk intake ----
-
-assert(
-  state.goNext() && currentScreen() === screens.intakeScreen,
-  "The hand-off leads to the intake.");
-assert(
-  !state.canGoNext(),
-  "Nothing is imported yet, so there is nothing to review.");
-
-// One press applies every module in the answer, including a new one.
-assert(
-  state.importPackage([
+function attach() {
+  store.reset();
+  store.setBook({
+    name: "受注管理.xlsm",
+    path: "C:\\work\\受注管理.xlsm",
+    ext: ".xlsm",
+    totalLines: 12
+  }, [
     {
       name: "Main",
-      code: "Option Explicit\r\nSub A(): Beep: End Sub\r\n",
-      changedLineCount: 1,
-      lineCount: 2
+      type: "standard",
+      typeLabel: "標準モジュール",
+      ext: "bas",
+      lineCount: 4,
+      code: "Option Explicit\r\nSub A()\r\n" +
+        "x = \"C:\\old\\input.csv\"\r\nEnd Sub\r\n",
+      attributes: ""
     },
     {
       name: "OrderRecord",
+      type: "class",
+      typeLabel: "クラスモジュール",
+      ext: "cls",
+      lineCount: 4,
       code: "Option Explicit\r\n",
-      changedLineCount: 0,
-      lineCount: 1
-    },
-    {
-      name: "CompatHelpers",
-      code: "Option Explicit\r\nSub W(): End Sub\r\n",
-      changedLineCount: 2,
-      lineCount: 2
+      attributes: "Attribute VB_Name = \"OrderRecord\"\r\n"
     }
-  ]) === 3,
-  "The whole package must be applied in one step.");
-state.setIntakeResult({ total: 3, existing: 2, added: 1 });
+  ]);
+  store.setTargetEnvironment({name: "新しい業務端末"}, "ENVIRONMENT-V1");
+}
 
-assert(
-  screens.countImported(state.getState()) === 3,
-  "Every module in the package counts as imported.");
-assert(
-  screens.countChanged(state.getState()) === 2,
-  "Only the modules whose code differs count as changed.");
-assert(
-  screens.countUnchangedImports(state.getState()) === 1,
-  "A module that came back unchanged is reported as unchanged.");
+function diagnosisPackage(requestId, label) {
+  return contracts.diagnosis(windowObject.MacroStudioDiagnosis, {
+    requestId: requestId,
+    modules: current().modules,
+    environment: {
+      constraints: [{
+        key: "WIN32API_BLOCKED", effect: "blocked", basis: "declared"
+      }]
+    },
+    findings: [{
+      number: "1",
+      className: "BLOCKER",
+      confidence: "CONFIRMED",
+      module: "Main",
+      procedure: "A",
+      lines: "2",
+      environmentKey: "WIN32API_BLOCKED",
+      title: label || "API が使えない",
+      condition: "実行時",
+      impact: "停止する",
+      evidence: "2 行目"
+    }]
+  });
+}
 
-// The workbook decides the kind: the class module stays a class and the
-// new module is standard.
-assert(
-  state.findModule("OrderRecord").type === "class",
-  "An imported existing module keeps the kind the workbook has.");
-assert(
-  state.findModule("CompatHelpers").type === "standard" &&
-  state.findModule("CompatHelpers").isNew === true,
-  "A new module is added as a standard module.");
+function commitDiagnosisRequest(id) {
+  assert(store.commitDiagnosisRequest({
+    requestId: id,
+    requestText: "事実を診断してください。",
+    prompt: "diagnose prompt",
+    requestPath: "C:\\work\\run\\diagnose-request.md",
+    runFolder: "C:\\work\\run"
+  }), "The diagnosis request must commit after a host success.");
+}
 
-assert(state.canGoNext(), "An imported package can be reviewed.");
-assert(
-  state.goNext() && currentScreen() === screens.reviewScreen,
-  "The intake leads to the review.");
-// Taking the answer in is the decision: reviewing does not ask again.
-assert(
-  screens.countAccepted(state.getState()) === 2,
-  "Every changed module that came in is written back.");
-assert(
-  state.canGoNext(),
-  "A reviewed package can go straight to the build.");
+function acceptDiagnosis(id, label) {
+  commitDiagnosisRequest(id);
+  store.setDiagnosisHandoffProgress(true, true);
+  assert(store.commitDiagnosis(
+    diagnosisPackage(id, label),
+    "C:\\work\\run\\diagnosis.md"),
+  "A current diagnosis must commit after diagnosis.md is written.");
+}
 
-// ---- rejecting puts the workbook back the way it was ----
+function chooseAiPreset(content) {
+  assert(store.setRepairPreset({
+    file: "02_改修\\01_refactor.md",
+    name: "VBAリファクター",
+    content: content || "# preset v1",
+    parsed: {
+      name: "VBAリファクター",
+      engine: "AI",
+      questions: [{text: "優先する動作は何ですか", choices: []}],
+      behaviorCandidates: ["標準機能だけで動かす"],
+      preserveItems: ["明示していない業務動作は変えない"],
+      output: {body: "契約どおり返す"},
+      splitOutput: null
+    }
+  }) !== false, "The AI preset must be selected.");
+}
 
-assert(
-  state.discardImportedModules() === 3,
-  "Discarding must revert every imported module.");
-assert(
-  screens.countImported(state.getState()) === 0 &&
-  state.findModule("CompatHelpers") === null &&
-  state.findModule("Main").status === "pending",
-  "Discarding removes new modules and clears imported code.");
+function fillRepairInput() {
+  store.setAnswer(0, "元の動作を優先");
+  store.setFindingSelected("1", true);
+  store.setDesiredBehaviour("1", "標準機能だけで動かす");
+}
 
-state.importPackage([
-  {
+function commitRepairRequest(id) {
+  assert(store.commitRepairRequest({
+    requestId: id,
+    requestText: "直してください。",
+    prompt: "repair prompt",
+    requestPath: "C:\\work\\run\\repair-request.md"
+  }), "The repair request must commit after a host success.");
+  store.setRepairHandoffProgress(true, true);
+}
+
+// ---- canonical 10-screen table and the only path branch ----
+// Handing the request to the chat and taking the reply back is one piece
+// of work, so each stage owns one screen instead of two. Reading the
+// diagnosis and choosing the work are two decisions, so they are two.
+
+assert(screens.count === 10, "The β2 flow must have ten screens.");
+assert(screens.majors.length === 4, "Progress must always have four steps.");
+assert(JSON.stringify(screens.getMajors({})) === JSON.stringify(screens.majors),
+  "The visible progress must never change by route or state.");
+assert(
+  screens.bookScreen === 0 &&
+  screens.diagnoseScreen === 1 &&
+  screens.findingsScreen === 2 &&
+  screens.nextStepScreen === 3 &&
+  screens.repairInputScreen === 4 &&
+  screens.repairScreen === 5 &&
+  screens.reviewScreen === 6 &&
+  screens.outputScreen === 7 &&
+  screens.buildScreen === 8 &&
+  screens.doneScreen === 9,
+  "Named screens must match SPEC §2.2.");
+assert(screens.diagnoseRequestScreen === screens.diagnoseScreen &&
+  screens.diagnoseIntakeScreen === screens.diagnoseScreen &&
+  screens.repairRequestScreen === screens.repairScreen &&
+  screens.repairIntakeScreen === screens.repairScreen,
+"Asking and importing are the same screen, under either name.");
+assert(screens.modeScreen === undefined &&
+  screens.isDiagnose === undefined && screens.isSimple === undefined &&
+  screens.isChatOnly === undefined,
+"Removed entrances and route modes must not survive in the screen API.");
+
+var straight = {presetEngine: "AI"};
+for (var index = screens.bookScreen; index < screens.doneScreen; index += 1) {
+  assert(screens.nextIndex(straight, index) === index + 1,
+    "The AI route must not skip screen " + index + ".");
+}
+assert(screens.nextIndex(
+  {presetEngine: "固定パス置換"},
+  screens.repairInputScreen) === screens.reviewScreen,
+"Only the fixed-path engine may branch from the repair input to review.");
+assert(screens.nextIndex(
+  {presetEngine: "AI", questions: []},
+  screens.nextStepScreen) === screens.repairInputScreen &&
+  screens.nextIndex(
+    {presetEngine: "AI", questions: [{text: "Q"}]},
+    screens.nextStepScreen) === screens.repairInputScreen,
+"Questions change the repair input's content, not the graph.");
+assert(screens.nextIndex(straight, screens.findingsScreen) ===
+  screens.nextStepScreen,
+"Reading the diagnosis leads to choosing the work, never past it.");
+
+// ---- no hidden shortcut around diagnosis ----
+
+attach();
+assert(current().screen === screens.bookScreen,
+  "The single entrance is the book screen.");
+assert(store.startSimple === undefined && store.setMode === undefined,
+  "The old simple and mode entrances must be gone.");
+assert(store.canGoNext(), "An attached workbook enables diagnosis.");
+assert(store.goNext() && current().screen === screens.diagnoseScreen,
+  "Screen 0 can only lead to the diagnosis screen.");
+assert(!store.canGoNext(),
+  "The diagnosis screen only advances once a diagnosis has been taken in.");
+
+// Handing over is no longer a gate of its own: the screen advances on
+// the diagnosis coming back, which is the only thing findings need.
+commitDiagnosisRequest(DIAGNOSIS_ID_1);
+store.setDiagnosisHandoffProgress(true, false);
+assert(!store.canGoNext(), "Copying the diagnosis prompt alone is insufficient.");
+store.setDiagnosisHandoffProgress(null, true);
+assert(!store.canGoNext(),
+  "Handing the request over is not itself progress: no diagnosis, no next.");
+assert(store.commitDiagnosis(
+  diagnosisPackage(DIAGNOSIS_ID_1), "diagnosis.md"),
+  "A current diagnosis must be accepted.");
+assert(store.canGoNext(), "A valid zero-or-more-finding diagnosis enables next.");
+assert(store.goNext() && current().screen === screens.findingsScreen,
+  "The diagnosis screen leads to findings.");
+
+// Reading the diagnosis is its own page; choosing the work is the next.
+assert(store.canGoNext(), "An accepted diagnosis may always be read past.");
+assert(store.goNext() && current().screen === screens.nextStepScreen,
+  "Findings lead to the choice of work.");
+assert(!store.canGoNext(), "No template chosen, no repair input.");
+chooseAiPreset();
+assert(store.canGoNext(), "Selecting one repair preset enables the next step.");
+assert(store.goNext() && current().screen === screens.repairInputScreen,
+  "The chosen template leads to the single repair-input screen.");
+assert(!store.canGoNext(), "Empty repair input is not ready.");
+store.setExtraRequest("診断にない追加要望");
+assert(!store.canGoNext(), "An unanswered preset question still blocks next.");
+store.setAnswer(0, "元の動作を優先");
+assert(store.canGoNext(),
+  "Answered questions plus an extra request may proceed without selection.");
+// A selected finding is a complete instruction on its own: it states the
+// problem, where it is and what breaks, so nothing further is asked.
+store.setFindingSelected("1", true);
+assert(store.canGoNext(),
+  "A selected finding needs no restatement to be ready.");
+
+// ---- transaction identities and snapshot invalidation ----
+
+commitRepairRequest(REPAIR_ID_1);
+store.importPackage(contracts.repair(windowObject.MacroStudioResponse, {
+  requestId: REPAIR_ID_1,
+  modules: [{
     name: "Main",
-    code: "Option Explicit\r\nSub A(): Beep: End Sub\r\n",
-    changedLineCount: 1,
-    lineCount: 2
-  },
-  {
-    name: "CompatHelpers",
-    code: "Option Explicit\r\nSub W(): End Sub\r\n",
-    changedLineCount: 2,
-    lineCount: 2
+    code: "Option Explicit\r\nSub A(): Beep: End Sub\r\n"
+  }],
+  existingModules: store.getBookModules(),
+  diagnosis: current().diagnosis
+}));
+assert(screens.isRepairIntakeCurrent(current()),
+  "The imported package belongs to the committed repair identity.");
+
+// A new repair request keeps the diagnosis but drops only repair results.
+var diagnosisVersion = current().diagnosisVersion;
+commitRepairRequest(REPAIR_ID_2);
+assert(current().diagnosis && current().diagnosisVersion === diagnosisVersion,
+  "Minting a repair id must preserve the accepted diagnosis.");
+assert(!screens.isRepairIntakeCurrent(current()) &&
+  screens.countImported(current()) === 0,
+"A new repair id must invalidate only the old repair package.");
+
+// Input mutation invalidates the repair request and output, not diagnosis.
+store.setExtraRequest("別の追加要望");
+assert(current().repairRequestId === null && current().diagnosis,
+  "Changing repair input must drop the repair identity only.");
+
+// Preset content is part of the identity even when the file name is equal.
+chooseAiPreset("# preset v2");
+assert(Object.keys(current().answers).length === 0 &&
+  current().extraRequest === "" &&
+  JSON.stringify(current().selectedFindings) ===
+    JSON.stringify(current().diagnosis.findings.filter(function (finding) {
+      return finding["class"] === "BLOCKER" || finding["class"] === "DEFECT";
+    }).map(function (finding) { return String(finding.number); })),
+"Changed preset content must clear what the reader typed and reset the " +
+  "selection to the mandatory findings.");
+
+// Re-intaking a diagnosis increments its version and clears selection/input.
+fillRepairInput();
+var beforeReintake = current().diagnosisVersion;
+assert(store.commitDiagnosis(
+  diagnosisPackage(DIAGNOSIS_ID_1, "再診断"), "diagnosis.md"),
+  "The same diagnosis request may be re-intaken.");
+// Re-intake resets the repair input. The selection resets to the findings
+// the target environment makes mandatory, not to nothing: work that stops
+// the macro is not something the reader should have to go and find.
+assert(current().diagnosisVersion === beforeReintake + 1 &&
+  current().presetFile === null &&
+  JSON.stringify(current().selectedFindings) ===
+    JSON.stringify(current().diagnosis.findings.filter(function (finding) {
+      return finding["class"] === "BLOCKER" || finding["class"] === "DEFECT";
+    }).map(function (finding) { return String(finding.number); })),
+"Diagnosis re-intake must increment the version, clear the repair input " +
+  "and preselect exactly the mandatory findings.");
+
+// A changed target environment invalidates the diagnosis identity and below.
+store.setTargetEnvironment({name: "新しい業務端末"}, "ENVIRONMENT-V2");
+assert(current().diagnosisRequestId === null && current().diagnosis === null &&
+  current().presetFile === null,
+"A changed canonical environment snapshot must drop diagnosis and downstream.");
+
+// A new diagnosis request also drops everything at and below diagnosis.
+commitDiagnosisRequest(DIAGNOSIS_ID_2);
+assert(current().diagnosis === null && current().repairRequestId === null,
+  "A new diagnosis identity cannot inherit downstream artifacts.");
+
+// The concern is a draft until explicit rebuild; split toggling invalidates now.
+store.setDiagnosisConcern("気になる点 A");
+assert(store.isDiagnosisRequestDirty(),
+  "Changed concern must mark the current diagnosis request dirty.");
+commitDiagnosisRequest(DIAGNOSIS_ID_1);
+assert(!store.isDiagnosisRequestDirty(),
+  "A successful rebuild snapshots the concern.");
+store.setDiagnosisSplit(true);
+assert(current().diagnosisRequestId === null && current().diagnosisParts === null,
+  "Toggling diagnosis split must invalidate request and received parts.");
+
+// A fixed-path preset accepts only a branded, validated mapping and takes the
+// one authorized branch from screen 4 to screen 7.
+attach();
+acceptDiagnosis(DIAGNOSIS_ID_1);
+store.setRepairPreset({
+  file: "02_改修\\03_path.md",
+  name: "固定パスを新環境へ置き換える",
+  content: "# path preset",
+  parsed: {
+    name: "固定パスを新環境へ置き換える",
+    engine: "固定パス置換",
+    questions: [],
+    behaviorCandidates: [],
+    preserveItems: [],
+    output: null,
+    splitOutput: null
   }
-]);
-state.setIntakeResult({ total: 2, existing: 1, added: 1 });
-
-// ---- what came in is what gets written ----
-
-assert(
-  screens.countAccepted(state.getState()) === 2,
-  "Both changed modules are written back without a second decision.");
-assert(
-  screens.countAcceptedLines(state.getState()) === 3,
-  "The written line count adds up the changed lines.");
-assert(state.canGoNext(), "A reviewed package enables next.");
-
-// An open manual fix holds the flow until it is applied or dropped.
-state.selectModule("Main");
-assert(state.beginPasteEdit(), "The manual fix must open.");
-assert(
-  !state.canGoNext(),
-  "An open manual fix must hold the fixed next button.");
-state.cancelPasteEdit();
-assert(state.canGoNext(), "Leaving the manual fix releases next.");
-
-// ---- output name and the build ----
-
-assert(
-  state.goNext() && currentScreen() === screens.outputScreen,
-  "The review leads to the output name.");
-// <base>-Modified-<yyyyMMdd><extension>, with the date the run carries.
-var expectedStamp = state.getState().outputDateStamp;
-var expectedOutputName = "受注管理-Modified-" + expectedStamp + ".xlsm";
-
-assert(
-  /^\d{8}$/.test(expectedStamp),
-  "The run must carry a fixed width date: " + expectedStamp);
-assert(
-  state.getState().outputName === expectedOutputName,
-  "The output name must default to " + expectedOutputName +
-    " but was " + state.getState().outputName);
-assert(
-  state.getDiffReportName(state.getState().book, expectedStamp) ===
-    "受注管理-Diff-Report-" + expectedStamp + ".html",
-  "The report name must carry the same base and date.");
-assert(state.canGoNext(), "A valid output name enables next.");
-
-[
-  "",
-  "受注管理-Modified-" + expectedStamp + ".txt",
-  "..\\受注管理-Modified-" + expectedStamp + ".xlsm",
-  "sub/受注管理-Modified-" + expectedStamp + ".xlsm"
-].forEach(function (name) {
-  state.setOutputName(name);
-  assert(
-    !state.canGoNext(),
-    "This output name must be refused: " + name);
 });
-state.setOutputName(expectedOutputName);
-assert(state.canGoNext(), "A repaired output name enables next again.");
+var pathApi = windowObject.MacroStudioPathMap;
+var pathMapping = pathApi.detect(store.getBookModules());
+assert(!store.setPathMap(JSON.parse(JSON.stringify(pathMapping))),
+  "State must reject an unbranded mapping look-alike.");
+assert(store.setPathMap(pathMapping),
+  "State must accept the product mapping contract.");
+store.goTo(screens.repairInputScreen, false);
+assert(!store.canGoNext(), "An unapplied mapping cannot branch.");
+pathMapping = pathApi.updateRow(
+  pathMapping,
+  "C:\\old\\input.csv",
+  {to: "D:\\new\\input.csv"});
+assert(store.setPathMap(pathMapping) && store.canGoNext(),
+  "One valid applied row must enable deterministic apply.");
+assert(store.goNext() && current().screen === screens.reviewScreen,
+  "The fixed-path engine must branch directly from repair input to review.");
 
-assert(
-  state.goNext() && currentScreen() === screens.buildScreen,
-  "The output name leads to the build.");
-assert(
-  !state.canGoNext() && !state.canGoBack(),
-  "The build screen has no manual way out.");
-
-state.setBuildResult({ status: "success", success: true });
-state.goTo(screens.doneScreen, false);
-assert(
-  !state.canGoNext(),
-  "The last screen has nothing after it.");
-assert(state.canGoBack(), "The last screen can still go back.");
-
-// ---- back returns along the screens that were visited ----
-
-attach();
-choosePurpose();
-state.goTo(screens.purposeScreen, true);
-state.goNext();
-assert(
-  currentScreen() === screens.requestScreen,
-  "Next moves to the request screen.");
-state.goBack();
-assert(
-  currentScreen() === screens.purposeScreen,
-  "Back must return to the screen the flow came from.");
-
-// ---- a preset with questions asks them, then stops at the files ----
+// ---- actual back path and build lock ----
 
 attach();
-state.goTo(screens.modeScreen, true);
-state.setMode("diagnose");
-choosePurpose([
-  { text: "何に困っていますか", choices: ["遅い", "壊れやすい"] },
-  { text: "いつまでに直したいですか", choices: [] }
-]);
-state.goTo(screens.purposeScreen, true);
-assert(
-  screens.nextIndex(state.getState(), screens.purposeScreen) ===
-    screens.questionScreen,
-  "A preset with questions must open the form.");
-assert(
-  state.goNext() && currentScreen() === screens.questionScreen,
-  "The purpose screen leads to the form.");
-assert(
-  !state.canGoNext(),
-  "The form needs at least one answer.");
-assert(state.setAnswer(0, "遅い"), "A choice must be storable.");
-assert(
-  screens.countAnswers(state.getState()) === 1,
-  "The answered count must follow the form.");
-assert(state.canGoNext(), "One answer is enough to move on.");
-assert(
-  state.goNext() && currentScreen() === screens.requestScreen,
-  "The form leads to the request screen.");
+acceptDiagnosis(DIAGNOSIS_ID_1);
+store.goTo(screens.diagnoseScreen, false);
+store.goTo(screens.nextStepScreen, true);
+chooseAiPreset();
+store.goNext();
+assert(current().screen === screens.repairInputScreen,
+  "Repair input is visited after the work is chosen.");
+assert(store.goBack() && current().screen === screens.nextStepScreen,
+  "Back returns along the actual history stack.");
 
-// Handing the files over is the whole job, so that screen is the end.
-state.goTo(screens.handoffScreen, true);
-assert(
-  screens.isTerminal(state.getState(), screens.handoffScreen),
-  "A chat-only run ends on the hand-off screen.");
-assert(
-  !screens.canFinish(state.getState(), screens.handoffScreen),
-  "Finishing waits for the copy and the folder, like next did.");
-state.setHandoffProgress(true, true);
-assert(
-  screens.canFinish(state.getState(), screens.handoffScreen),
-  "Copying and opening the folder allow the run to finish.");
-assert(
-  !state.canGoNext(),
-  "A terminal screen never advances.");
-assert(
-  !screens.isTerminal(
-    { mode: "refactor", questions: [] },
-    screens.handoffScreen),
-  "A refactoring run keeps going past the hand-off.");
+store.goTo(screens.buildScreen, false);
+assert(!store.canGoBack() && !store.canGoNext(),
+  "The build screen permits neither direction while it runs.");
+store.goTo(screens.doneScreen, false);
+assert(store.canGoBack() && !store.canGoNext() &&
+  screens.canFinish(current(), screens.doneScreen),
+"Done is terminal but may return to the actual previous state.");
 
-// Busy work freezes both directions.
-attach();
-state.setBusyAction("attachBook");
-assert(
-  !state.canGoNext() && !state.canGoBack(),
-  "A running host action must freeze the navigation.");
-state.setBusyAction(null);
+store.setBusyAction("writeRequestFiles");
+assert(!store.canGoBack() && !store.canGoNext(),
+  "A host transaction freezes navigation.");
 
 console.log("test-flow-state: PASS");
-console.log(
-  "twelve screens, both run modes, the question form, " +
-  "one-press intake, discarding a package, output name and " +
-  "back history behave as specified");
+console.log("10-screen graph, single entrance, ownership snapshots, invalidation, " +
+  "history and engine branch behave as specified");

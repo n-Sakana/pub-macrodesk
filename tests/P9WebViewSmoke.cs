@@ -159,19 +159,6 @@ namespace MacroStudio.Tests
                 {
                     await WaitFor(
                         "MacroStudioState.getState().appInfo !== null");
-                    // The work is chosen first (screen 0), because the
-                    // purpose list on screen 3 belongs to one mode.
-                    await Execute(
-                        "document.querySelector(" +
-                        "'[data-action=\"select-mode\"]" +
-                        "[data-mode=\"refactor\"]').click();");
-                    await WaitFor(
-                        "MacroStudioState.getState().mode === 'refactor'");
-                    await Execute(
-                        "document.querySelector(" +
-                        "'[data-action=\"go-next\"]').click();");
-                    await WaitFor(
-                        "MacroStudioState.getState().screen === 1");
                     Dictionary<string, object> eventData =
                         new Dictionary<string, object>();
                     eventData.Add("path", bookPath);
@@ -179,47 +166,67 @@ namespace MacroStudio.Tests
                     await WaitFor(
                         "MacroStudioState.getState().book !== null && " +
                         "MacroStudioState.getState().busyAction === null");
-                    // 1 -> 2 -> 3: the workbook, what was read, then the
-                    // list of purposes.
                     await Execute(
-                        "document.querySelector(" +
-                        "'[data-action=\"go-next\"]').click();");
+                        "(function(){" +
+                        "var id='11111111-1111-4111-8111-111111111111';" +
+                        "var marker=String.fromCharCode(39)+" +
+                        "'@MACROSTUDIO '+id+' ';" +
+                        "var lines=[marker+'DIAG BEGIN 1'];" +
+                        "['PURPOSE','FLOW','DEPENDENCY','ENVIRONMENT']" +
+                        ".forEach(function(name){" +
+                        "lines.push(marker+'SECTION BEGIN '+name);" +
+                        "lines.push(name+' checked.');" +
+                        "lines.push(marker+'SECTION END '+name);});" +
+                        "lines.push(marker+'DIAG NOFINDING SCOPE_CLEAR');" +
+                        "lines.push(marker+'DIAG COMPLETE 0');" +
+                        "lines.push(marker+'DIAG END');" +
+                        "MacroStudioState.commitDiagnosisRequest({" +
+                        "requestId:id,requestText:'test',prompt:'test'," +
+                        "requestPath:'test',runFolder:'test'});" +
+                        "var parsed=MacroStudioDiagnosis.parse(" +
+                        "lines.join('\\r\\n'),{" +
+                        "requestId:id," +
+                        "modules:MacroStudioState.getState().modules," +
+                        "environment:MacroStudioState.getState()" +
+                        ".targetEnvironment});" +
+                        "if(!parsed.ok){throw new Error(parsed.validationId);}" +
+                        "MacroStudioState.commitDiagnosis(" +
+                        "parsed.diagnosis,'diagnosis.md');" +
+                        "MacroStudioState.goTo(" +
+                        "MacroStudioScreens.nextStepScreen,false);" +
+                        "}());");
+                    // The templates are drawn on their own page now.
                     await WaitFor(
-                        "MacroStudioState.getState().screen === 2");
-                    await Execute(
-                        "document.querySelector(" +
-                        "'[data-action=\"go-next\"]').click();");
-                    await WaitFor(
-                        "MacroStudioState.getState().screen === 3");
+                        "MacroStudioState.getState().screen === " +
+                        "MacroStudioScreens.nextStepScreen");
                     Result = await ReadJson(
                         "(function(){" +
-                        "var presets=MacroStudioState.getState()" +
-                        ".appInfo.presets;" +
+                        "var info=MacroStudioState.getState().appInfo;" +
+                        "var presets=info.presets.repair;" +
                         "var entries=MacroStudioPreset" +
-                        ".describeAll(presets);" +
+                        ".describeAll(presets,'repair');" +
                         "return {" +
                         "count:document.querySelectorAll(" +
-                        "'[data-action=\"select-purpose\"]').length," +
+                        "'[data-action=\"select-repair-preset\"]').length," +
                         "stateCount:presets.length," +
+                        "diagnoseCount:info.presets.diagnose.length," +
                         "invalidCount:entries.filter(function(item){" +
                         "return !item.valid;}).length," +
                         "validCount:entries.filter(function(item){" +
-                        "return item.valid && " +
-                        "item.mode === 'refactor';}).length," +
+                        "return item.valid;}).length," +
                         "labels:Array.prototype.map.call(" +
                         "document.querySelectorAll('.choice-title')," +
                         "function(node){return node.textContent;})," +
                         "names:entries.filter(function(item){" +
-                        "return item.valid && " +
-                        "item.mode === 'refactor';}).map(function(item){" +
+                        "return item.valid;}).map(function(item){" +
                         "return item.name;})," +
                         "files:presets.map(function(item){" +
                         "return item.file;})," +
-                        "invalidFiles:Array.prototype.map.call(" +
-                        "document.querySelectorAll(" +
-                        "'[data-preset-invalid-file]')," +
-                        "function(item){return item.getAttribute(" +
-                        "'data-preset-invalid-file');})," +
+                        "invalidFiles:entries.filter(function(item){" +
+                        "return !item.valid;}).map(function(item){" +
+                        "return item.file;})," +
+                        "invalidVisible:document.querySelectorAll(" +
+                        "'.preset-invalid-item').length," +
                         "horizontal:document.documentElement" +
                         ".scrollWidth>innerWidth" +
                         "};}())");

@@ -168,6 +168,43 @@ for ($index = 0; $index -lt $expected.Count; $index++) {
         "Visible code still has a leading Attribute block at $index."
 }
 
+if ([IO.Path]::GetFileName($BookPath) -ieq 'test_large.xlsm') {
+    $lexerFixturePath = Join-Path `
+        $PSScriptRoot `
+        'fixtures\lexer\test-large-modules.json'
+    Assert-True (Test-Path -LiteralPath $lexerFixturePath -PathType Leaf) `
+        'The real-book lexer fixture is missing.'
+    $lexerFixture = [IO.File]::ReadAllText(
+        (Resolve-Path -LiteralPath $lexerFixturePath),
+        [Text.UTF8Encoding]::new($false, $true)) | ConvertFrom-Json
+    Assert-True ($lexerFixture.schemaVersion -eq 1) `
+        'The real-book lexer fixture schema is unknown.'
+    Assert-True ($lexerFixture.modules.Count -eq $project.Modules.Count) `
+        'The real-book lexer fixture module count changed.'
+    $sha256 = [Security.Cryptography.SHA256]::Create()
+    try {
+        foreach ($fixtureModule in $lexerFixture.modules) {
+            $actualModule = $project.Modules | Where-Object {
+                $_.Name -ceq $fixtureModule.name
+            } | Select-Object -First 1
+            Assert-True ($null -ne $actualModule) `
+                ('Lexer fixture module is missing: ' + $fixtureModule.name)
+            [byte[]]$actualBytes = [Text.Encoding]::UTF8.GetBytes(
+                $actualModule.Code)
+            $actualBase64 = [Convert]::ToBase64String($actualBytes)
+            $actualHash = ([BitConverter]::ToString(
+                $sha256.ComputeHash($actualBytes))).Replace(
+                    '-', '').ToLowerInvariant()
+            Assert-True ($actualBase64 -ceq $fixtureModule.codeBase64) `
+                ('Lexer fixture text changed: ' + $fixtureModule.name)
+            Assert-True ($actualHash -ceq $fixtureModule.sha256) `
+                ('Lexer fixture hash changed: ' + $fixtureModule.name)
+        }
+    } finally {
+        $sha256.Dispose()
+    }
+}
+
 $codePage = 0
 $dirModules = [MacroStudio.VbaProjectReader]::ReadDirModules(
     $project.DirDecompressed,

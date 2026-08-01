@@ -17,6 +17,7 @@
 var fs = require("fs");
 var path = require("path");
 var vm = require("vm");
+var contracts = require("./helpers/contracts");
 
 function assert(condition, message) {
   if (!condition) {
@@ -160,14 +161,16 @@ function loadApp() {
       };
     }
   };
-  [
+  ["icons.js",
     "diff.js",
     "diff-view.js",
     "vba-highlight.js",
     "preset-document.js",
     "response-package.js",
+    "diagnosis-package.js",
     "screens.js",
     "state.js",
+    "screens/workflow.js",
     "app.js"
   ].forEach(function (name) {
     vm.runInContext(
@@ -183,6 +186,7 @@ var app = host.MacroStudioApp;
 var state = host.MacroStudioState;
 var screens = host.MacroStudioScreens;
 var response = host.MacroStudioResponse;
+var workflow = host.MacroStudioWorkflow;
 
 // ---- P2-1: the intake screen keeps its own way back ----
 
@@ -215,23 +219,54 @@ function attach() {
         attributes: ""
       }
     ]);
-  state.setMode("refactor");
-  state.setPurpose(
-    "sample.md",
-    "ひな形",
-    response.createRequestId(),
-    []);
+  state.setTargetEnvironment({displayName: "test", revision: "1"}, "ENV");
+  state.commitDiagnosisRequest({
+    requestId: response.createRequestId(),
+    runFolder: "C:\\work\\MacroStudio\\受注管理_20260730_010203",
+    outputTimestamp: "20260730_010203"
+  });
+  state.commitDiagnosis(contracts.diagnosis(host.MacroStudioDiagnosis, {
+    requestId: state.getState().diagnosisRequestId,
+    modules: state.getState().modules
+  }), "diagnosis.md");
+  state.setRepairPreset({
+    file: "02_改修\\sample.md",
+    name: "ひな形",
+    content: "preset",
+    parsed: {
+      engine: "AI", questions: [], behaviorCandidates: [], preserveItems: [],
+      output: {body: "rules"}, splitOutput: null
+    }
+  });
+  state.setExtraRequest("この改修を行う");
+  state.commitRepairRequest({requestId: response.createRequestId()});
+}
+
+function importModules(items, summary) {
+  return state.importPackage(contracts.repair(response, {
+    requestId: state.getState().repairRequestId,
+    modules: items.map(function (item) {
+      return {
+        name: item.name,
+        kind: item.kind || "standard",
+        code: item.code
+      };
+    }),
+    existingModules: state.getBookModules(),
+    diagnosis: state.getState().diagnosis,
+    summary: summary || "Main を直しました。"
+  }));
 }
 
 attach();
-state.goTo(screens.intakeScreen, false);
+state.goTo(screens.repairIntakeScreen, false);
 
-var emptyIntake = app.createIntakeScreen(state.getState());
+var emptyIntake = workflow.createRepairIntakeScreen(state.getState());
 assert(
-  findActions(emptyIntake).indexOf("import-response") >= 0,
+  findActions(emptyIntake).indexOf("import-repair") >= 0,
   "The empty intake screen must offer the intake button.");
 
-state.importPackage([
+importModules([
   {
     name: "Main",
     code: "Option Explicit\r\nSub A(): Beep: End Sub\r\n",
@@ -239,38 +274,32 @@ state.importPackage([
     lineCount: 2
   }
 ]);
-state.setIntakeResult({
-  total: 1,
-  existing: 1,
-  added: 0,
-  summary: "Main を直しました。"
-});
 
-var filledIntake = app.createIntakeScreen(state.getState());
+var filledIntake = workflow.createRepairIntakeScreen(state.getState());
 var filledActions = findActions(filledIntake);
 var filledText = collectText(filledIntake);
 
 assert(
-  filledActions.indexOf("import-response") >= 0,
+  filledActions.indexOf("import-repair") >= 0,
   "P2-1: after a package came in, the intake button must still be " +
   "in the screen.");
 assert(
-  filledText.indexOf("取り込み直す") >= 0,
-  "P2-1: the screen must name the way to take another answer.");
+  filledText.indexOf("クリップボードから改修結果を取り込む") >= 0,
+  "P2-1: the screen must keep the way to take another answer.");
 assert(
   filledText.indexOf("1個のモジュールを取り込みました") >= 0,
   "The intake result must stay on the screen next to the button.");
 assert(
-  filledActions.indexOf("toggle-disclosure") >= 0,
-  "The AI's own account of the change must still be openable.");
+  state.getState().intakeResult.summary === "Main を直しました。",
+  "The AI's own account of the change must remain in accepted state.");
 
 // ---- P1-1: one package at a time ----
 
 // A second, valid answer to the same request replaces the first one
 // completely: what the first answer changed or added must not survive.
 attach();
-state.goTo(screens.intakeScreen, false);
-state.importPackage([
+state.goTo(screens.repairIntakeScreen, false);
+importModules([
   {
     name: "Main",
     code: "Option Explicit\r\nSub A(): Beep: End Sub\r\n",
@@ -288,7 +317,7 @@ assert(
   screens.countImported(state.getState()) === 2,
   "The first package must come in.");
 
-state.importPackage([
+importModules([
   {
     name: "Helper",
     code: "Option Explicit\r\nSub B(): Beep: End Sub\r\n",
@@ -314,8 +343,8 @@ assert(
 
 // A new request id invalidates whatever the previous request took in.
 attach();
-state.goTo(screens.intakeScreen, false);
-state.importPackage([
+state.goTo(screens.repairIntakeScreen, false);
+importModules([
   {
     name: "Main",
     code: "Option Explicit\r\nSub A(): Beep: End Sub\r\n",
@@ -324,30 +353,26 @@ state.importPackage([
   }
 ]);
 assert(
-  screens.canAdvance(state.getState(), screens.intakeScreen),
+  screens.canAdvance(state.getState(), screens.repairIntakeScreen),
   "An answer to the current request lets the flow continue.");
 
-state.setPurpose(
-  "other.md",
-  "別のひな形",
-  response.createRequestId(),
-  []);
+state.commitRepairRequest({requestId: response.createRequestId()});
 assert(
   screens.countImported(state.getState()) === 0,
   "P1-1: a new request id must drop the answer to the old request.");
 assert(
-  !screens.canAdvance(state.getState(), screens.intakeScreen),
+  !screens.canAdvance(state.getState(), screens.repairIntakeScreen),
   "P1-1: the intake must not pass on an answer to a request that is " +
   "gone.");
 assert(
-  !screens.isIntakeCurrent(state.getState()),
+  !screens.isRepairIntakeCurrent(state.getState()),
   "P1-1: an imported package belongs to the request it answered.");
 
 // Choosing the same purpose again keeps what is already in: going back
 // and forward through the screens is not a reason to lose an answer.
 attach();
-state.goTo(screens.intakeScreen, false);
-state.importPackage([
+state.goTo(screens.repairIntakeScreen, false);
+importModules([
   {
     name: "Main",
     code: "Option Explicit\r\nSub A(): Beep: End Sub\r\n",
@@ -355,48 +380,45 @@ state.importPackage([
     lineCount: 2
   }
 ]);
-state.setPurpose(
-  "sample.md",
-  "ひな形",
-  state.getState().requestId,
-  []);
+state.goTo(screens.repairRequestScreen, false);
+state.goTo(screens.repairIntakeScreen, false);
 assert(
   screens.countImported(state.getState()) === 1 &&
-    screens.isIntakeCurrent(state.getState()),
-  "Re-applying the same request must keep the imported package.");
+    screens.isRepairIntakeCurrent(state.getState()),
+  "Re-entering the same request path must keep the imported package.");
 
 // A module a previous answer added is measured against the workbook, not
 // against that answer: the same new module may come back again.
 attach();
-state.goTo(screens.intakeScreen, false);
+state.goTo(screens.repairIntakeScreen, false);
 assert(
-  app.applyResponsePackage([
+  workflow.applyRepairText([
     response.beginLine(
-      state.getState().requestId,
+      state.getState().repairRequestId,
       "standard",
       "CompatHelpers"),
     "Option Explicit",
     "Public Sub W(): End Sub",
     response.endLine(
-      state.getState().requestId,
+      state.getState().repairRequestId,
       "standard",
       "CompatHelpers"),
-    response.completeLine(state.getState().requestId, 1)
+    response.completeLine(state.getState().repairRequestId, 1)
   ].join("\r\n")),
   "A package adding a standard module must be accepted.");
 assert(
-  app.applyResponsePackage([
+  workflow.applyRepairText([
     response.beginLine(
-      state.getState().requestId,
+      state.getState().repairRequestId,
       "standard",
       "CompatHelpers"),
     "Option Explicit",
     "Public Sub W(): Beep: End Sub",
     response.endLine(
-      state.getState().requestId,
+      state.getState().repairRequestId,
       "standard",
       "CompatHelpers"),
-    response.completeLine(state.getState().requestId, 1)
+    response.completeLine(state.getState().repairRequestId, 1)
   ].join("\r\n")),
   "P1-1: a corrected answer may add the same module again.");
 assert(
@@ -409,8 +431,8 @@ assert(
 // ---- P2-2: a summary note that could not be written is reported ----
 
 attach();
-state.goTo(screens.intakeScreen, false);
-state.importPackage([
+state.goTo(screens.repairIntakeScreen, false);
+importModules([
   {
     name: "Main",
     code: "Option Explicit\r\nSub A(): Beep: End Sub\r\n",
@@ -418,7 +440,6 @@ state.importPackage([
     lineCount: 2
   }
 ]);
-state.setRunFolder("C:\\work\\MacroStudio\\受注管理_20260730_010203");
 state.setBuildResult({
   status: "success",
   success: true,
@@ -475,8 +496,25 @@ assert(
 state.setBusyAction(null);
 state.setBuildSlow(false);
 
+// ---- WP-01: clipboard failures keep both recovery routes visible ----
+
+assert(
+  app.getHostErrorMessage({ code: "E-GEN-04" }).indexOf("Ctrl+V") >= 0,
+  "A clipboard read failure must name the paste-event recovery route.");
+var appSource = fs.readFileSync(
+  path.join(root, "assets", "js", "app.js"),
+  "utf8");
+var workflowSource = fs.readFileSync(
+  path.join(root, "assets", "js", "screens", "workflow.js"),
+  "utf8");
+assert(
+  workflowSource.indexOf('name: "retry-copy-request"') >= 0 &&
+    workflowSource.indexOf('label: "もう一度コピー"') >= 0 &&
+    appSource.indexOf("function onToastClick") >= 0,
+  "A clipboard write failure must render a working retry action.");
+
 console.log("test-audit-fixes: PASS");
 console.log(
   "one package at a time, a reachable way to take another answer, " +
-  "a reported summary-note failure and a long build that stays a " +
-  "build behave as specified");
+  "clipboard recovery, a reported summary-note failure and a long " +
+  "build that stays a build behave as specified");

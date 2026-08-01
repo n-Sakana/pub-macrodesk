@@ -225,7 +225,8 @@ namespace MacroStudio.Tests
                 // accepted.
                 result.Add("trustedRequestWorks", await ReadJson(
                     "({presets:MacroStudioState.getState()" +
-                    ".appInfo.presets.length," +
+                    ".appInfo.presets.diagnose.length+" +
+                    "MacroStudioState.getState().appInfo.presets.repair.length," +
                     "version:String(MacroStudioState.getState()" +
                     ".appInfo.version)})"));
                 result.Add("startPage", await CurrentSource());

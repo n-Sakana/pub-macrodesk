@@ -248,7 +248,9 @@ var memo = app.createResultMarkdown(
     outputName: "SalesTool-Modified-20260730.xlsm",
     outputDateStamp: "20260730",
     presetName: "ひな形",
-    requestId: "3f1c9c7a-2b64-4a1e-9f52-0b5a4d2e77c1",
+    repairRequestId: "3f1c9c7a-2b64-4a1e-9f52-0b5a4d2e77c1",
+    diagnosisFilePath: "C:\\run\\diagnosis.md",
+    repairRequestFilePath: "C:\\run\\repair-request.md",
     intakeResult: { summary: "Module1 を直しました。" },
     modules: [
       {
@@ -289,9 +291,54 @@ assert(
   memo.indexOf("diff-report.html") < 0,
   "The memo must not name the old fixed report name.");
 assert(
-  memo.indexOf("- request.md") >= 0 &&
+  memo.indexOf("- diagnose-request.md") >= 0 &&
     memo.indexOf("- source-code.md") >= 0 &&
+    memo.indexOf("- diagnosis.md") >= 0 &&
+    memo.indexOf("- repair-request.md") >= 0 &&
     memo.indexOf("- result.md") >= 0,
   "The memo must still name the files that keep their fixed names.");
+assert(
+  memo.indexOf("- request.md") < 0,
+  "The beta 1.10 request.md name must not come back.");
+
+var mappingMemo = app.createResultMarkdown({
+  book: {name: "SalesTool.xlsm", ext: ".xlsm"},
+  outputName: "SalesTool-Modified-20260730.xlsm",
+  outputDateStamp: "20260730",
+  presetName: "固定パスを新環境へ置き換える",
+  repairRequestId: null,
+  repairResultEngine: "固定パス置換",
+  diagnosisFilePath: "C:\\run\\diagnosis.md",
+  repairRequestFilePath: null,
+  intakeResult: {
+    mapping: {
+      rows: [{
+        "class": "driveAbsolute",
+        from: "C:\\old\\report.xlsx",
+        to: "D:\\new\\report.xlsx",
+        count: 1,
+        occurrences: [{module: "Module1", procedure: "Run", line: 4}]
+      }]
+    }
+  },
+  modules: [{
+    name: "Module1",
+    type: "standard",
+    typeLabel: "標準モジュール",
+    status: "changed",
+    accepted: true,
+    code: "x = \"C:\\old\\report.xlsx\"\r\n",
+    pastedCode: "x = \"D:\\new\\report.xlsx\"\r\n"
+  }]
+}, "20260730_010203");
+assert(
+  mappingMemo.indexOf("## 固定パスの対応表") >= 0 &&
+    mappingMemo.indexOf("C:\\old\\report.xlsx") >= 0 &&
+    mappingMemo.indexOf("D:\\new\\report.xlsx") >= 0 &&
+    mappingMemo.indexOf("Module1 / Run / 4行目") >= 0,
+  "The deterministic result memo must preserve the reviewed mapping table.");
+assert(
+  mappingMemo.indexOf("repair-request.md") < 0,
+  "The deterministic route must not claim an AI repair request artifact.");
 
 console.log("test-build-payload: PASS");

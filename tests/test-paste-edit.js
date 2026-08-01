@@ -6,6 +6,7 @@
 var fs = require("fs");
 var path = require("path");
 var vm = require("vm");
+var contracts = require("./helpers/contracts");
 
 function assert(condition, message) {
   if (!condition) {
@@ -21,6 +22,7 @@ windowObject.window = windowObject;
 
 [
   "response-package.js",
+  "diagnosis-package.js",
   "screens.js",
   "state.js"
 ].forEach(function (name) {
@@ -35,7 +37,9 @@ windowObject.window = windowObject;
 var state = windowObject.MacroStudioState;
 var screens = windowObject.MacroStudioScreens;
 var reviewScreen = screens.reviewScreen;
-var intakeScreen = screens.intakeScreen;
+var intakeScreen = screens.repairIntakeScreen;
+var diagnosisId = "11111111-1111-4111-8111-111111111111";
+var repairId = "33333333-3333-4333-8333-333333333333";
 
 function setup() {
   state.reset();
@@ -66,17 +70,39 @@ function setup() {
         attributes: ""
       }
     ]);
+  state.setTargetEnvironment({displayName: "test", revision: "1"}, "ENV");
+  state.commitDiagnosisRequest({requestId: diagnosisId});
+  state.commitDiagnosis(contracts.diagnosis(
+    windowObject.MacroStudioDiagnosis,
+    {requestId: diagnosisId, modules: state.getState().modules}),
+  "diagnosis.md");
+  state.setRepairPreset({
+    file: "02_改修\\sample.md", name: "ひな形", content: "preset",
+    parsed: {
+      engine: "AI", questions: [], behaviorCandidates: [], preserveItems: [],
+      output: {body: "rules"}, splitOutput: null
+    }
+  });
+  state.setExtraRequest("改修する");
+  state.commitRepairRequest({requestId: repairId, prompt: "prompt text"});
   state.goTo(intakeScreen, false);
   state.goTo(reviewScreen, false);
 }
 
-function importMain(code, changedLineCount, lineCount) {
-  state.importPackage([
+function importModules(modules) {
+  return state.importPackage(contracts.repair(windowObject.MacroStudioResponse, {
+    requestId: repairId,
+    modules: modules,
+    existingModules: state.getBookModules(),
+    diagnosis: state.getState().diagnosis
+  }));
+}
+
+function importMain(code) {
+  importModules([
     {
       name: "Main",
-      code: code,
-      changedLineCount: changedLineCount,
-      lineCount: lineCount
+      code: code
     }
   ]);
 }
@@ -166,7 +192,7 @@ assert(
 
 // New modules stay new through an edit, and their line count follows
 // the accepted code.
-state.importPackage([
+importModules([
   {
     name: "WaitUtils",
     code: "Public Sub WaitMs()\r\nEnd Sub\r\n",
@@ -192,10 +218,9 @@ assert(
   "The edited new module must stay changed.");
 
 // setBook resets the editing state and the stored prompt.
-state.setRequestPrompt("prompt text");
 assert(
-  state.getState().requestPrompt === "prompt text",
-  "setRequestPrompt must store the prompt.");
+  state.getState().repairPrompt === "prompt text",
+  "The committed repair request must store its prompt.");
 state.selectModule("Main");
 state.beginPasteEdit();
 state.setBook(
@@ -210,10 +235,10 @@ assert(
   state.getState().pasteEditing === false,
   "setBook must end the edit session.");
 assert(
-  state.getState().requestPrompt === null,
+  state.getState().repairPrompt === null,
   "setBook must clear the stored request prompt.");
 assert(
-  state.getState().requestId === null,
+  state.getState().repairRequestId === null,
   "setBook must clear the request id of the previous workbook.");
 
 console.log("test-paste-edit: PASS");

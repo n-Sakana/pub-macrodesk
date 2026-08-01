@@ -26,6 +26,7 @@ windowObject.window = windowObject;
 });
 
 var state = windowObject.MacroStudioState;
+var screens = windowObject.MacroStudioScreens;
 
 state.setBook(
   {
@@ -45,7 +46,9 @@ state.setBook(
     }
   ]);
 
-assert(state.goTo(6, false), "Could not open the intake screen.");
+assert(
+  state.goTo(screens.repairIntakeScreen, false),
+  "Could not open the repair intake screen.");
 assert(
   state.acceptModuleCode(
     "Module1",
@@ -71,7 +74,9 @@ assert(
 assert(
   state.getState().lastError === null,
   "New confirmation did not clear the prior error.");
-assert(state.goTo(9, false), "Could not open the output screen.");
+assert(
+  state.goTo(screens.outputScreen, false),
+  "Could not open the output screen.");
 
 state.setBuildResult({
   status: "success",
@@ -93,7 +98,9 @@ assert(
   state.findModule("Module2").written === false,
   "Unreported module was marked written.");
 
-assert(state.goTo(6, false), "Could not return to the intake screen.");
+assert(
+  state.goTo(screens.repairIntakeScreen, false),
+  "Could not return to the repair intake screen.");
 assert(
   state.findModule("Module1").pastedCode.indexOf("Debug.Print") >= 0,
   "Step 4 round trip lost pasted code.");

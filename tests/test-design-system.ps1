@@ -80,7 +80,14 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $assetRoot = Join-Path $repoRoot 'assets'
 $fontRoot = Join-Path $assetRoot 'fonts'
 $variablePath = Join-Path $assetRoot 'css\variables.css'
+$findingsPath = Join-Path $assetRoot 'css\findings.css'
+$pathMapPath = Join-Path $assetRoot 'css\path-map.css'
 $indexPath = Join-Path $assetRoot 'index.html'
+
+Assert-True (Test-Path -LiteralPath $findingsPath -PathType Leaf) `
+    'The findings stylesheet is missing.'
+Assert-True (Test-Path -LiteralPath $pathMapPath -PathType Leaf) `
+    'The path-map stylesheet is missing.'
 
 Test-TrueTypeFont (Join-Path $fontRoot 'NotoSansJP[wght].ttf')
 Test-TrueTypeFont (Join-Path $fontRoot 'UDEVGothic-Regular.ttf')
@@ -247,6 +254,10 @@ Get-ChildItem (Join-Path $assetRoot 'css') -Filter '*.css' -File |
     }
 
 $index = [IO.File]::ReadAllText($indexPath)
+Assert-True ($index -match 'href="css/findings\.css"') `
+    'The findings stylesheet is not loaded by the product page.'
+Assert-True ($index -match 'href="css/path-map\.css"') `
+    'The path-map stylesheet is not loaded by the product page.'
 Assert-True ($index -match 'macrostudio\.theme') `
     'The pre-paint theme initialization is missing.'
 Assert-True ($index -match 'id="theme-toggle"') `

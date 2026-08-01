@@ -13,6 +13,7 @@
 var fs = require("fs");
 var path = require("path");
 var vm = require("vm");
+var contracts = require("./helpers/contracts");
 
 function assert(condition, message) {
   if (!condition) {
@@ -144,15 +145,17 @@ windowObject.hostBridge = {
   }
 };
 
-[
+["icons.js",
   "diff.js",
   "diff-view.js",
   "vba-highlight.js",
   "preset-document.js",
   "prompt-template.js",
   "response-package.js",
+  "diagnosis-package.js",
   "screens.js",
   "state.js",
+  "screens/workflow.js",
   "app.js"
 ].forEach(function (name) {
   vm.runInContext(
@@ -165,9 +168,11 @@ var api = windowObject.MacroStudioResponse;
 var screens = windowObject.MacroStudioScreens;
 var state = windowObject.MacroStudioState;
 var app = windowObject.MacroStudioApp;
+var workflow = windowObject.MacroStudioWorkflow;
 
 var id = api.createRequestId();
 var other = api.createRequestId();
+var diagnosisId = "11111111-1111-4111-8111-111111111111";
 var reason = [
   "対象の3モジュールを読みました。",
   "依頼にある保存先の切り替えは、すでに設定シートから読む形になっています。",
@@ -277,15 +282,29 @@ function attach(requestId) {
         attributes: ""
       }
     ]);
-  state.setMode("refactor");
-  state.setPurpose("sample.md", "ひな形", requestId || id, []);
-  state.setRequestText("保存先を切り替えられるようにしてください。");
-  state.setOutputRules({ title: "出力指示", body: "まとめて返す。" });
-  state.goTo(screens.intakeScreen, false);
+  state.setTargetEnvironment({displayName: "test", revision: "1"}, "ENV");
+  state.commitDiagnosisRequest({requestId: diagnosisId});
+  state.commitDiagnosis(contracts.diagnosis(
+    windowObject.MacroStudioDiagnosis,
+    {requestId: diagnosisId, modules: state.getState().modules}),
+  "diagnosis.md");
+  state.setRepairPreset({
+    file: "02_改修\\sample.md",
+    name: "ひな形",
+    content: "preset",
+    parsed: {
+      engine: "AI", questions: [], behaviorCandidates: [], preserveItems: [],
+      output: {title: "出力指示", body: "まとめて返す。"},
+      splitOutput: null
+    }
+  });
+  state.setExtraRequest("保存先を切り替えられるようにしてください。");
+  state.commitRepairRequest({requestId: requestId || id});
+  state.goTo(screens.repairIntakeScreen, false);
 }
 
 function stuck() {
-  return !screens.canAdvance(state.getState(), screens.intakeScreen);
+  return !screens.canAdvance(state.getState(), screens.repairIntakeScreen);
 }
 
 // ---- 1. the verdicts that are accepted ----
@@ -299,7 +318,7 @@ function stuck() {
 
   attach();
   assert(
-    app.applyResponsePackage(noChange({ verdict: entry[0] })),
+    workflow.applyRepairText(noChange({ verdict: entry[0] })),
     entry[0] + ": a declared result must be taken in.");
   assert(
     state.getState().noChangeResult !== null &&
@@ -329,7 +348,7 @@ function stuck() {
     entry[0] + ": neither the diff nor the build may become reachable.");
 
   // ...and the person is told which verdict it was, and why.
-  screen = app.createIntakeScreen(state.getState());
+  screen = workflow.createRepairIntakeScreen(state.getState());
   text = readText(screen);
   assert(
     text.indexOf(entry[1]) >= 0,
@@ -338,10 +357,10 @@ function stuck() {
     text.indexOf(reason[1]) >= 0,
     entry[0] + ": the screen must show the reason the AI gave.");
   assert(
-    findByAction(screen, "import-response").length === 1,
+    findByAction(screen, "import-repair").length === 1,
     entry[0] + ": taking another answer instead must stay available.");
   assert(
-    screens.get(screens.intakeScreen).title(state.getState())
+    screens.get(screens.repairIntakeScreen).title(state.getState())
       .indexOf("変更なし") >= 0,
     entry[0] + ": the screen title must say what happened.");
 });
@@ -349,11 +368,11 @@ function stuck() {
 // The two verdicts must not read the same, or the distinction the
 // protocol makes would be lost on the way to the screen.
 attach();
-app.applyResponsePackage(noChange({ verdict: "UNNECESSARY" }));
-var unnecessaryText = readText(app.createIntakeScreen(state.getState()));
+workflow.applyRepairText(noChange({ verdict: "UNNECESSARY" }));
+var unnecessaryText = readText(workflow.createRepairIntakeScreen(state.getState()));
 attach();
-app.applyResponsePackage(noChange({ verdict: "IMPOSSIBLE" }));
-var impossibleText = readText(app.createIntakeScreen(state.getState()));
+workflow.applyRepairText(noChange({ verdict: "IMPOSSIBLE" }));
+var impossibleText = readText(workflow.createRepairIntakeScreen(state.getState()));
 assert(
   unnecessaryText !== impossibleText,
   "The two verdicts must not be shown with the same words.");
@@ -365,14 +384,15 @@ state.setSplitOutputRules({ title: "出力指示（モジュール単位）", bo
 assert(
   state.setSplitOutput(true) && screens.isSplitOutput(state.getState()),
   "The module-by-module option must be available for this check.");
+state.commitRepairRequest({requestId: id});
 assert(
-  app.applyResponsePackage(noChange({})),
+  workflow.applyRepairText(noChange({})),
   "A declared result must be taken in the module-by-module run too.");
 assert(
   screens.isNoChange(state.getState()),
   "The verdict must be seen the same way in either run.");
 assert(
-  state.getState().intakeParts === null &&
+  state.getState().repairIntakeParts === null &&
     screens.getIntakePartTotal(state.getState()) === 0,
   "A declared result must not leave the run waiting for a module 00.");
 assert(
@@ -386,6 +406,10 @@ assert(
   ["truncated", noChange({ verdict: false }), "an unspoken zero"],
   // A verdict with nothing to close it.
   ["truncated", noChange({ complete: false }), "no COMPLETE line"],
+  ["mismatch", noChange({ complete: "00" }), "a leading-zero count", "R1"],
+  ["mismatch", noChange({ complete: "0.0" }), "a decimal count", "R1"],
+  ["mismatch", noChange({ complete: "0x0" }), "a hexadecimal count", "R1"],
+  ["mismatch", noChange({ complete: "0e0" }), "an exponent count", "R1"],
   // A verdict nobody can read.
   [
     "noChangeVerdict",
@@ -435,8 +459,13 @@ assert(
     !parsed.ok && parsed.reason === entry[0],
     entry[2] + " must be refused as " + entry[0] +
       ", not " + (parsed.ok ? "accepted" : parsed.reason) + ".");
+  if (entry[3]) {
+    assert(
+      parsed.validationId === entry[3],
+      entry[2] + " must be identified as " + entry[3] + ".");
+  }
   assert(
-    !app.applyResponsePackage(entry[1]),
+    !workflow.applyRepairText(entry[1]),
     entry[2] + " must not be taken in.");
   assert(
     state.getState().noChangeResult === null &&
@@ -454,8 +483,9 @@ assert(
 attach();
 state.setSplitOutputRules({ title: "出力指示（モジュール単位）", body: "1つずつ。" });
 state.setSplitOutput(true);
+state.commitRepairRequest({requestId: id});
 assert(
-  app.applyResponsePackage(partAnswer(id, 0, 2, "Main", true)),
+  workflow.applyRepairText(partAnswer(id, 0, 2, "Main", true)),
   "The first module of a series must be accepted.");
 assert(
   !screens.isNoChange(state.getState()) &&
@@ -464,21 +494,21 @@ assert(
   "One module of two is not a finished answer and not a zero either.");
 assert(
   screens.countIntakeParts(state.getState()) === 1 &&
-    api.listMissingParts(state.getState().intakeParts).length === 1,
+    api.listMissingParts(state.getState().repairIntakeParts).length === 1,
   "The missing module must still be reported as missing.");
 
 // ---- 4. one result replaces the other, both ways round ----
 
 attach();
 assert(
-  app.applyResponsePackage(wholeAnswer(id)) &&
+  workflow.applyRepairText(wholeAnswer(id)) &&
     screens.countImported(state.getState()) > 0,
   "A normal answer must still be imported.");
 assert(
-  !screens.canAdvance(state.getState(), screens.intakeScreen) === false,
+  !screens.canAdvance(state.getState(), screens.repairIntakeScreen) === false,
   "A normal answer must open the way to the review screen.");
 assert(
-  app.applyResponsePackage(noChange({})),
+  workflow.applyRepairText(noChange({})),
   "A verdict arriving after a package must be taken.");
 assert(
   screens.countImported(state.getState()) === 0 &&
@@ -487,7 +517,7 @@ assert(
   "The package it replaced must not survive into the build.");
 
 assert(
-  app.applyResponsePackage(wholeAnswer(id)),
+  workflow.applyRepairText(wholeAnswer(id)),
   "A package arriving after a verdict must be taken.");
 assert(
   !screens.isNoChange(state.getState()) &&
@@ -502,14 +532,14 @@ assert(
 // the gate must not be leaning on that. Even with a package still
 // imported, a verdict closes the way forward on its own.
 attach();
-app.applyResponsePackage(wholeAnswer(id));
+workflow.applyRepairText(wholeAnswer(id));
 assert(
   !stuck() && screens.countChanged(state.getState()) > 0,
   "A package alone must open the way forward.");
 state.getState().noChangeResult = {
   verdict: "UNNECESSARY",
   summary: reason.join("\r\n"),
-  requestId: state.getState().requestId
+  requestId: state.getState().repairRequestId
 };
 assert(
   stuck(),
@@ -518,11 +548,11 @@ assert(
 
 // A verdict belongs to the request it answered. A new request leaves it.
 attach();
-app.applyResponsePackage(noChange({}));
+workflow.applyRepairText(noChange({}));
 assert(
   screens.isNoChange(state.getState()),
   "The verdict must be current while its request is.");
-state.setPurpose("sample.md", "ひな形", other, []);
+state.commitRepairRequest({requestId: other});
 assert(
   !screens.isNoChange(state.getState()),
   "A new request must not inherit the previous verdict.");
@@ -531,7 +561,7 @@ assert(
 
 attach();
 assert(
-  app.applyResponsePackage(wholeAnswer(id)),
+  workflow.applyRepairText(wholeAnswer(id)),
   "One paste with one module must still work.");
 assert(
   screens.countImported(state.getState()) === 1 &&
@@ -543,9 +573,10 @@ assert(
 attach();
 state.setSplitOutputRules({ title: "出力指示（モジュール単位）", body: "1つずつ。" });
 state.setSplitOutput(true);
+state.commitRepairRequest({requestId: id});
 assert(
-  app.applyResponsePackage(partAnswer(id, 0, 2, "Main", true)) &&
-    app.applyResponsePackage(partAnswer(id, 1, 2, "Helper", false)),
+  workflow.applyRepairText(partAnswer(id, 0, 2, "Main", true)) &&
+    workflow.applyRepairText(partAnswer(id, 1, 2, "Helper", false)),
   "Module by module must still work.");
 assert(
   screens.countImported(state.getState()) === 2 &&
@@ -561,13 +592,14 @@ assert(
 
 // ---- 6. the templates carry the instruction, the app does not ----
 
-var refactorPresets = fs.readdirSync(path.join(root, "presets"))
+var repairPresetDir = path.join(root, "presets", "02_改修");
+var refactorPresets = fs.readdirSync(repairPresetDir)
   .filter(function (name) {
     return path.extname(name).toLowerCase() === ".md";
   })
   .map(function (name) {
     var text = fs.readFileSync(
-      path.join(root, "presets", name),
+      path.join(repairPresetDir, name),
       "utf8");
 
     return { name: name, text: text.charCodeAt(0) === 0xFEFF
@@ -608,13 +640,16 @@ var appSource = fs.readFileSync(
 var responseSource = fs.readFileSync(
   path.join(root, "assets", "js", "response-package.js"),
   "utf8");
+var workflowSource = fs.readFileSync(
+  path.join(root, "assets", "js", "screens", "workflow.js"),
+  "utf8");
 
 assert(
   appSource.indexOf("NOCHANGE") < 0,
   "The instruction text must not be duplicated into app.js.");
 assert(
   responseSource.indexOf("UNNECESSARY") >= 0 &&
-    appSource.indexOf("UNNECESSARY") >= 0,
+    workflowSource.indexOf("UNNECESSARY") >= 0,
   "The verdict names are protocol, and are read where they are used.");
 [
   "直すところが無いと判断したとき",
@@ -622,6 +657,7 @@ assert(
 ].forEach(function (sentence) {
   assert(
     appSource.indexOf(sentence) < 0 &&
+      workflowSource.indexOf(sentence) < 0 &&
       responseSource.indexOf(sentence) < 0,
     "The template's own sentences must not be copied into the app: " +
       sentence);

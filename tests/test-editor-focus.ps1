@@ -60,6 +60,7 @@ function Assert-BoxSurvived {
     $groups = @(
         @('typed', $Report.typed),
         @('composed', $Report.composed),
+        @('imeEnter', $Report.imeEnter),
         @('pasted', $Report.pasted),
         @('replaced', $Report.replaced))
 
@@ -84,6 +85,10 @@ function Assert-BoxSurvived {
         Assert-True ($step.caret -eq $index) `
             ("$Label : after " + $index + ' characters the caret was at ' +
                 [string]$step.caret + '.')
+    }
+    foreach ($step in $Report.imeEnter) {
+        Assert-True ([bool]$step.screenUnchanged) `
+            "$Label : IME Enter advanced the workflow."
     }
 }
 
@@ -156,6 +161,7 @@ $source = ($usings -join "`n") + "`n`n" +
     ($combined -replace $usingPattern, '')
 
 Add-Type -TypeDefinition $source -ReferencedAssemblies @(
+    'System.Collections'
     [System.Windows.Window].Assembly.Location
     [System.Windows.UIElement].Assembly.Location
     [System.Windows.DependencyObject].Assembly.Location
@@ -170,6 +176,13 @@ Add-Type -TypeDefinition $source -ReferencedAssemblies @(
 ) -Language CSharp
 
 $runFolders = @()
+$sourceHash = (Get-FileHash -LiteralPath $resolvedBookPath `
+    -Algorithm SHA256).Hash
+$mappingBook = (Resolve-Path (
+    Join-Path $PSScriptRoot `
+        '..\testdata\input_monthly_report.xlsm')).Path
+$mappingHash = (Get-FileHash -LiteralPath $mappingBook `
+    -Algorithm SHA256).Hash
 try {
     try {
         $rawResult = [MacroStudio.Tests.EditorFocusSmoke]::Run(
@@ -185,12 +198,13 @@ try {
     }
 
     $result = $rawResult | ConvertFrom-Json
-    $detailed = $result.detailed | ConvertFrom-Json
-    $questions = $result.questions | ConvertFrom-Json
-    $simple = $result.simple | ConvertFrom-Json
+    $ai = $result.ai | ConvertFrom-Json
+    $mapping = $result.mapping | ConvertFrom-Json
 
-    if ($detailed.runFolder) {
-        $runFolders += [string]$detailed.runFolder
+    foreach ($phase in @($ai, $mapping)) {
+        if ($phase.runFolder) {
+            $runFolders += [string]$phase.runFolder
+        }
     }
 
     # 'Xabc' followed by the settled word and the pasted one: what is
@@ -199,13 +213,9 @@ try {
         [char]0x6F22, [char]0x5B57, [char]0x8CBC, [char]0x4ED8))
 
     $boxes = @(
-        @('request-text (detailed)', ($detailed.requestText |
+        @('extra-request', ($ai.extra |
             ConvertFrom-Json)),
-        @('output-name (detailed)', ($detailed.outputName |
-            ConvertFrom-Json)),
-        @('answer-0 (questions)', ($questions.answer |
-            ConvertFrom-Json)),
-        @('simple-request-input (simple)', ($simple.requestText |
+        @('path-map-to', ($mapping.value |
             ConvertFrom-Json)))
 
     foreach ($box in $boxes) {
@@ -216,47 +226,39 @@ try {
                 $expected + '".')
     }
 
-    # Keeping the element alive must not have cost the update. What was
-    # typed has to be in the state, and the lines worked out from the
-    # state have to show it.
-    $derived = $detailed.derived | ConvertFrom-Json
-    Assert-True (([string]$derived.boxText) -eq $expected) `
-        'The request box does not hold what was typed into it.'
-    Assert-True (([string]$derived.stateText) -eq $expected) `
-        ('What was typed never reached the state: "' +
-            [string]$derived.stateText + '".')
-    $countMark = -join @([char]0x6587, [char]0x5B57)
+    $aiState = $ai.state | ConvertFrom-Json
+    $mapState = $mapping.state | ConvertFrom-Json
     Assert-True (
-        ([string]$derived.note) -eq
-            ([string]$expected.Length + $countMark)) `
-        ('The character count did not follow the typing: "' +
-            [string]$derived.note + '".')
-    Assert-True (([string]$derived.preview) -eq $expected) `
-        ('The preview line did not follow the typing: "' +
-            [string]$derived.preview + '".')
+        ([string]$aiState.extra) -eq $expected -and
+        $aiState.nextReady
+    ) 'The extra request did not reach product state.'
+    Assert-True (
+        $mapState.applied -eq 1 -and
+        ([string]$mapState.value) -eq $expected -and
+        $mapState.nextReady
+    ) 'The edited mapping value did not reach the branded path map.'
 
-    Assert-True (([string]$detailed.outputNameState) -eq $expected) `
-        ('The file name never reached the state: "' +
-            [string]$detailed.outputNameState + '".')
-    Assert-True (([string]$questions.answerState) -eq $expected) `
-        ('The answer never reached the state: "' +
-            [string]$questions.answerState + '".')
-    Assert-True (([string]$simple.requestState) -eq $expected) `
-        ('The short way never reached the state: "' +
-            [string]$simple.requestState + '".')
+    foreach ($shellValue in @($ai.shell, $mapping.shell)) {
+        $shell = $shellValue | ConvertFrom-Json
+        Assert-True (-not $shell.vertical -and -not $shell.horizontal) `
+            'Screen 4 scrolled at 1366x768 while editing.'
+        Assert-True ($shell.footer) `
+            'The screen-4 footer left the 1366x768 viewport.'
+    }
 
-    Assert-ToggleSurvived ($detailed.splitOption | ConvertFrom-Json) `
-        'split-output (detailed)'
-    Assert-ToggleSurvived ($simple.splitOption | ConvertFrom-Json) `
-        'split-output (simple)'
-
-    Assert-True ($questions.questionCount -gt 0) `
-        'The preset that asks questions must have asked at least one.'
+    $afterSourceHash = (Get-FileHash -LiteralPath $resolvedBookPath `
+        -Algorithm SHA256).Hash
+    $afterMappingHash = (Get-FileHash -LiteralPath $mappingBook `
+        -Algorithm SHA256).Hash
+    Assert-True (
+        $afterSourceHash -ceq $sourceHash -and
+        $afterMappingHash -ceq $mappingHash
+    ) 'The focus test modified an attached source workbook.'
 
     Write-Output 'test-editor-focus: PASS'
     Write-Output (
-        'every box kept its element, its focus and its caret through ' +
-        'typing, IME composition, pasting and replacing a selection')
+        'extra/mapping kept element, focus and caret through ' +
+        'typing, IME Enter/composition, paste and selection replacement')
 } finally {
     [GC]::Collect()
     [GC]::WaitForPendingFinalizers()
@@ -267,14 +269,15 @@ try {
             [IO.Directory]::Delete($folder, $true)
         }
     }
-    if ([IO.Directory]::Exists($cacheDir)) {
-        Assert-InsideDirectory $cacheDir $testdataRoot
+    for ($attempt = 0; $attempt -lt 50; $attempt++) {
+        if (-not [IO.Directory]::Exists($cacheDir)) {
+            break
+        }
         try {
+            Assert-InsideDirectory $cacheDir $testdataRoot
             [IO.Directory]::Delete($cacheDir, $true)
         } catch {
-            Write-Output (
-                'note: the WebView2 cache folder is still in use: ' +
-                $cacheDir)
+            Start-Sleep -Milliseconds 100
         }
     }
 }

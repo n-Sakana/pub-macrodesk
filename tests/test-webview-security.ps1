@@ -182,7 +182,7 @@ try {
     # trusted origin and its host requests are still answered.
     Assert-True ($startPage -ceq 'https://macrostudio.local/index.html') `
         ("The app did not load from the trusted origin: " + $startPage)
-    Assert-True ($trustedRequest.presets -ge 6) `
+    Assert-True ($trustedRequest.presets -eq 5) `
         ("A trusted host request stopped working: presets=" +
             $trustedRequest.presets)
     Assert-True (

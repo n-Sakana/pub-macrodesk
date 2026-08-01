@@ -82,9 +82,19 @@
   padding: var(--space-6);
 }
 
+.workspace.screen-body {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.screen-body .task {
+  max-height: none;
+}
+
 .workspace--centered {
   display: grid;
-  place-items: center;
+  align-items: start;
+  justify-items: center;
 }
 
 .workspace--code {
@@ -115,6 +125,21 @@
 
 .task--wide {
   width: min(var(--content-flow-wide-w), 100%);
+}
+
+/* Nothing in the flow is allowed to push the screen sideways. A long
+   identifier, a long path or a long Japanese sentence wraps in place.
+   break-word, not anywhere: the shortest line a box may be squeezed to
+   stays the longest word, so a box can never end up one glyph wide. */
+.task p,
+.task li,
+.task span,
+.task strong,
+.task code,
+.task h2,
+.task h3,
+.task label {
+  overflow-wrap: break-word;
 }
 
 .task--fill {

@@ -1,0 +1,15 @@
+添付ファイル {{CODE_FILE_NAME}} は、Excel ブック {{BOOK_NAME}} の VBA コード全文です
+（{{MODULE_COUNT}} モジュール、合計 {{TOTAL_LINE_COUNT}} 行。省略はありません）。
+ソースコードが欠落している・省略されていると判断せず、追加の資料を求めず、
+添付ファイルの内容と下の【想定動作環境】だけを根拠に、事実を診断してください。
+
+【想定動作環境】
+{{TARGET_ENVIRONMENT}}
+
+【診断指示】
+{{REQUEST_TEXT}}
+
+【対象モジュール】※ 0 行のモジュールは元から空です
+{{MODULE_LIST}}
+
+{{OUTPUT_RULES}}

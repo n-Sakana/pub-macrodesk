@@ -1,0 +1,495 @@
+.workflow-section {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.workflow-section:last-child {
+  border-bottom: 0;
+}
+
+.workflow-section-title {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--type-section-size);
+  font-weight: var(--type-section-weight);
+  line-height: var(--type-section-line);
+}
+
+.disclosure-trigger:focus-visible,
+.finding-toggle:focus-visible,
+.summary-toggle:focus-visible,
+.repair-finding-select:focus-within {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* The label has to be able to shrink, or a long one pushes the note off
+   the row instead of wrapping. */
+.disclosure-label {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.disclosure-inner > * {
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+/* Handing over and taking back are two moves inside one screen. They are
+   numbered so the reader can see where they are without a second screen
+   and a second [次へ] to tell them. */
+.task-step {
+  margin: var(--space-5) 0 var(--space-1);
+  color: var(--text);
+  font-size: var(--type-section-size);
+  font-weight: var(--type-section-weight);
+  line-height: var(--type-section-line);
+}
+
+.task-step:first-of-type {
+  margin-top: var(--space-4);
+}
+
+.task-note {
+  margin: 0;
+  color: var(--text-sub);
+}
+
+/* Everything the reader does not need in order to press [次へ] sits
+   below, closed, behind a label that says what it opens. */
+.optional-details {
+  display: grid;
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  gap: var(--space-2);
+}
+
+/* Actions never stretch. A .task is a column flex box, so a button put
+   straight into it grows to the full width of the screen. */
+.step-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+  gap: var(--space-3);
+}
+
+/* The outcome of the last action: one line, no border, no box. */
+.task-status {
+  display: flex;
+  align-items: baseline;
+  margin: var(--space-3) 0 0;
+  color: var(--text-sub);
+  gap: var(--space-2);
+}
+
+.task-status-icon {
+  flex: 0 0 auto;
+  align-self: center;
+  color: var(--success-text, var(--accent-text));
+}
+
+.task-status > span {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.read-module-list,
+.preserve-list {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-5);
+  color: var(--text-sub);
+}
+
+.read-module-item {
+  margin: var(--space-1) 0;
+}
+
+.environment-summary,
+.diagnosis-conclusion {
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+.environment-name {
+  color: var(--text);
+}
+
+.environment-description,
+.diagnosis-conclusion-text {
+  margin: 0;
+  color: var(--text-sub);
+}
+
+.request-files,
+.repair-questions,
+.repair-findings,
+.preserve-items,
+.need-decision {
+  margin-top: var(--space-3);
+}
+
+/* A request id and a file list wrap like any other long token. They used
+   to scroll sideways inside their own box, which is a second scrollbar
+   the reader never asked for. */
+.request-id,
+.request-file-list {
+  margin: 0;
+  color: var(--text-sub);
+  font-family: var(--font-code);
+  overflow-wrap: break-word;
+}
+
+.handoff-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.inline-status,
+.split-progress {
+  margin: var(--space-3) 0;
+  color: var(--text-sub);
+}
+
+.diagnosis-conclusion {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.diagnosis-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.class-chip,
+.confidence-chip,
+.environment-chip,
+.candidate-chip {
+  display: inline-flex;
+  min-height: var(--icon-lg);
+  align-items: center;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--type-micro-size);
+  font-weight: var(--type-micro-weight);
+  line-height: var(--type-micro-line);
+}
+
+.class-chip--blocker {
+  background: var(--danger);
+  color: var(--text-on-accent);
+}
+
+.class-chip--defect {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
+.class-chip--conditional {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.class-chip--external {
+  background: var(--surface-hover);
+  color: var(--text-sub);
+}
+
+.class-chip--info {
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.confidence-chip {
+  border: 1px solid var(--border);
+  color: var(--text-sub);
+}
+
+.environment-chip {
+  width: fit-content;
+  border: 1px solid var(--border);
+  color: var(--text-sub);
+}
+
+.summary-label {
+  min-width: 0;
+  color: var(--text);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: break-word;
+}
+
+.environment-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--type-meta-size);
+}
+
+.summary-full {
+  margin: 0;
+  color: var(--text-sub);
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+/* The macro summary and the findings are two lists of the same kind of
+   row, so they are one look with one rule. */
+.findings-list,
+.summary-list {
+  display: grid;
+  min-height: calc(var(--space-8) * 2);
+  gap: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.summary-list {
+  min-height: 0;
+}
+
+.summary-row + .summary-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.summary-row.is-open .disclosure-chevron {
+  transform: rotate(90deg);
+}
+
+.summary-panel {
+  margin: 0 var(--space-3) var(--space-3);
+  padding-left: var(--space-3);
+  border-left: var(--rail-w) solid var(--border-strong);
+  color: var(--text-sub);
+  font-size: var(--type-meta-size);
+}
+
+.diagnosis-conclusion-verdict {
+  margin: 0;
+  color: var(--text);
+  font-weight: var(--weight-semibold);
+}
+
+.findings-empty {
+  margin: 0;
+  padding: var(--space-4);
+  color: var(--text-sub);
+}
+
+.finding-row + .finding-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.finding-toggle,
+.summary-toggle {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  padding: var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  gap: var(--space-3);
+  text-align: left;
+}
+
+/* chevron, class chip, title, module, confidence */
+.finding-toggle {
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+}
+
+/* chevron, label */
+.summary-toggle {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.finding-row.is-open .disclosure-chevron {
+  transform: rotate(90deg);
+}
+
+.finding-toggle:hover,
+.summary-toggle:hover {
+  background: var(--surface-hover);
+}
+
+.finding-title {
+  min-width: 0;
+}
+
+.finding-module {
+  color: var(--text-muted);
+  font-family: var(--font-code);
+  font-size: var(--type-meta-size);
+}
+
+.finding-detail {
+  display: grid;
+  margin: 0 var(--space-3) var(--space-3);
+  padding-left: var(--space-3);
+  border-left: var(--rail-w) solid var(--border-strong);
+  color: var(--text-sub);
+  font-size: var(--type-meta-size);
+  gap: var(--space-2);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.finding-detail > p,
+.finding-detail-block > p {
+  margin: 0;
+}
+
+.finding-condition,
+.finding-impact,
+.finding-environment {
+  grid-column: 1 / -1;
+}
+
+.finding-detail-block {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-1);
+}
+
+.finding-detail code {
+  overflow-wrap: break-word;
+}
+
+.repair-finding-row {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.repair-finding-select {
+  display: flex;
+  align-items: center;
+  padding: var(--space-3);
+  cursor: pointer;
+  gap: var(--space-3);
+}
+
+.desired-behaviour-editor {
+  display: grid;
+  padding: 0 var(--space-4) var(--space-4);
+  gap: var(--space-3);
+}
+
+.candidate-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--type-meta-size);
+}
+
+.behaviour-candidates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.candidate-chip {
+  border: 1px solid var(--accent);
+  background: var(--surface);
+  color: var(--accent-text);
+  cursor: pointer;
+}
+
+.form-field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.form-field--subtle {
+  padding-left: var(--space-3);
+  border-left: var(--rail-w) solid var(--border-subtle);
+}
+
+.form-label {
+  color: var(--text-sub);
+  font-size: var(--type-label-size);
+  font-weight: var(--type-label-weight);
+}
+
+.decision-quotes {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.decision-quote {
+  margin: 0;
+  padding-left: var(--space-3);
+  border-left: var(--rail-w) solid var(--accent);
+  color: var(--text-sub);
+  font-size: var(--type-meta-size);
+}
+
+.decision-quote p {
+  margin: var(--space-1) 0 0;
+}
+
+.need-decision-item {
+  padding-left: var(--space-3);
+  border-left: var(--rail-w) solid var(--accent);
+  color: var(--text-sub);
+}
+
+.need-decision-item h3,
+.need-decision-item p {
+  margin: 0;
+}
+
+@media (max-width: 68.6875em) {
+  .finding-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .finding-detail-block,
+  .finding-condition,
+  .finding-impact,
+  .finding-environment {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 63.9375em) {
+  .diagnosis-counts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .finding-toggle {
+    grid-template-columns: auto auto minmax(0, 1fr);
+  }
+
+  .finding-module,
+  .confidence-chip {
+    grid-column: 3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workflow-disclosure-panel,
+  .finding-detail {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* A template the diagnosis actually points at. The badge is only drawn
+   when a finding names an environment constraint the template declares,
+   so it can always be traced back to a fact on the page before. */
+.choice-recommended {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--accent-text);
+  font-size: var(--type-micro-size);
+  font-weight: var(--type-micro-weight);
+}
+
+.choice-card.is-recommended {
+  border-color: var(--accent);
+}

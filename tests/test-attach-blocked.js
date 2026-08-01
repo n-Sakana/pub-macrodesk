@@ -134,7 +134,7 @@ windowObject.hostBridge = {
   }
 };
 
-[
+["icons.js",
   "diff.js",
   "diff-view.js",
   "vba-highlight.js",
@@ -142,6 +142,7 @@ windowObject.hostBridge = {
   "response-package.js",
   "screens.js",
   "state.js",
+  "screens/workflow.js",
   "app.js"
 ].forEach(function (name) {
   vm.runInContext(
@@ -159,12 +160,15 @@ var ENCRYPTED = "E-ATTACH-04";
 
 function buildBookScreen(error) {
   stateApi.reset();
-  stateApi.setAppInfo({ version: "test", presets: [] });
-  stateApi.setMode("refactor");
+  stateApi.setAppInfo({
+    version: "test",
+    presets: { diagnose: [], repair: [] }
+  });
   if (error) {
     stateApi.setLastError(error);
   }
-  return app.createBookScreen(stateApi.getState());
+  return windowObject.MacroStudioWorkflow.createBookScreen(
+    stateApi.getState());
 }
 
 var blocked = buildBookScreen({

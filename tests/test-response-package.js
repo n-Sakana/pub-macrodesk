@@ -27,7 +27,8 @@ vm.runInContext(
   { filename: "response-package.js" });
 
 var api = windowObject.MacroStudioResponse;
-var id = api.createRequestId();
+var identity = api.createRequestIdentity();
+var id = identity.id;
 var other = api.createRequestId();
 
 function pack(requestId, modules, options) {
@@ -67,14 +68,50 @@ var helper = {
   kind: "class",
   code: "Option Explicit\r\nPrivate value As Long"
 };
+var addition = {
+  name: "CompatHelpers",
+  kind: "standard",
+  code: "Option Explicit\r\nPublic Sub Wait(): End Sub"
+};
 
 // ---- the request id ----
 
 assert(api.isRequestId(id), "A generated request id must be a UUID.");
 assert(id !== other, "Each request must get its own id.");
 assert(
+  identity.secure === false,
+  "A context without crypto must report the Math.random fallback.");
+assert(
   !api.isRequestId("") && !api.isRequestId("not-an-id"),
   "Anything that is not a UUID must be refused.");
+
+windowObject.crypto = {
+  getRandomValues: function (bytes) {
+    var index;
+
+    for (index = 0; index < bytes.length; index += 1) {
+      bytes[index] = index;
+    }
+    return bytes;
+  }
+};
+var secureIdentity = api.createRequestIdentity();
+
+assert(
+  secureIdentity.secure === true && api.isRequestId(secureIdentity.id),
+  "A working crypto provider must be reported as secure.");
+windowObject.crypto = {
+  getRandomValues: function () {
+    throw new Error("crypto unavailable");
+  }
+};
+var failedCryptoIdentity = api.createRequestIdentity();
+
+assert(
+  failedCryptoIdentity.secure === false &&
+    api.isRequestId(failedCryptoIdentity.id),
+  "A failing crypto provider must fall back without losing the UUID shape.");
+delete windowObject.crypto;
 
 // ---- the happy path ----
 
@@ -100,7 +137,7 @@ assert(
 // ---- what the package means for this workbook ----
 
 var described = api.describe(
-  api.parse(pack(id, [main, helper]), id),
+  api.parse(pack(id, [main, addition]), id),
   [{ name: "main", type: "standard" }]);
 
 assert(
@@ -152,7 +189,44 @@ var cases = [
   {
     label: "a count that does not match",
     text: pack(id, [main, helper], { count: 3 }),
-    reason: "mismatch"
+    reason: "mismatch",
+    validationId: "R1"
+  },
+  {
+    label: "a decimal count",
+    text: pack(id, [main], { count: "1.0" }),
+    reason: "mismatch",
+    validationId: "R1"
+  },
+  {
+    label: "a leading-zero count",
+    text: pack(id, [main], { count: "01" }),
+    reason: "mismatch",
+    validationId: "R1"
+  },
+  {
+    label: "a hexadecimal count",
+    text: pack(id, [main, helper], { count: "0x2" }),
+    reason: "mismatch",
+    validationId: "R1"
+  },
+  {
+    label: "an exponent count",
+    text: pack(id, [main], { count: "1e0" }),
+    reason: "mismatch",
+    validationId: "R1"
+  },
+  {
+    label: "an extra COMPLETE token",
+    text: pack(id, [main]) + " extra",
+    reason: "mismatch",
+    validationId: "R1"
+  },
+  {
+    label: "two COMPLETE lines",
+    text: pack(id, [main]) + "\r\n" + api.completeLine(id, 1),
+    reason: "mismatch",
+    validationId: "R1"
   },
   {
     label: "the same module twice",
@@ -228,6 +302,12 @@ cases.forEach(function (item) {
   assert(
     result.reason === item.reason,
     "Wrong reason for " + item.label + ": " + result.reason);
+  if (item.validationId) {
+    assert(
+      result.validationId === item.validationId,
+      "Wrong validation id for " + item.label + ": " +
+        result.validationId);
+  }
   assert(
     result.message.length > 0 &&
       result.message.indexOf("undefined") < 0,
@@ -333,13 +413,13 @@ assert(
   wrongKind.modules[2].kindCorrected === false,
   "A matching kind is not a correction.");
 assert(
-  wrongKind.kindWarnings.length === 2 &&
-    wrongKind.kindWarnings[0].name === "OrderRecord" &&
-    wrongKind.kindWarnings[0].answered === "standard" &&
-    wrongKind.kindWarnings[0].actual === "class",
+  wrongKind.warnings.length === 2 &&
+    wrongKind.warnings[0].name === "OrderRecord" &&
+    wrongKind.warnings[0].answered === "standard" &&
+    wrongKind.warnings[0].actual === "class",
   "Every corrected kind must be reported.");
 
-var warningText = api.describeKindWarning(wrongKind.kindWarnings);
+var warningText = api.describeKindWarning(wrongKind.warnings);
 assert(
   warningText.indexOf("OrderRecord") >= 0 &&
     warningText.indexOf("Sheet1") >= 0,
@@ -349,21 +429,38 @@ assert(
     api.describeKindWarning(null) === "",
   "With nothing corrected there is no warning to show.");
 
-// A new module keeps the kind the answer gave: the app refuses
-// anything but a standard module before it is added.
-var newKind = api.describe(
+// The contract layer, not the app, refuses every non-standard new module.
+var newStandard = api.describe(
   api.parse(
     pack(id, [
-      { name: "NewThing", kind: "class", code: "Option Explicit" }
+      { name: "NewThing", kind: "standard", code: "Option Explicit" }
     ]),
     id),
   [{ name: "Main", type: "standard" }]);
 
 assert(
-  newKind.modules[0].isNew === true &&
-    newKind.modules[0].kind === "class" &&
-    newKind.kindWarnings.length === 0,
-  "A module the workbook does not have keeps the answered kind.");
+  newStandard.ok &&
+    newStandard.modules[0].isNew === true &&
+    newStandard.modules[0].kind === "standard" &&
+    newStandard.warnings.length === 0,
+  "A new standard module must pass R2.");
+
+["class", "form", "document"].forEach(function (kind) {
+  var refused = api.describe(
+    api.parse(
+      pack(id, [
+        { name: "NewThing", kind: kind, code: "Option Explicit" }
+      ]),
+      id),
+    [{ name: "Main", type: "standard" }]);
+
+  assert(
+    !refused.ok &&
+      refused.validationId === "R2" &&
+      refused.reason === "newModuleKind" &&
+      refused.modules.length === 0,
+    "A new " + kind + " module must be refused by R2 without output.");
+});
 
 console.log("test-response-package: PASS");
 console.log(

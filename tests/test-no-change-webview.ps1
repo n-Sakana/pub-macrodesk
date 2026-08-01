@@ -92,6 +92,7 @@ $source = ($usings -join "`n") + "`n`n" +
     ($combined -replace $usingPattern, '')
 
 Add-Type -TypeDefinition $source -ReferencedAssemblies @(
+    'System.Collections'
     [System.Windows.Window].Assembly.Location
     [System.Windows.UIElement].Assembly.Location
     [System.Windows.DependencyObject].Assembly.Location
@@ -106,6 +107,8 @@ Add-Type -TypeDefinition $source -ReferencedAssemblies @(
 ) -Language CSharp
 
 $runFolders = @()
+$sourceHash = (Get-FileHash -LiteralPath $resolvedBookPath `
+    -Algorithm SHA256).Hash
 try {
     try {
         $rawResult = [MacroStudio.Tests.NoChangeSmoke]::Run(
@@ -138,12 +141,29 @@ try {
         $refusals = $phase.refusals | ConvertFrom-Json
         $declared = $phase.declared | ConvertFrom-Json
         $second = $phase.second | ConvertFrom-Json
+        $diagnosis = $phase.diagnosis | ConvertFrom-Json
+        $needDecision = $phase.needDecision | ConvertFrom-Json
+        $decisionReturn = $phase.decisionReturn | ConvertFrom-Json
         $recovered = $phase.recovered | ConvertFrom-Json
         $built = $phase.built | ConvertFrom-Json
 
         if ($phase.runFolder) {
             $runFolders += [string]$phase.runFolder
         }
+
+        Assert-True ([string]$phase.singleEntrance -ceq 'true') `
+            "$name : a removed mode or purpose entrance reappeared."
+        $expectedDiagnosisReason = if ($name -ceq 'whole') {
+            'SCOPE_CLEAR'
+        } else {
+            'INSUFFICIENT'
+        }
+        Assert-True (
+            $diagnosis.reason -ceq $expectedDiagnosisReason -and
+            $diagnosis.findings -eq 0 -and
+            $diagnosis.recorded -and
+            $diagnosis.nextReady
+        ) "$name : the explicit zero-finding diagnosis was not retained."
 
         # ---- near misses stay refused ----
         foreach ($case in @(
@@ -202,6 +222,20 @@ try {
         Assert-True (-not $second.nextReady) `
             "$name : the second verdict must shut the way as well."
 
+        # ---- NEEDDECISION returns to input without inventing an answer ----
+        Assert-True (
+            $needDecision.screen -eq 5 -and
+            $needDecision.decisions -eq 1 -and
+            -not $needDecision.nextReady -and
+            $needDecision.returnAction -eq 1
+        ) "$name : NEEDDECISION did not stop on the intake screen."
+        Assert-True (
+            $decisionReturn.screen -eq 4 -and
+            $decisionReturn.quotes -eq 1 -and
+            $decisionReturn.extra -ceq
+                'Apply the requested safe test change.'
+        ) "$name : the decision did not return as an unanswered quote."
+
         # ---- and a real answer afterwards still finishes the job ----
         Assert-True ([bool]$recovered.verdictGone) `
             "$name : a real answer must clear the verdict."
@@ -216,10 +250,15 @@ try {
                 $built.outputPath)
     }
 
+    $afterHash = (Get-FileHash -LiteralPath $resolvedBookPath `
+        -Algorithm SHA256).Hash
+    Assert-True ($afterHash -ceq $sourceHash) `
+        'The no-change WebView flow modified the source workbook.'
+
     Write-Output 'test-no-change-webview: PASS'
     Write-Output (
-        'declared verdicts are shown and stop the run; near misses are ' +
-        'refused; a real answer afterwards still builds')
+        'zero=SCOPE_CLEAR/INSUFFICIENT; verdicts=' +
+        'UNNECESSARY/IMPOSSIBLE/NEEDDECISION; recovery builds')
 } finally {
     [GC]::Collect()
     [GC]::WaitForPendingFinalizers()
@@ -230,14 +269,15 @@ try {
             [IO.Directory]::Delete($folder, $true)
         }
     }
-    if ([IO.Directory]::Exists($cacheDir)) {
-        Assert-InsideDirectory $cacheDir $testdataRoot
+    for ($attempt = 0; $attempt -lt 50; $attempt++) {
+        if (-not [IO.Directory]::Exists($cacheDir)) {
+            break
+        }
         try {
+            Assert-InsideDirectory $cacheDir $testdataRoot
             [IO.Directory]::Delete($cacheDir, $true)
         } catch {
-            Write-Output (
-                'note: the WebView2 cache folder is still in use: ' +
-                $cacheDir)
+            Start-Sleep -Milliseconds 100
         }
     }
 }

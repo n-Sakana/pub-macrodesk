@@ -187,14 +187,6 @@ namespace MacroStudio.Tests
                     new Dictionary<string, object>();
 
                 await StartOver();
-                await Execute(
-                    "document.querySelector('[data-action=\"select-mode\"]" +
-                    "[data-mode=\"refactor\"]').click();");
-                await WaitFor(
-                    "MacroStudioState.getState().mode === 'refactor'");
-                await ClickNext();
-                await WaitForScreen("bookScreen");
-
                 Dictionary<string, object> eventData =
                     new Dictionary<string, object>();
                 eventData.Add("path", bookPath);
@@ -202,24 +194,72 @@ namespace MacroStudio.Tests
                 await WaitFor(
                     "MacroStudioState.getState().book !== null && " +
                     "MacroStudioState.getState().busyAction === null");
-
+                phase.Add("singleEntrance", await ReadRaw(
+                    "document.querySelectorAll(" +
+                    "'[data-action=\"select-mode\"]," +
+                    "[data-action=\"select-purpose\"]').length === 0"));
                 await ClickNext();
-                await WaitForScreen("readScreen");
+                await WaitFor(
+                    "MacroStudioState.getState().screen === " +
+                    "MacroStudioScreens.diagnoseScreen && " +
+                    "MacroStudioState.getState().diagnosisRequestId " +
+                    "!== null && " +
+                    "MacroStudioState.getState().busyAction === null");
+                phase.Add("runFolder", await ReadJson(
+                    "MacroStudioState.getState().runFolder"));
+                await Execute(
+                    "MacroStudioState.setDiagnosisHandoffProgress(" +
+                    "true,true);");
+                // Asking and importing share one screen: no [次へ] here.
+                await WaitForScreen("diagnoseScreen");
+                await Execute(
+                    "MacroStudioWorkflow.applyDiagnosisText(" +
+                    ZeroDiagnosis(perModule
+                        ? "INSUFFICIENT"
+                        : "SCOPE_CLEAR") + ");");
+                await WaitFor(
+                    "MacroStudioState.getState().diagnosis !== null && " +
+                    "MacroStudioState.getState().busyAction === null");
+                phase.Add("diagnosis", await ReadJson(
+                    "JSON.stringify({" +
+                    "reason:MacroStudioState.getState()" +
+                    ".diagnosis.noFinding," +
+                    "findings:MacroStudioState.getState()" +
+                    ".diagnosis.findings.length," +
+                    "recorded:MacroStudioState.getState()" +
+                    ".diagnosisFilePath !== null," +
+                    "nextReady:!document.querySelector(" +
+                    "'[data-action=\"go-next\"]').disabled})"));
                 await ClickNext();
-                await WaitForScreen("purposeScreen");
+                await WaitForScreen("findingsScreen");
+                // Reading the diagnosis and choosing the work are two pages.
+                await ClickNext();
+                await WaitForScreen("nextStepScreen");
                 await Execute(
                     "document.querySelector(" +
-                    "'[data-action=\"select-purpose\"]').click();");
+                    "'[data-action=\"select-repair-preset\"]')" +
+                    ".click();");
                 await WaitFor(
                     "MacroStudioState.getState().presetFile !== null && " +
-                    "MacroStudioState.getState().requestId !== null && " +
                     "MacroStudioState.getState().busyAction === null");
                 await ClickNext();
-                await WaitForScreen("requestScreen");
+                await WaitForScreen("repairInputScreen");
+                await Execute(
+                    "(function(){var input=document.querySelector(" +
+                    "'[data-workflow-input=\"extra-request\"]');" +
+                    "input.value='Apply the requested safe test change.';" +
+                    "input.dispatchEvent(new Event(" +
+                    "'input',{bubbles:true}));}())");
+                await WaitFor(
+                    "MacroStudioScreens.isRepairInputReady(" +
+                    "MacroStudioState.getState())");
                 if (perModule)
                 {
                     await Execute(
-                        "document.getElementById('split-output').click();");
+                        "document.querySelector(" +
+                        "'[data-workflow-input=" +
+                        "\"repair-split-output\"]')" +
+                        ".click();");
                     await WaitFor(
                         "MacroStudioState.getState().splitOutput === true");
                 }
@@ -229,14 +269,15 @@ namespace MacroStudio.Tests
                 await ClickNext();
                 await WaitFor(
                     "MacroStudioState.getState().screen === " +
-                    "MacroStudioScreens.handoffScreen && " +
-                    "MacroStudioState.getState().runFolder !== null");
-                phase.Add("runFolder", await ReadJson(
-                    "MacroStudioState.getState().runFolder"));
+                    "MacroStudioScreens.repairScreen && " +
+                    "MacroStudioState.getState().repairRequestId " +
+                    "!== null && " +
+                    "MacroStudioState.getState().busyAction === null");
                 await Execute(
-                    "MacroStudioState.setHandoffProgress(true, true);");
-                await ClickNext();
-                await WaitForScreen("intakeScreen");
+                    "MacroStudioState.setRepairHandoffProgress(" +
+                    "true,true);");
+                // Asking and importing share one screen: no [次へ] here.
+                await WaitForScreen("repairScreen");
 
                 // ---- what must be refused, before anything is taken ----
                 Dictionary<string, object> refusals =
@@ -259,8 +300,8 @@ namespace MacroStudio.Tests
                         "window.__err='';try{window.__text = " +
                         cases[index][1] + ";}catch(e){window.__text='';" +
                         "window.__err=String(e);}" +
-                        "window.__took = MacroStudioApp" +
-                        ".applyResponsePackage(window.__text);");
+                        "window.__took = MacroStudioWorkflow" +
+                        ".applyRepairText(window.__text);");
                     refusals.Add(cases[index][0], await ReadJson(
                         "JSON.stringify({" +
                         "sent:String(window.__text || '').length," +
@@ -280,7 +321,7 @@ namespace MacroStudio.Tests
 
                 // ---- and what must be taken ----
                 await Execute(
-                    "MacroStudioApp.applyResponsePackage(" +
+                    "MacroStudioWorkflow.applyRepairText(" +
                     Declared("UNNECESSARY") + ");");
                 await WaitFor(
                     "MacroStudioScreens.isNoChange(" +
@@ -288,12 +329,56 @@ namespace MacroStudio.Tests
                 phase.Add("declared", await ReadJson(ScreenShape()));
 
                 await Execute(
-                    "MacroStudioApp.applyResponsePackage(" +
+                    "MacroStudioWorkflow.applyRepairText(" +
                     Declared("IMPOSSIBLE") + ");");
                 await WaitFor(
                     "MacroStudioState.getState().noChangeResult" +
                     ".verdict === 'IMPOSSIBLE'");
                 phase.Add("second", await ReadJson(ScreenShape()));
+
+                string oldRepairId = await ReadJson(
+                    "MacroStudioState.getState().repairRequestId");
+                await Execute(
+                    "MacroStudioWorkflow.applyRepairText(" +
+                    NeedDecision() + ");");
+                await WaitFor(
+                    "MacroStudioState.getState().needDecision !== null");
+                phase.Add("needDecision", await ReadJson(
+                    "JSON.stringify({" +
+                    "screen:MacroStudioState.getState().screen," +
+                    "decisions:MacroStudioState.getState()" +
+                    ".needDecision.decisions.length," +
+                    "nextReady:!document.querySelector(" +
+                    "'[data-action=\"go-next\"]').disabled," +
+                    "returnAction:document.querySelectorAll(" +
+                    "'[data-action=\"return-repair-input\"]').length," +
+                    "text:document.getElementById(" +
+                    "'main-content').textContent})"));
+                await Execute(
+                    "document.querySelector(" +
+                    "'[data-action=\"return-repair-input\"]')" +
+                    ".click();");
+                await WaitForScreen("repairInputScreen");
+                phase.Add("decisionReturn", await ReadJson(
+                    "JSON.stringify({" +
+                    "screen:MacroStudioState.getState().screen," +
+                    "quotes:document.querySelectorAll(" +
+                    "'.decision-quote').length," +
+                    "extra:document.querySelector(" +
+                    "'[data-workflow-input=\"extra-request\"]')" +
+                    ".value})"));
+                await ClickNext();
+                await WaitFor(
+                    "MacroStudioState.getState().screen === " +
+                    "MacroStudioScreens.repairScreen && " +
+                    "MacroStudioState.getState().repairRequestId !== " +
+                    serializer.Serialize(oldRepairId) + " && " +
+                    "MacroStudioState.getState().busyAction === null");
+                await Execute(
+                    "MacroStudioState.setRepairHandoffProgress(" +
+                    "true,true);");
+                // Asking and importing share one screen: no [次へ] here.
+                await WaitForScreen("repairScreen");
 
                 // ---- taking a real answer instead still works ----
                 if (perModule)
@@ -360,7 +445,7 @@ namespace MacroStudio.Tests
                     "nextReady:!document.querySelector(" +
                     "'[data-action=\"go-next\"]').disabled," +
                     "canRetake:document.querySelectorAll(" +
-                    "'[data-action=\"import-response\"]:not([disabled])')" +
+                    "'[data-action=\"import-repair\"]:not([disabled])')" +
                     ".length," +
                     "diffTables:document.querySelectorAll(" +
                     "'.diff-table').length" +
@@ -368,6 +453,44 @@ namespace MacroStudio.Tests
             }
 
             // ---- the answers, built from the protocol's own helpers ----
+
+            private static string ZeroDiagnosis(string reason)
+            {
+                return "(function(){" +
+                    "var id=MacroStudioState.getState()" +
+                    ".diagnosisRequestId;" +
+                    "var marker=String.fromCharCode(39)+" +
+                    "'@MACROSTUDIO '+id+' ';" +
+                    "var lines=[marker+'DIAG BEGIN 1'];" +
+                    "['PURPOSE','FLOW','DEPENDENCY','ENVIRONMENT']" +
+                    ".forEach(function(name){" +
+                    "lines.push(marker+'SECTION BEGIN '+name);" +
+                    "lines.push(name+' checked.');" +
+                    "lines.push(marker+'SECTION END '+name);});" +
+                    "lines.push(marker+'DIAG NOFINDING " + reason + "');" +
+                    "lines.push(marker+'DIAG COMPLETE 0');" +
+                    "lines.push(marker+'DIAG END');" +
+                    "return lines.join('\\r\\n');}())";
+            }
+
+            private static string NeedDecision()
+            {
+                return Wrap(
+                    "[api.summaryBeginLine(id)," +
+                    "'A choice is required.'," +
+                    "api.summaryEndLine(id)," +
+                    "api.marker+' '+id+' DECISION BEGIN 1'," +
+                    "api.marker+' '+id+' META FINDING=- MODULE=-'," +
+                    "api.marker+' '+id+' TEXT BEGIN QUESTION'," +
+                    "'Choose the output destination.'," +
+                    "api.marker+' '+id+' TEXT END QUESTION'," +
+                    "api.marker+' '+id+' TEXT BEGIN OPTIONS'," +
+                    "'Shared folder / personal folder'," +
+                    "api.marker+' '+id+' TEXT END OPTIONS'," +
+                    "api.marker+' '+id+' DECISION END 1'," +
+                    "api.noChangeLine(id, 'NEEDDECISION')," +
+                    "api.completeLine(id, 0)].join('\\r\\n')");
+            }
 
             private static string Reason()
             {
@@ -434,16 +557,17 @@ namespace MacroStudio.Tests
             private static string Wrap(string body)
             {
                 return "(function(){var api=MacroStudioResponse;" +
-                    "var id=MacroStudioState.getState().requestId;" +
+                    "var id=MacroStudioState.getState().repairRequestId;" +
                     "return " + body + ";}())";
             }
 
             private static string WholeAnswer()
             {
                 return "(function(){" +
-                    "var id = MacroStudioState.getState().requestId;" +
+                    "var id = MacroStudioState.getState()" +
+                    ".repairRequestId;" +
                     "var api = MacroStudioResponse;" +
-                    "MacroStudioApp.applyResponsePackage([" +
+                    "MacroStudioWorkflow.applyRepairText([" +
                     "api.summaryBeginLine(id)," +
                     "'\\u76f4\\u3057\\u307e\\u3057\\u305f'," +
                     "api.summaryEndLine(id)," +
@@ -472,9 +596,10 @@ namespace MacroStudio.Tests
                     : string.Empty;
 
                 return "(function(){" +
-                    "var id = MacroStudioState.getState().requestId;" +
+                    "var id = MacroStudioState.getState()" +
+                    ".repairRequestId;" +
                     "var api = MacroStudioResponse;" +
-                    "MacroStudioApp.applyResponsePackage([" +
+                    "MacroStudioWorkflow.applyRepairText([" +
                     summary +
                     "api.partLine(id, " + index.ToString() + ", " +
                     total.ToString() + ")," +
@@ -498,7 +623,7 @@ namespace MacroStudio.Tests
                 await WaitFor(
                     "MacroStudioState.getState().appInfo !== null && " +
                     "MacroStudioState.getState().screen === " +
-                    "MacroStudioScreens.modeScreen");
+                    "MacroStudioScreens.bookScreen");
             }
 
             private async Task ClickNext()

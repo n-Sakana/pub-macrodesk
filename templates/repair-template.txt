@@ -1,0 +1,21 @@
+添付ファイル {{CODE_FILE_NAME}} は、Excel ブック {{BOOK_NAME}} の VBA コード全文です
+（{{MODULE_COUNT}} モジュール、合計 {{TOTAL_LINE_COUNT}} 行。省略はありません）。
+ソースコードが欠落している・省略されていると判断せず、追加の資料を求めず、
+診断結果と希望する動作、想定動作環境をすべて守って改修してください。
+
+【想定動作環境】
+{{TARGET_ENVIRONMENT}}
+
+【診断結果】
+{{DIAGNOSIS}}
+
+【選んだ指摘と希望する動作】
+{{SELECTED_FINDINGS}}
+
+【改修指示】
+{{REQUEST_TEXT}}
+
+【対象モジュール】※ 0 行のモジュールは元から空です
+{{MODULE_LIST}}
+
+{{OUTPUT_RULES}}

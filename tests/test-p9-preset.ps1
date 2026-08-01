@@ -111,9 +111,15 @@ try {
     $result = $rawResult | ConvertFrom-Json
     Assert-True ($result.count -eq $result.validCount) `
         'Only presets that parse may become buttons.'
+    Assert-True ($result.stateCount -ge 4) `
+        'The staged product must expose at least the four shipped repair presets.'
+    Assert-True ($result.diagnoseCount -eq 1) `
+        'The staged product must expose exactly one diagnosis preset.'
     Assert-True (
         $result.invalidFiles.Count -eq $result.invalidCount) `
         'Every unusable preset file must be listed with its reason.'
+    Assert-True ($result.invalidVisible -eq $result.invalidCount) `
+        'Every unusable preset must also be visible on the screen.'
     for ($i = 0; $i -lt $result.count; $i++) {
         Assert-True (
             $result.labels[$i] -ceq $result.names[$i]) `

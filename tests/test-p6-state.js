@@ -7,6 +7,7 @@
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
+const contracts = require("./helpers/contracts");
 
 function assert(condition, message) {
   if (!condition) {
@@ -20,7 +21,8 @@ const sandbox = {
 };
 
 vm.createContext(sandbox);
-["response-package.js", "screens.js", "state.js"].forEach(function (name) {
+["response-package.js", "diagnosis-package.js", "screens.js", "state.js"]
+  .forEach(function (name) {
   vm.runInContext(
     fs.readFileSync(
       path.join(__dirname, "..", "assets", "js", name),
@@ -31,7 +33,19 @@ vm.createContext(sandbox);
 
 const state = windowObject.MacroStudioState;
 const screens = windowObject.MacroStudioScreens;
+const response = windowObject.MacroStudioResponse;
 const reviewScreen = screens.reviewScreen;
+const requestId = "33333333-3333-4333-8333-333333333333";
+const diagnosisId = "11111111-1111-4111-8111-111111111111";
+
+function importModules(modules) {
+  return state.importPackage(contracts.repair(response, {
+    requestId: requestId,
+    modules: modules,
+    existingModules: state.getBookModules(),
+    diagnosis: state.getState().diagnosis
+  }));
+}
 
 function attach() {
   state.reset();
@@ -70,12 +84,29 @@ function attach() {
         attributes: "Attribute VB_Name = \"OrderRecord\"\r\n"
       }
     ]);
+  state.setTargetEnvironment({constraints: []}, "ENV");
+  state.commitDiagnosisRequest({requestId: diagnosisId});
+  state.commitDiagnosis(contracts.diagnosis(
+    windowObject.MacroStudioDiagnosis,
+    {requestId: diagnosisId, modules: state.getState().modules}),
+  "diagnosis.md");
+  state.setRepairPreset({
+    file: "02_改修\\sample.md",
+    name: "ひな形",
+    content: "preset",
+    parsed: {
+      engine: "AI", questions: [], behaviorCandidates: [], preserveItems: [],
+      output: {body: "rules"}, splitOutput: null
+    }
+  });
+  state.setExtraRequest("改修する");
+  state.commitRepairRequest({requestId: requestId});
 }
 
 // ---- an answer that changes nothing is still an answer ----
 
 attach();
-state.importPackage([
+importModules([
   {
     name: "Module1",
     code: "Option Explicit\r\nEnd\r\n",
@@ -97,7 +128,7 @@ assert(
 
 attach();
 assert(
-  state.importPackage([
+  importModules([
     {
       name: "Module1",
       code: "Option Explicit\r\nDebug.Print 1\r\nEnd\r\n",
@@ -166,7 +197,7 @@ assert(
 assert(state.goTo(reviewScreen, false), "Could not open the review screen.");
 assert(state.selectModule("Module1"), "Could not select Module1.");
 assert(
-  state.goTo(screens.intakeScreen, false) &&
+  state.goTo(screens.repairIntakeScreen, false) &&
     state.goTo(reviewScreen, false),
   "Could not move between intake and review.");
 assert(

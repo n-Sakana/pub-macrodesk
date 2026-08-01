@@ -11,6 +11,7 @@
 var fs = require("fs");
 var path = require("path");
 var vm = require("vm");
+var dom = require("./helpers/dom-shim");
 
 function assert(condition, message) {
   if (!condition) {
@@ -22,20 +23,7 @@ var windowObject = {};
 var context = vm.createContext({
   window: windowObject,
   document: {
-    createElement: function () {
-      return {
-        setAttribute: function () {
-        },
-        appendChild: function () {
-        },
-        classList: {
-          add: function () {
-          },
-          toggle: function () {
-          }
-        }
-      };
-    },
+    createElement: dom.createElement,
     addEventListener: function () {
     },
     getElementById: function () {
@@ -67,7 +55,7 @@ windowObject.hostBridge = {
   }
 };
 
-[
+["icons.js",
   "diff.js",
   "diff-view.js",
   "vba-highlight.js",
@@ -75,6 +63,7 @@ windowObject.hostBridge = {
   "response-package.js",
   "screens.js",
   "state.js",
+  "screens/workflow.js",
   "app.js"
 ].forEach(function (name) {
   vm.runInContext(
@@ -86,6 +75,7 @@ windowObject.hostBridge = {
 });
 
 var app = windowObject.MacroStudioApp;
+var workflow = windowObject.MacroStudioWorkflow;
 
 function attachData(warning, read) {
   return {
@@ -240,6 +230,53 @@ assert(
     shortStream: false
   })).indexOf("全モジュール読み取れています") >= 0,
   "The single-line message must follow the same split.");
+
+// The integrated screen 0 must consume the same two-level result. A helper
+// that is correct but never reaches the visible screen would still be a bug.
+function visibleReadText(data) {
+  var described = app.describeReadResult(data);
+  return dom.text(workflow.createBookScreen({
+    book: {
+      name: data.book.name,
+      path: data.book.path,
+      totalLines: 2,
+      read: described
+    },
+    modules: [
+      {name: "TimerUtils", lineCount: 1},
+      {name: "WindowUtils", lineCount: 1}
+    ],
+    busyAction: null,
+    lastError: null
+  }));
+}
+
+var visibleDoubt = visibleReadText(attachData(true, {
+  level: "sourceDoubt",
+  partialModules: ["TimerUtils"],
+  unreadableModules: ["WindowUtils"],
+  recoveredOffsetModules: [],
+  containerFallback: false,
+  salvaged: false,
+  shortStream: true
+}));
+assert(visibleDoubt.indexOf("バイナリレベルで読み取れませんでした") >= 0 &&
+  visibleDoubt.indexOf("改修前後のコードを確認してください") >= 0 &&
+  visibleDoubt.indexOf("TimerUtils") >= 0,
+"Screen 0 must visibly carry the source-doubt warning and evidence.");
+
+var visibleStructure = visibleReadText(attachData(true, {
+  level: "structureOnly",
+  partialModules: [],
+  unreadableModules: [],
+  recoveredOffsetModules: [],
+  containerFallback: false,
+  salvaged: false,
+  shortStream: false
+}));
+assert(visibleStructure.indexOf("全モジュール読み取れています") >= 0 &&
+  visibleStructure.indexOf("改修前後のコードを確認してください") < 0,
+"Screen 0 must visibly keep bookkeeping-only recovery non-alarming.");
 
 console.log("test-read-report: PASS");
 console.log(

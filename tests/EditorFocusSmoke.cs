@@ -172,9 +172,8 @@ namespace MacroStudio.Tests
                         "MacroStudioState.getState().appInfo !== null");
                     await Execute(ProbeScript());
 
-                    report.Add("detailed", await RunDetailed());
-                    report.Add("questions", await RunQuestions());
-                    report.Add("simple", await RunSimple());
+                    report.Add("ai", await RunAiInputs());
+                    report.Add("mapping", await RunPathMapping());
 
                     Result = serializer.Serialize(report);
                     Stop();
@@ -185,211 +184,89 @@ namespace MacroStudio.Tests
                 }
             }
 
-            // ---- the detailed way: the request box and the option ----
+            // ---- second-AI input: the one free-text box that is left ----
 
-            private async Task<string> RunDetailed()
+            private async Task<string> RunAiInputs()
             {
                 Dictionary<string, object> phase =
                     new Dictionary<string, object>();
 
                 await StartOver();
-                await Execute(
-                    "document.querySelector('[data-action=\"select-mode\"]" +
-                    "[data-mode=\"refactor\"]').click();");
-                await WaitFor(
-                    "MacroStudioState.getState().mode === 'refactor'");
-                await AttachBook();
+                await AttachBook(bookPath);
+                await ReachFindings(false);
+                phase.Add("runFolder", await ReadJson(
+                    "MacroStudioState.getState().runFolder"));
+                await SelectPreset(false);
                 await ClickNext();
-                await WaitForScreen("readScreen");
-                await ClickNext();
-                await WaitForScreen("purposeScreen");
+                await WaitForScreen("repairInputScreen");
                 await Execute(
                     "document.querySelector(" +
-                    "'[data-action=\"select-purpose\"]').click();");
+                    "'[data-action=\"toggle-workflow-disclosure\"]" +
+                    "[data-disclosure-key=\"extra-request\"]')" +
+                    ".click();");
+                // The β1 disclosure opens by data-open on its box, and its
+                // closed body is visibility:hidden rather than [hidden].
+                // Wait for what the field actually needs: a field that is
+                // still visibility:hidden cannot take the focus.
                 await WaitFor(
-                    "MacroStudioState.getState().presetFile !== null && " +
-                    "MacroStudioState.getState().requestId !== null && " +
-                    "MacroStudioState.getState().busyAction === null");
-                await ClickNext();
-                await WaitForScreen("requestScreen");
-
-                // The request text lives behind a disclosure, the way a
-                // person would open it before editing. A box that is
-                // still folded away cannot be focused at all, so the
-                // wait is for it to be on screen, not merely present.
-                await Execute(
-                    "document.querySelector(" +
-                    "'[data-action=\"toggle-disclosure\"]').click();");
-                await WaitFor(
-                    "document.getElementById('request-text') !== null && " +
-                    "getComputedStyle(document.getElementById(" +
-                    "'request-text')).visibility === 'visible'");
-
-                phase.Add("requestText", await Probe("request-text"));
-
-                // Keeping the box alive is only half of it: what was
-                // typed still has to reach the state, and the parts of
-                // the screen worked out from the state - the preview
-                // line and the character count - still have to follow.
-                phase.Add("derived", await ReadJson(
-                    "JSON.stringify({" +
-                    "stateText:MacroStudioState.getState().requestText," +
-                    "boxText:document.getElementById(" +
-                    "'request-text').value," +
-                    "note:document.querySelector(" +
-                    "'.disclosure-note').textContent," +
-                    "preview:document.querySelector(" +
-                    "'.headline-preview').textContent" +
-                    "})"));
-
-                phase.Add("splitOption", await ProbeToggle("split-output"));
-
-                // ...and on to the box that names the file, which is the
-                // last thing typed in a run.
-                await ClickNext();
-                await WaitFor(
-                    "MacroStudioState.getState().screen === " +
-                    "MacroStudioScreens.handoffScreen && " +
-                    "MacroStudioState.getState().runFolder !== null");
-                phase.Add(
-                    "runFolder",
-                    await ReadJson(
-                        "MacroStudioState.getState().runFolder"));
-                await Execute(
-                    "MacroStudioState.setHandoffProgress(true, true);");
-                await ClickNext();
-                await WaitForScreen("intakeScreen");
-                await Execute(WholeAnswer());
-                await WaitFor(
-                    "MacroStudioScreens.countImported(" +
-                    "MacroStudioState.getState()) === 2");
-                await ClickNext();
-                await WaitForScreen("reviewScreen");
-                await AcceptEverything();
-                await ClickNext();
-                await WaitForScreen("outputScreen");
-                phase.Add("outputName", await Probe("output-name"));
-                phase.Add("outputNameState", await ReadJson(
-                    "MacroStudioState.getState().outputName"));
+                    "(function(){var box=document.querySelector(" +
+                    "'[data-disclosure-box=\"extra-request\"]');" +
+                    "var field=document.querySelector(" +
+                    "'[data-workflow-input=\"extra-request\"]');" +
+                    "return box !== null && field !== null && " +
+                    "box.getAttribute('data-open') === 'true' && " +
+                    "getComputedStyle(field).visibility === 'visible';}())");
+                phase.Add("extra", await Probe(
+                    "[data-workflow-input=\"extra-request\"]"));
+                phase.Add("state", await ReadJson(
+                    "(function(){var state=MacroStudioState.getState();" +
+                    "return JSON.stringify({" +
+                    "extra:state.extraRequest," +
+                    "nextReady:!document.querySelector(" +
+                    "'[data-action=\"go-next\"]').disabled});}())"));
+                phase.Add("shell", await ReadJson(ShellShape()));
                 return serializer.Serialize(phase);
             }
 
-            // ---- the questions a preset asks ----
+            // ---- fixed-path mapping value on the alternate screen 4 ----
 
-            private async Task<string> RunQuestions()
+            private async Task<string> RunPathMapping()
             {
                 Dictionary<string, object> phase =
                     new Dictionary<string, object>();
+                string mappingBook = Path.Combine(
+                    baseDir,
+                    "testdata",
+                    "input_monthly_report.xlsm");
 
                 await StartOver();
-                await Execute(
-                    "document.querySelector('[data-action=\"select-mode\"]" +
-                    "[data-mode=\"diagnose\"]').click();");
-                await WaitFor(
-                    "MacroStudioState.getState().mode === 'diagnose'");
-                await AttachBook();
+                await AttachBook(mappingBook);
+                await ReachFindings(true);
+                phase.Add("runFolder", await ReadJson(
+                    "MacroStudioState.getState().runFolder"));
+                await SelectPreset(true);
                 await ClickNext();
-                await WaitForScreen("readScreen");
-                await ClickNext();
-                await WaitForScreen("purposeScreen");
-
-                // Only some presets ask anything, and which ones is the
-                // preset folder's business, not this test's. So each is
-                // tried in turn until one brings up the form.
-                int cards = serializer.Deserialize<int>(await ReadRaw(
-                    "document.querySelectorAll(" +
-                    "'[data-action=\"select-purpose\"]').length"));
-                int asked = 0;
-                int index;
-
-                for (index = 0; index < cards; index += 1)
-                {
-                    await Execute(
-                        "document.querySelectorAll(" +
-                        "'[data-action=\"select-purpose\"]')[" +
-                        index.ToString() + "].click();");
-                    await WaitFor(
-                        "MacroStudioState.getState().busyAction === null " +
-                        "&& MacroStudioState.getState()" +
-                        ".presetFile !== null");
-                    asked = serializer.Deserialize<int>(await ReadRaw(
-                        "MacroStudioState.getState().questions.length"));
-                    if (asked > 0)
-                    {
-                        break;
-                    }
-                }
-                if (asked == 0)
-                {
-                    throw new InvalidOperationException(
-                        "No preset on the purpose screen asks questions, " +
-                        "so the answer box could not be reached.");
-                }
-                phase.Add("questionCount", asked);
-                await ClickNext();
-                await WaitForScreen("questionScreen");
-
-                // A question with choices is answered by pressing one of
-                // them; only a question without any offers a box. The
-                // form is walked forward until that box appears.
-                string answerId = string.Empty;
-
-                for (index = 0; index < asked; index += 1)
-                {
-                    answerId = await ReadJson(
-                        "(function(){var box=document.querySelector(" +
-                        "'textarea[id^=\"answer-\"]');" +
-                        "return box ? box.id : '';}())");
-                    if (answerId.Length > 0)
-                    {
-                        break;
-                    }
-                    await Execute(
-                        "document.querySelector(" +
-                        "'.question-arrow--next').click();");
-                    await Task.Delay(120);
-                }
-                if (answerId.Length == 0)
-                {
-                    throw new InvalidOperationException(
-                        "No question offered a box to write in, so the " +
-                        "free answer could not be reached.");
-                }
-                phase.Add("answerId", answerId);
-                phase.Add("answer", await Probe(answerId));
-                phase.Add("answerState", await ReadJson(
-                    "MacroStudioState.getState().answers[" +
-                    "String(MacroStudioState.getState().questionIndex)]"));
-                return serializer.Serialize(phase);
-            }
-
-            // ---- the short way: one box, one option ----
-
-            private async Task<string> RunSimple()
-            {
-                Dictionary<string, object> phase =
-                    new Dictionary<string, object>();
-
-                await StartOver();
+                await WaitForScreen("repairInputScreen");
                 await Execute(
                     "document.querySelector(" +
-                    "'[data-action=\"start-simple\"]').click();");
+                    "'[data-workflow-input=\"path-map-include\"]')" +
+                    ".click();");
                 await WaitFor(
-                    "MacroStudioState.getState().simple === true && " +
-                    "MacroStudioState.getState().screen === " +
-                    "MacroStudioScreens.bookScreen");
-                await AttachBook();
-                await ClickNext();
-                await WaitForScreen("requestScreen");
-                await WaitFor(
-                    "document.getElementById(" +
-                    "'simple-request-input') !== null");
-                phase.Add(
-                    "requestText",
-                    await Probe("simple-request-input"));
-                phase.Add("requestState", await ReadJson(
-                    "MacroStudioState.getState().requestText"));
-                phase.Add("splitOption", await ProbeToggle("split-output"));
+                    "document.querySelector(" +
+                    "'[data-workflow-input=\"path-map-to\"]')" +
+                    " !== null");
+                phase.Add("value", await Probe(
+                    "[data-workflow-input=\"path-map-to\"]"));
+                phase.Add("state", await ReadJson(
+                    "(function(){var rows=MacroStudioState.getState()" +
+                    ".pathMap.rows.filter(function(row){" +
+                    "return row.applied;});" +
+                    "return JSON.stringify({" +
+                    "applied:rows.length," +
+                    "value:rows.length?rows[0].to:''," +
+                    "nextReady:!document.querySelector(" +
+                    "'[data-action=\"go-next\"]').disabled});}())"));
+                phase.Add("shell", await ReadJson(ShellShape()));
                 return serializer.Serialize(phase);
             }
 
@@ -404,54 +281,115 @@ namespace MacroStudio.Tests
                 await WaitFor(
                     "MacroStudioState.getState().appInfo !== null && " +
                     "MacroStudioState.getState().screen === " +
-                    "MacroStudioScreens.modeScreen");
+                    "MacroStudioScreens.bookScreen");
             }
 
-            private async Task AttachBook()
+            private async Task AttachBook(string path)
             {
-                await ClickNext();
-                await WaitForScreen("bookScreen");
                 Dictionary<string, object> eventData =
                     new Dictionary<string, object>();
-                eventData.Add("path", bookPath);
+                eventData.Add("path", path);
                 router.PushEvent("bookDropped", eventData);
                 await WaitFor(
                     "MacroStudioState.getState().book !== null && " +
                     "MacroStudioState.getState().busyAction === null");
             }
 
-            private async Task AcceptEverything()
+            private async Task ReachFindings(bool zero)
             {
-                await Execute(
-                    "(function(){var all=document.querySelectorAll(" +
-                    "'[data-action=\"accept-package\"]');" +
-                    "var index;for(index=0;index<all.length;index+=1){" +
-                    "all[index].click();}}());");
+                await ClickNext();
                 await WaitFor(
-                    "!document.querySelector(" +
-                    "'[data-action=\"go-next\"]').disabled");
+                    "MacroStudioState.getState().screen === " +
+                    "MacroStudioScreens.diagnoseScreen && " +
+                    "MacroStudioState.getState().diagnosisRequestId " +
+                    "!== null && " +
+                    "MacroStudioState.getState().busyAction === null");
+                await Execute(
+                    "MacroStudioState.setDiagnosisHandoffProgress(" +
+                    "true,true);");
+                // Asking and importing share one screen: no [次へ] here.
+                await WaitForScreen("diagnoseScreen");
+                await Execute(
+                    "MacroStudioWorkflow.applyDiagnosisText(" +
+                    DiagnosisResponse(zero) + ");");
+                await WaitFor(
+                    "MacroStudioState.getState().diagnosis !== null && " +
+                    "MacroStudioState.getState().busyAction === null");
+                await ClickNext();
+                await WaitForScreen("findingsScreen");
+                // Reading the diagnosis and choosing the work are two pages.
+                await ClickNext();
+                await WaitForScreen("nextStepScreen");
             }
 
-            private static string WholeAnswer()
+            private async Task SelectPreset(bool fixedPath)
+            {
+                await Execute(
+                    "(function(){" +
+                    "var state=MacroStudioState.getState();" +
+                    "var entries=MacroStudioPreset.describeAll(" +
+                    "state.appInfo.presets.repair,'repair');" +
+                    "var target=entries.filter(function(entry){" +
+                    "return entry.valid&&" +
+                    (fixedPath
+                        ? "entry.engine!=='AI';"
+                        : "entry.engine==='AI';") +
+                    "})[0];" +
+                    "var cards=Array.prototype.slice.call(" +
+                    "document.querySelectorAll(" +
+                    "'[data-action=\"select-repair-preset\"]'));" +
+                    "cards.filter(function(card){return " +
+                    "card.getAttribute('data-preset-file')===" +
+                    "target.file;})[0].click();}())");
+                await WaitFor(
+                    "MacroStudioState.getState().presetFile !== null && " +
+                    "MacroStudioState.getState().busyAction === null");
+            }
+
+            private static string DiagnosisResponse(bool zero)
             {
                 return "(function(){" +
-                    "var id = MacroStudioState.getState().requestId;" +
-                    "var api = MacroStudioResponse;" +
-                    "MacroStudioApp.applyResponsePackage([" +
-                    "api.summaryBeginLine(id)," +
-                    "'\\u7e70\\u308a\\u8fd4\\u3057\\u3092\\u76f4\\u3057" +
-                    "\\u307e\\u3057\\u305f'," +
-                    "api.summaryEndLine(id)," +
-                    "api.beginLine(id, 'standard', 'AppController')," +
-                    "'Option Explicit'," +
-                    "'Public Sub Boot(): Beep: End Sub'," +
-                    "api.endLine(id, 'standard', 'AppController')," +
-                    "api.beginLine(id, 'standard', 'TimerUtils')," +
-                    "'Option Explicit'," +
-                    "'Public Sub Tick(): Beep: End Sub'," +
-                    "api.endLine(id, 'standard', 'TimerUtils')," +
-                    "api.completeLine(id, 2)" +
-                    "].join('\\r\\n'));}());";
+                    "var state=MacroStudioState.getState();" +
+                    "var id=state.diagnosisRequestId;" +
+                    "var marker=String.fromCharCode(39)+" +
+                    "'@MACROSTUDIO '+id+' ';" +
+                    "var lines=[marker+'DIAG BEGIN 1'];" +
+                    "['PURPOSE','FLOW','DEPENDENCY','ENVIRONMENT']" +
+                    ".forEach(function(name){" +
+                    "lines.push(marker+'SECTION BEGIN '+name);" +
+                    "lines.push(name+' checked.');" +
+                    "lines.push(marker+'SECTION END '+name);});" +
+                    (zero
+                        ? "lines.push(marker+'DIAG NOFINDING SCOPE_CLEAR');" +
+                          "lines.push(marker+'DIAG COMPLETE 0');"
+                        : "var module=state.modules.filter(function(item){" +
+                          "return Number(item.lineCount)>0;})[0];" +
+                          "lines.push(marker+'FINDING BEGIN 1');" +
+                          "lines.push(marker+'META CLASS=DEFECT ' +" +
+                          "'CONFIDENCE=CONFIRMED MODULE='+module.name+" +
+                          "' PROC=- LINES=1 ENVKEY=-');" +
+                          "['TITLE','CONDITION','IMPACT','EVIDENCE']" +
+                          ".forEach(function(name){" +
+                          "lines.push(marker+'TEXT BEGIN '+name);" +
+                          "lines.push(name+' checked.');" +
+                          "lines.push(marker+'TEXT END '+name);});" +
+                          "lines.push(marker+'FINDING END 1');" +
+                          "lines.push(marker+'DIAG COMPLETE 1');") +
+                    "lines.push(marker+'DIAG END');" +
+                    "return lines.join('\\r\\n');}())";
+            }
+
+            private static string ShellShape()
+            {
+                return "(function(){" +
+                    "var nav=document.querySelector('.nav-actions');" +
+                    "var box=nav.getBoundingClientRect();" +
+                    "return JSON.stringify({" +
+                    "vertical:document.documentElement.scrollHeight>" +
+                    "innerHeight," +
+                    "horizontal:document.documentElement.scrollWidth>" +
+                    "innerWidth," +
+                    "footer:box.top>=0&&box.bottom<=innerHeight+1});}())";
             }
 
             // ---- the probe itself ----
@@ -464,13 +402,6 @@ namespace MacroStudio.Tests
             {
                 return await ReadJson(
                     "JSON.stringify(window.__focusProbe.run(" +
-                    serializer.Serialize(id) + "))");
-            }
-
-            private async Task<string> ProbeToggle(string id)
-            {
-                return await ReadJson(
-                    "JSON.stringify(window.__focusProbe.toggle(" +
                     serializer.Serialize(id) + "))");
             }
 
@@ -570,7 +501,7 @@ namespace MacroStudio.Tests
             {
                 return @"
 window.__focusProbe = (function () {
-  function live(id) { return document.getElementById(id); }
+  function live(selector) { return document.querySelector(selector); }
   function activeName() {
     var node = document.activeElement;
     if (!node) { return ''; }
@@ -625,8 +556,8 @@ window.__focusProbe = (function () {
   }
   return {
     run: function (id) {
-      var report = { id: id, typed: [], composed: [], pasted: [],
-        replaced: [], focusTaken: false, finalValue: '' };
+      var report = { id: id, typed: [], composed: [], imeEnter: [],
+        pasted: [], replaced: [], focusTaken: false, finalValue: '' };
       var node = live(id);
       var text = '\u3042\u3044\u3046abc';
       var chunks = ['\u304b', '\u304b\u3093', '\u304b\u3093\u3058'];
@@ -636,6 +567,9 @@ window.__focusProbe = (function () {
       var index;
       var origin;
       var start;
+      var enterEvent;
+      var enterStep;
+      var screenBefore;
 
       if (!node) { report.missing = true; return report; }
       node.value = '';
@@ -670,6 +604,20 @@ window.__focusProbe = (function () {
         fire(origin, 'input', chunks[index], 'insertCompositionText', true);
         report.composed.push(snap(id, origin, 'compose:' + index));
       }
+      origin = live(id);
+      screenBefore = MacroStudioState.getState().screen;
+      enterEvent = new KeyboardEvent('keydown', {
+        bubbles: true, cancelable: true, key: 'Enter', code: 'Enter'
+      });
+      try {
+        Object.defineProperty(enterEvent, 'isComposing', { value: true });
+        Object.defineProperty(enterEvent, 'keyCode', { value: 229 });
+      } catch (error) { }
+      origin.dispatchEvent(enterEvent);
+      enterStep = snap(id, origin, 'ime-enter');
+      enterStep.screenUnchanged =
+        MacroStudioState.getState().screen === screenBefore;
+      report.imeEnter.push(enterStep);
       origin = live(id);
       origin.value = base + settled;
       place(origin, origin.value.length, origin.value.length);

@@ -185,27 +185,14 @@ namespace MacroStudio.Tests
                 }
             }
 
-            // Choose the work, read the workbook, and press the first
-            // preset that carries the module-by-module rules. The work
-            // comes first: that is the order of the flow.
+            // Attach once, rebuild the first-AI request with split output,
+            // prove gap/duplicate/merge handling, then choose an AI repair
+            // preset that also carries module-by-module rules.
             private async Task OpenRequestScreen(
                 Dictionary<string, object> report)
             {
                 await WaitFor(
                     "MacroStudioState.getState().appInfo !== null");
-                await WaitFor(
-                    "MacroStudioState.getState().screen === " +
-                    "MacroStudioScreens.modeScreen");
-                await Execute(
-                    "document.querySelector('[data-action=\"select-mode\"]" +
-                    "[data-mode=\"refactor\"]').click();");
-                await WaitFor(
-                    "MacroStudioState.getState().mode === 'refactor'");
-                await ClickNext(-1);
-                await WaitFor(
-                    "MacroStudioState.getState().screen === " +
-                    "MacroStudioScreens.bookScreen");
-
                 Dictionary<string, object> eventData =
                     new Dictionary<string, object>();
                 eventData.Add("path", bookPath);
@@ -213,24 +200,62 @@ namespace MacroStudio.Tests
                 await WaitFor(
                     "MacroStudioState.getState().book !== null && " +
                     "MacroStudioState.getState().busyAction === null");
-                // Reading a workbook must not drop the chosen work.
-                report.Add(
-                    "modeKept",
-                    await ReadBool(
-                        "MacroStudioState.getState().mode === 'refactor' " +
-                        "&& MacroStudioState.getState().screen === " +
-                        "MacroStudioScreens.bookScreen"));
+                report.Add("singleEntrance", await ReadBool(
+                    "MacroStudioState.getState().screen === 0 && " +
+                    "document.querySelectorAll(" +
+                    "'[data-action=\"select-mode\"]," +
+                    "[data-action=\"select-purpose\"]').length === 0"));
+                await ClickNext(1);
+                await WaitFor(
+                    "MacroStudioState.getState().diagnosisRequestId " +
+                    "!== null && " +
+                    "MacroStudioState.getState().busyAction === null");
+
+                // The diagnosis is prose about the macro and fits in one
+                // reply, so the screen no longer offers to split it. Only
+                // the repair reply, which is code, still can be.
+                report.Add("diagnosisOptionGone", await ReadBool(
+                    "document.querySelector(" +
+                    "'[data-workflow-input=\"diagnosis-split\"]') " +
+                    "=== null"));
+                string diagnosisId = await ReadJson(
+                    "MacroStudioState.getState().diagnosisRequestId");
+                report.Add("runFolder", await ReadJson(
+                    "MacroStudioState.getState().runFolder"));
+                await Execute(
+                    "MacroStudioState.setDiagnosisHandoffProgress(" +
+                    "true,true);");
+                // Asking and importing share one screen: no [次へ] here.
+
+                // One reply, one package: the diagnosis is no longer split.
+                await Execute(
+                    "MacroStudioWorkflow.applyDiagnosisText(" +
+                    serializer.Serialize(BuildDiagnosis(diagnosisId)) + ");");
+                await WaitFor(
+                    "MacroStudioState.getState().diagnosis !== null && " +
+                    "MacroStudioState.getState().busyAction === null");
+                report.Add("diagnosisTaken", await ReadJson(
+                    "JSON.stringify({" +
+                    "findings:MacroStudioState.getState()" +
+                    ".diagnosis.findings.length," +
+                    "partsUnused:MacroStudioState.getState()" +
+                    ".diagnosisParts === null," +
+                    "recorded:MacroStudioState.getState()" +
+                    ".diagnosisFilePath !== null})"));
                 await ClickNext(2);
+                // Reading the diagnosis and choosing the work are two pages.
                 await ClickNext(3);
 
                 string presetFile = await ReadJson(
                     "(function(){" +
                     "var entries = MacroStudioPreset.describeAll(" +
-                    "MacroStudioState.getState().appInfo.presets);" +
+                    "MacroStudioState.getState().appInfo.presets.repair," +
+                    "'repair');" +
                     "var found = '';" +
                     "entries.forEach(function(entry){" +
                     "if (!found && entry.valid && " +
-                    "entry.mode === 'refactor' && entry.splitOutput) {" +
+                    "entry.engine === MacroStudioPreset.engines.ai && " +
+                    "entry.splitOutput) {" +
                     "found = entry.file;}});" +
                     "return found;}())");
                 if (string.IsNullOrEmpty(presetFile))
@@ -240,17 +265,99 @@ namespace MacroStudio.Tests
                 }
                 report.Add("presetFile", presetFile);
                 await Execute(
-                    "document.querySelector('[data-action=" +
-                    "\"select-purpose\"][data-preset-file=" +
-                    serializer.Serialize(presetFile) + "]').click();");
+                    "(function(){var file=" +
+                    serializer.Serialize(presetFile) + ";" +
+                    "var cards=Array.prototype.slice.call(" +
+                    "document.querySelectorAll(" +
+                    "'[data-action=\"select-repair-preset\"]'));" +
+                    "cards.filter(function(card){return " +
+                    "card.getAttribute('data-preset-file')===file;})" +
+                    "[0].click();}())");
                 await WaitFor(
                     "MacroStudioState.getState().splitOutputRules " +
                     "!== null && " +
                     "MacroStudioState.getState().busyAction === null");
-                await ClickNext(-1);
+                await ClickNext(4);
+                // The blocking finding is selected from the start and the
+                // screen asks nothing further about it.
                 await WaitFor(
-                    "MacroStudioState.getState().screen === " +
-                    "MacroStudioScreens.requestScreen");
+                    "MacroStudioScreens.isRepairInputReady(" +
+                    "MacroStudioState.getState())");
+            }
+
+            // One reply carries the whole diagnosis.
+            private string BuildDiagnosis(string requestId)
+            {
+                string marker = "'@MACROSTUDIO " + requestId + " ";
+                List<string> lines = new List<string>();
+                string[] sections = {
+                    "PURPOSE", "FLOW", "DEPENDENCY", "ENVIRONMENT"
+                };
+                int sectionIndex;
+
+                lines.Add(marker + "DIAG BEGIN 1");
+                for (sectionIndex = 0;
+                    sectionIndex < sections.Length;
+                    sectionIndex++)
+                {
+                    lines.Add(marker + "SECTION BEGIN " +
+                        sections[sectionIndex]);
+                    lines.Add(sections[sectionIndex] + " checked.");
+                    lines.Add(marker + "SECTION END " +
+                        sections[sectionIndex]);
+                }
+                AddDiagnosisFinding(
+                    lines,
+                    marker,
+                    1,
+                    "DEFECT",
+                    "AppController",
+                    "Test",
+                    "2",
+                    "First split finding.");
+                AddDiagnosisFinding(
+                    lines,
+                    marker,
+                    2,
+                    "INFO",
+                    "TimerUtils",
+                    "-",
+                    "1",
+                    "Second split finding.");
+                lines.Add(marker + "DIAG COMPLETE 2");
+                lines.Add(marker + "DIAG END");
+                return string.Join("\r\n", lines.ToArray());
+            }
+
+            private void AddDiagnosisFinding(
+                List<string> lines,
+                string marker,
+                int number,
+                string className,
+                string module,
+                string procedure,
+                string lineRange,
+                string title)
+            {
+                string value = number.ToString();
+                lines.Add(marker + "FINDING BEGIN " + value);
+                lines.Add(marker + "META CLASS=" + className +
+                    " CONFIDENCE=CONFIRMED MODULE=" + module +
+                    " PROC=" + procedure + " LINES=" + lineRange +
+                    " ENVKEY=-");
+                lines.Add(marker + "TEXT BEGIN TITLE");
+                lines.Add(title);
+                lines.Add(marker + "TEXT END TITLE");
+                lines.Add(marker + "TEXT BEGIN CONDITION");
+                lines.Add("Condition checked.");
+                lines.Add(marker + "TEXT END CONDITION");
+                lines.Add(marker + "TEXT BEGIN IMPACT");
+                lines.Add("Impact checked.");
+                lines.Add(marker + "TEXT END IMPACT");
+                lines.Add(marker + "TEXT BEGIN EVIDENCE");
+                lines.Add("Evidence checked.");
+                lines.Add(marker + "TEXT END EVIDENCE");
+                lines.Add(marker + "FINDING END " + value);
             }
 
             private async Task TurnTheOptionOn(
@@ -259,22 +366,28 @@ namespace MacroStudio.Tests
                 report.Add(
                     "optionOnScreen",
                     await ReadBool(
-                        "document.getElementById('split-output') !== null"));
+                        "document.querySelector(" +
+                        "'[data-workflow-input=\"repair-split-output\"]')" +
+                        " !== null"));
                 report.Add(
                     "optionOffByDefault",
                     await ReadBool(
                         "MacroStudioState.getState().splitOutput " +
                         "=== false && " +
-                        "document.getElementById('split-output')" +
+                        "document.querySelector(" +
+                        "'[data-workflow-input=\"repair-split-output\"]')" +
                         ".checked === false"));
                 await Execute(
-                    "document.getElementById('split-output').click();");
+                    "document.querySelector(" +
+                    "'[data-workflow-input=\"repair-split-output\"]')" +
+                    ".click();");
                 await WaitFor(
                     "MacroStudioState.getState().splitOutput === true");
                 report.Add(
                     "optionChecked",
                     await ReadBool(
-                        "document.getElementById('split-output')" +
+                        "document.querySelector(" +
+                        "'[data-workflow-input=\"repair-split-output\"]')" +
                         ".checked === true"));
             }
 
@@ -289,38 +402,33 @@ namespace MacroStudio.Tests
                     "'[data-action=\"go-next\"]').click();");
                 await WaitFor(
                     "MacroStudioState.getState().screen === " +
-                    "MacroStudioScreens.handoffScreen && " +
+                    "MacroStudioScreens.repairScreen && " +
                     "MacroStudioState.getState().busyAction === null");
-                report.Add(
-                    "runFolder",
-                    await ReadJson(
-                        "MacroStudioState.getState().runFolder"));
                 report.Add(
                     "promptHasPartSentinel",
                     await ReadBool(
-                        "MacroStudioState.getState().requestPrompt" +
+                        "MacroStudioState.getState().repairPrompt" +
                         ".indexOf(MacroStudioResponse.marker + ' ' + " +
-                        "MacroStudioState.getState().requestId + " +
+                        "MacroStudioState.getState().repairRequestId + " +
                         "' PART ') >= 0"));
                 report.Add(
                     "promptHasOneBlockRule",
                     await ReadBool(
-                        "MacroStudioState.getState().requestPrompt" +
+                        "MacroStudioState.getState().repairPrompt" +
                         ".indexOf(MacroStudioResponse.marker + ' ' + " +
-                        "MacroStudioState.getState().requestId + " +
+                        "MacroStudioState.getState().repairRequestId + " +
                         "' COMPLETE 1') >= 0"));
 
                 // The copy and the explorer window are the hand-off
                 // screen's own conditions and need the clipboard, so they
                 // are marked done here instead of being pressed.
                 await Execute(
-                    "MacroStudioState.setHandoffProgress(true, true);");
-                await Execute(
-                    "document.querySelector(" +
-                    "'[data-action=\"go-next\"]').click();");
+                    "MacroStudioState.setRepairHandoffProgress(" +
+                    "true,true);");
+                // Asking and importing share one screen: no [次へ] here.
                 await WaitFor(
                     "MacroStudioState.getState().screen === " +
-                    "MacroStudioScreens.intakeScreen");
+                    "MacroStudioScreens.repairScreen");
             }
 
             private async Task TakeThePartsIn(
@@ -348,9 +456,9 @@ namespace MacroStudio.Tests
                         "MacroStudioState.getState())," +
                         "canGoNext: MacroStudioState.canGoNext()," +
                         "rows: document.querySelectorAll(" +
-                        "'.intake-part-row').length," +
+                        "'.split-progress').length," +
                         "missingShown: document.querySelector(" +
-                        "'.intake-part-missing') !== null" +
+                        "'.split-progress') !== null" +
                         "})"));
 
                 // A second module under a number that is already in, with
@@ -396,37 +504,44 @@ namespace MacroStudio.Tests
                         ".createBuildModules(" +
                         "MacroStudioState.getState()).length," +
                         "restartOnScreen: document.querySelector(" +
-                        "'[data-action=\"restart-intake\"]') !== null," +
+                        "'[data-action=\"restart-repair-intake\"]')" +
+                        " !== null," +
                         "summary: MacroStudioState.getState()" +
                         ".intakeResult.summary" +
                         "})"));
             }
 
-            // Audit P2-1: after a package has come in, the way to take a
-            // corrected answer instead has to be on the screen.
+            // After a package has come in, restart the split intake and
+            // take a corrected pair instead. The prior added module must
+            // not leak into the replacement result.
             private async Task TakeAWholeAnswerInstead(
                 Dictionary<string, object> report)
             {
-                await Execute("MacroStudioState.setSplitOutput(false);");
+                await Execute(
+                    "document.querySelector(" +
+                    "'[data-action=\"restart-repair-intake\"]')" +
+                    ".click();");
                 await WaitFor(
-                    "MacroStudioState.getState().splitOutput === false && " +
+                    "MacroStudioState.getState().splitOutput === true && " +
                     "MacroStudioScreens.countImported(" +
                     "MacroStudioState.getState()) === 0");
-                await Execute(
-                    "(function(){" +
-                    "var id = MacroStudioState.getState().requestId;" +
-                    "var api = MacroStudioResponse;" +
-                    "MacroStudioApp.applyResponsePackage([" +
-                    "api.beginLine(id, 'standard', 'AppController')," +
-                    "'Option Explicit'," +
-                    "'Public Sub Boot(): Beep: End Sub'," +
-                    "api.endLine(id, 'standard', 'AppController')," +
-                    "api.beginLine(id, 'standard', 'TimerUtils')," +
-                    "'Option Explicit'," +
-                    "'Public Sub Tick(): Beep: End Sub'," +
-                    "api.endLine(id, 'standard', 'TimerUtils')," +
-                    "api.completeLine(id, 2)" +
-                    "].join('\\r\\n'));}());");
+                await Execute(BuildPart(
+                    0,
+                    2,
+                    "standard",
+                    "AppController",
+                    "Public Sub Boot(): Beep: End Sub",
+                    true));
+                await WaitFor(
+                    "MacroStudioScreens.countIntakeParts(" +
+                    "MacroStudioState.getState()) === 1");
+                await Execute(BuildPart(
+                    1,
+                    2,
+                    "standard",
+                    "TimerUtils",
+                    "Public Sub Tick(): Beep: End Sub",
+                    false));
                 await WaitFor(
                     "MacroStudioScreens.countImported(" +
                     "MacroStudioState.getState()) === 2");
@@ -438,7 +553,7 @@ namespace MacroStudio.Tests
                         "MacroStudioState.getState())," +
                         "canGoNext: MacroStudioState.canGoNext()," +
                         "reimportOnScreen: document.querySelector(" +
-                        "'[data-action=\"import-response\"]') !== null," +
+                        "'[data-action=\"import-repair\"]') !== null," +
                         "addedModuleGone: MacroStudioState.findModule(" +
                         "'CompatHelpers') === null," +
                         "horizontal: document.documentElement" +
@@ -459,9 +574,10 @@ namespace MacroStudio.Tests
                       "api.summaryEndLine(id), "
                     : string.Empty;
 
-                return "var id = MacroStudioState.getState().requestId;" +
+                return "var id = MacroStudioState.getState()" +
+                    ".repairRequestId;" +
                     "var api = MacroStudioResponse;" +
-                    "var taken = MacroStudioApp.applyResponsePackage([" +
+                    "var taken = MacroStudioWorkflow.applyRepairText([" +
                     summary +
                     "api.partLine(id, " + index.ToString() + ", " +
                     total.ToString() + ")," +

@@ -2,6 +2,14 @@
   box-sizing: border-box;
 }
 
+/* The browser hides [hidden] with display: none, and any later display
+   rule silently wins. Every collapsed layer in the flow is a grid or a
+   flex box, so without this they all stand open however the code sets
+   the attribute. */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   width: 100%;
@@ -467,6 +475,11 @@ a:focus-visible {
   color: var(--text-muted);
   font-size: var(--type-micro-size);
   font-weight: var(--weight-semibold);
+}
+
+.toast-action {
+  flex: 0 0 auto;
+  margin-left: var(--space-1);
 }
 
 .toast--error .toast-label {
