@@ -118,6 +118,13 @@
     }).length;
   }
 
+  // A run may declare that it wants no diagnosis. The findings page has
+  // nothing to show then, so the flow steps over it.
+  function isDiagnosisSkipped(state) {
+    return Boolean(state) && state.diagnosisSkipped === true &&
+      !state.diagnosis;
+  }
+
   function isDiagnosisCurrent(state) {
     var attribution = state && state.diagnosisAttribution;
 
@@ -274,7 +281,9 @@
         }
         return "AIの返答をコピーして、この画面へ取り込みます";
       },
-      ready: isDiagnosisCurrent
+      ready: function (state) {
+        return isDiagnosisCurrent(state) || isDiagnosisSkipped(state);
+      }
     },
     {
       major: 3,
@@ -299,7 +308,8 @@
         return "したい作業に近いひな形を1つ選びます";
       },
       ready: function (state) {
-        return isDiagnosisCurrent(state) && Boolean(state.presetFile);
+        return (isDiagnosisCurrent(state) || isDiagnosisSkipped(state)) &&
+          Boolean(state.presetFile);
       }
     },
     {
@@ -465,6 +475,9 @@
   function nextIndex(state, index) {
     var current = clampIndex(index);
 
+    if (current === DIAGNOSE_SCREEN && isDiagnosisSkipped(state)) {
+      return NEXT_STEP_SCREEN;
+    }
     if (current === REPAIR_INPUT_SCREEN &&
         getEngine(state) === "固定パス置換") {
       return REVIEW_SCREEN;
@@ -507,6 +520,7 @@
     nextIndex: nextIndex,
     isTerminal: isTerminal,
     isDiagnosisCurrent: isDiagnosisCurrent,
+    isDiagnosisSkipped: isDiagnosisSkipped,
     isDiagnosisRequestCurrent: isDiagnosisRequestCurrent,
     isRepairIntakeCurrent: isRepairIntakeCurrent,
     isRepairResultCurrent: isRepairResultCurrent,

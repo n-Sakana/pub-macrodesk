@@ -136,7 +136,12 @@ assert(store.goNext() && store.getState().screen === screens.findingsScreen,
 
 var findings = workflow.createFindingsScreen(Object.assign(
   store.getState(), {appInfo: {presets: {repair: []}}}));
+// Two tiers stay shut on the shortest path: the places a problem was
+// found in, and the evidence behind each place.
+var groupPanel = findings.querySelector(".group-panel");
 var findingDetail = findings.querySelector(".finding-detail");
+assert(groupPanel && groupPanel.hidden === true,
+  "The shortest path may leave the occurrences unopened.");
 assert(findingDetail && findingDetail.hidden === true,
   "The shortest path may leave the finding evidence layer unread.");
 

@@ -35,6 +35,7 @@
       targetEnvironment: null,
       targetEnvironmentSnapshot: "",
       diagnosisConcern: "",
+      diagnosisSkipped: false,
       diagnosisSplit: false,
       diagnosisRequestId: null,
       diagnosisRequestSnapshot: null,
@@ -466,6 +467,24 @@
     return true;
   }
 
+  // Skipping is a declared choice, not a silent absence: the run records
+  // that no diagnosis was asked for, and any diagnosis already taken in
+  // is dropped so the request cannot claim facts it did not use.
+  function setDiagnosisSkipped(enabled) {
+    var next = enabled === true;
+
+    if (next === state.diagnosisSkipped) {
+      return false;
+    }
+    state.diagnosisSkipped = next;
+    if (next) {
+      invalidateDiagnosisResult();
+    }
+    clearRepairInput();
+    notify();
+    return true;
+  }
+
   function setDiagnosisSplit(enabled) {
     var next = enabled === true;
     if (next === state.diagnosisSplit) {
@@ -706,7 +725,10 @@
   function commitRepairRequest(value) {
     var next = value || {};
     var requestId = String(next.requestId || "");
-    if (!requestId || !state.presetFile || !state.diagnosis) {
+    // A run that skipped the diagnosis has no findings to carry, but it
+    // still has a template and a request of its own.
+    if (!requestId || !state.presetFile ||
+        (!state.diagnosis && state.diagnosisSkipped !== true)) {
       return false;
     }
     invalidateRepairPackage(false);
@@ -1165,6 +1187,7 @@
     setAppInfo: setAppInfo,
     setTargetEnvironment: setTargetEnvironment,
     setDiagnosisConcern: setDiagnosisConcern,
+    setDiagnosisSkipped: setDiagnosisSkipped,
     setDiagnosisSplit: setDiagnosisSplit,
     isDiagnosisRequestDirty: isDiagnosisRequestDirty,
     commitDiagnosisRequest: commitDiagnosisRequest,

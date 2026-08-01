@@ -167,6 +167,122 @@
     return findings;
   }
 
+  // The改修ガイド sorts everything that can go wrong into five kinds of
+  // work. The canonical environment already carries an axis per key that
+  // lines up with them, so the grouping is read from the環境 file rather
+  // than invented here.
+  var AXIS_ORDER = ["execution", "storage", "components", "host", ""];
+  var AXIS_LABELS = {
+    execution: "Win32 API・外部プログラム・スクリプト",
+    storage: "パス・ファイル・フォルダー操作",
+    components: "参照ライブラリ・古い部品",
+    host: "接続先・機器",
+    "": "対象環境の指定がない指摘"
+  };
+
+  function environmentConstraint(state, key) {
+    var constraints = state.targetEnvironment &&
+      Array.isArray(state.targetEnvironment.constraints)
+      ? state.targetEnvironment.constraints
+      : [];
+    var found = null;
+
+    constraints.some(function (constraint) {
+      if (constraint.key === key) {
+        found = constraint;
+        return true;
+      }
+      return false;
+    });
+    return found;
+  }
+
+  function worstClass(findings) {
+    var best = CLASS_ORDER.length - 1;
+
+    findings.forEach(function (finding) {
+      var index = CLASS_ORDER.indexOf(finding["class"]);
+      if (index >= 0 && index < best) {
+        best = index;
+      }
+    });
+    return CLASS_ORDER[best];
+  }
+
+  // One problem, however many places it shows up in. Thirteen findings
+  // that all say "this macro calls Sleep" are one thing to decide about
+  // and thirteen places to look at, so they are shown that way.
+  function groupFindings(state, findings) {
+    var byKey = {};
+    var order = [];
+    var byAxis = {};
+    var axisOrder = [];
+
+    findings.forEach(function (finding) {
+      var key = finding.environmentKey === "-" ? "" : finding.environmentKey;
+
+      if (!Object.prototype.hasOwnProperty.call(byKey, key)) {
+        byKey[key] = [];
+        order.push(key);
+      }
+      byKey[key].push(finding);
+    });
+    order.forEach(function (key) {
+      var constraint = key ? environmentConstraint(state, key) : null;
+      var axis = constraint && constraint.axis ? constraint.axis : "";
+      var group = {
+        key: key,
+        axis: axis,
+        title: constraint && constraint.title
+          ? constraint.title
+          : firstLine(byKey[key][0].texts.title),
+        "class": worstClass(byKey[key]),
+        findings: byKey[key]
+      };
+
+      if (!Object.prototype.hasOwnProperty.call(byAxis, axis)) {
+        byAxis[axis] = [];
+        axisOrder.push(axis);
+      }
+      byAxis[axis].push(group);
+    });
+    axisOrder.sort(function (left, right) {
+      return AXIS_ORDER.indexOf(left) - AXIS_ORDER.indexOf(right);
+    });
+    return axisOrder.map(function (axis) {
+      byAxis[axis].sort(function (left, right) {
+        return CLASS_ORDER.indexOf(left["class"]) -
+          CLASS_ORDER.indexOf(right["class"]);
+      });
+      return {
+        axis: axis,
+        label: AXIS_LABELS[axis] || AXIS_LABELS[""],
+        groups: byAxis[axis]
+      };
+    });
+  }
+
+  function allGroups(categories) {
+    var groups = [];
+
+    categories.forEach(function (category) {
+      category.groups.forEach(function (group) {
+        groups.push(group);
+      });
+    });
+    return groups;
+  }
+
+  function countGroupClasses(categories) {
+    var counts = {};
+
+    CLASS_ORDER.forEach(function (name) { counts[name] = 0; });
+    allGroups(categories).forEach(function (group) {
+      counts[group["class"]] += 1;
+    });
+    return counts;
+  }
+
   function environmentTitle(state, key) {
     var constraints = state.targetEnvironment &&
       Array.isArray(state.targetEnvironment.constraints)
@@ -930,6 +1046,23 @@
       "診断の依頼文はできています。AIへ渡して、返ってきた答えをこの画面へ" +
         "戻してください。"));
 
+    // Someone who already knows what to change does not need the
+    // diagnosis. Skipping is offered here, in front, rather than hidden
+    // as a way of getting unstuck later.
+    root.appendChild(optionRow(
+      "diagnosis-skip",
+      "診断を飛ばして、直したいことを自分で書く",
+      state.diagnosisSkipped === true,
+      state.busyAction !== null,
+      "diagnosis-skip"));
+    if (state.diagnosisSkipped) {
+      root.appendChild(element(
+        "p",
+        "task-note",
+        "診断は行いません。右下の「次へ」で、次にすることを選びます。"));
+      return root;
+    }
+
     root.appendChild(element("h2", "task-step", "1. 依頼をAIへ渡す"));
     if (state.diagnosisRequestId) {
       root.appendChild(element(
@@ -1031,40 +1164,82 @@
     return detail;
   }
 
-  function createFindingDisclosure(state, finding) {
-    var row = element("div", "finding-row finding-row--" +
-      finding.class.toLowerCase() + (open ? " is-open" : ""));
-    var button = element("button", "finding-toggle");
-    var id = "finding-detail-" + finding.number;
-    var open = disclosureState["finding-" + finding.number] === true;
+  // One occurrence of a grouped problem: where it is and why it counts.
+  function createOccurrenceRow(state, finding) {
+    var row = element("div", "occurrence-row");
+    var button = element("button", "occurrence-toggle");
+    var id = "occurrence-detail-" + finding.number;
+    var key = "finding-" + finding.number;
+    var open = disclosureState[key] === true;
     var details = createFindingDetails(state, finding);
 
     button.type = "button";
     button.setAttribute("data-action", "toggle-finding");
-    button.setAttribute("data-finding-key", "finding-" + finding.number);
+    button.setAttribute("data-finding-key", key);
     button.setAttribute("data-finding-toggle", "true");
     button.setAttribute("aria-expanded", open ? "true" : "false");
     button.setAttribute("aria-controls", id);
-    // The same chevron the rest of the flow uses to say "this opens".
-    // Without it the row is a line of text that happens to react.
     button.appendChild(icon("chevron", "flow-icon--small disclosure-chevron"));
-    button.appendChild(element("span", "class-chip class-chip--" +
-      finding.class.toLowerCase(), CLASS_LABELS[finding.class]));
-    button.appendChild(element("span", "finding-title", finding.texts.title));
-    button.appendChild(element("span", "finding-module", finding.module));
+    button.appendChild(element("code", "occurrence-location",
+      formatLocation(finding)));
     button.appendChild(element("span", "confidence-chip",
       CONFIDENCE_LABELS[finding.confidence]));
     details.id = id;
     details.hidden = !open;
+    if (open) {
+      row.classList.add("is-open");
+    }
     row.appendChild(button);
     row.appendChild(details);
     return row;
   }
 
+  // The middle tier: one row per problem, closed, carrying how many
+  // places it was found in. Opening it lists those places.
+  function createGroupRow(state, group, prefix) {
+    var key = prefix + "-group-" + (group.key || "none");
+    var open = disclosureState[key] === true;
+    var row = element("div", "group-row" + (open ? " is-open" : ""));
+    var button = element("button", "group-toggle");
+    var panel = element("div", "group-panel");
+    var id = "group-panel-" + prefix + "-" + (group.key || "none");
+
+    button.type = "button";
+    button.setAttribute("data-action", "toggle-finding");
+    button.setAttribute("data-finding-key", key);
+    button.setAttribute("data-finding-toggle", "true");
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+    button.setAttribute("aria-controls", id);
+    button.appendChild(icon("chevron", "flow-icon--small disclosure-chevron"));
+    button.appendChild(element("span", "class-chip class-chip--" +
+      group["class"].toLowerCase(), CLASS_LABELS[group["class"]]));
+    button.appendChild(element("span", "group-title", group.title));
+    button.appendChild(element("span", "group-count",
+      "該当 " + group.findings.length + " か所"));
+    panel.id = id;
+    panel.hidden = !open;
+    group.findings.forEach(function (finding) {
+      panel.appendChild(createOccurrenceRow(state, finding));
+    });
+    row.appendChild(button);
+    row.appendChild(panel);
+    return row;
+  }
+
+  function createCategorySection(state, category, prefix) {
+    var box = element("div", "category-block");
+
+    box.appendChild(element("h3", "category-label", category.label));
+    category.groups.forEach(function (group) {
+      box.appendChild(createGroupRow(state, group, prefix));
+    });
+    return box;
+  }
+
   function createFindingsList(state) {
     var list = element("div", "findings-list");
     var findings = sortedFindings(state.diagnosis);
-    var info = [];
+
     if (!findings.length) {
       list.appendChild(element(
         "p",
@@ -1072,24 +1247,9 @@
         "この監査範囲では動作阻害要因を確認できませんでした。"));
       return list;
     }
-    findings.forEach(function (finding) {
-      if (finding.class === "INFO") {
-        info.push(finding);
-      } else {
-        list.appendChild(createFindingDisclosure(state, finding));
-      }
+    groupFindings(state, findings).forEach(function (category) {
+      list.appendChild(createCategorySection(state, category, "diagnosis"));
     });
-    if (info.length) {
-      var infoContent = element("div", "info-findings");
-      info.forEach(function (finding) {
-        infoContent.appendChild(createFindingDisclosure(state, finding));
-      });
-      list.appendChild(createDisclosure(
-        "info-findings",
-        "補助情報（" + info.length + "件）",
-        infoContent,
-        false));
-    }
     return list;
   }
 
@@ -1168,12 +1328,6 @@
         card.classList.add("is-recommended");
       }
       card.appendChild(icon("template", "choice-icon"));
-      if (basis.length > 0) {
-        body.appendChild(element(
-          "span",
-          "choice-recommended",
-          "★ 推奨 — 診断の指摘 " + basis.length + "件に対応します"));
-      }
       body.appendChild(element("span", "choice-title", entry.name));
       if (entry.description) {
         body.appendChild(element("span", "choice-description", entry.description));
@@ -1185,6 +1339,11 @@
           "固定パスの候補 " + pathCandidateCount + "件"));
       }
       card.appendChild(body);
+      // The mark sits at the far edge, on its own, and says only that
+      // the diagnosis points here. The reasons are the page before.
+      if (basis.length > 0) {
+        mark.appendChild(element("span", "choice-recommended", "★ 推奨"));
+      }
       if (selected) {
         mark.appendChild(icon("check", "flow-icon--small"));
       }
@@ -1195,9 +1354,9 @@
   }
 
   var SUMMARY_LABELS = {
-    PURPOSE: "このマクロが何をするもので",
-    FLOW: "どう動いていて",
-    DEPENDENCY: "何に頼っていて",
+    PURPOSE: "このマクロは何をするものか",
+    FLOW: "どう動いているか",
+    DEPENDENCY: "何に頼っているか",
     ENVIRONMENT: "対象の環境で何が起きるか"
   };
 
@@ -1230,8 +1389,9 @@
 
   // Two or three lines that give the whole diagnosis: what the macro is
   // for, what the target environment does to it, and how much has to be
-  // dealt with. Everything else on this page opens from here.
-  function createDiagnosisHeadline(state, counts) {
+  // dealt with. The count is of problems, not of places: a macro that
+  // calls Sleep in thirteen procedures is one thing to decide about.
+  function createDiagnosisHeadline(state, counts, occurrences) {
     var box = element("div", "diagnosis-conclusion");
     var chips = element("div", "diagnosis-counts");
     var acted = counts.BLOCKER + counts.DEFECT + counts.CONDITIONAL;
@@ -1249,7 +1409,8 @@
       "p",
       "diagnosis-conclusion-verdict",
       acted > 0
-        ? "対象環境で対処が必要な事実が " + acted + " 件あります。"
+        ? "対象環境で対処が必要な問題が " + acted + " 件あります（該当 " +
+          occurrences + " か所）。"
         : "この監査範囲では動作阻害要因を確認できませんでした。"));
     CLASS_ORDER.forEach(function (name) {
       chips.appendChild(element(
@@ -1280,11 +1441,14 @@
     if (!state.diagnosis) {
       return missingDiagnosis(root);
     }
+    var categories = groupFindings(state, sortedFindings(state.diagnosis));
+
     root.appendChild(createDiagnosisHeadline(
       state,
-      countClasses(state.diagnosis)));
+      countGroupClasses(categories),
+      sortedFindings(state.diagnosis).length));
 
-    root.appendChild(element("h2", "task-step", "このマクロの概要"));
+    root.appendChild(element("h2", "task-step", "このマクロの詳細"));
     ["PURPOSE", "FLOW", "DEPENDENCY", "ENVIRONMENT"].forEach(
       function (name) {
         summaryList.appendChild(createSummaryRow(state, name));
@@ -1305,7 +1469,7 @@
   function createNextStepScreen(state) {
     var root = task(true);
 
-    if (!state.diagnosis) {
+    if (!state.diagnosis && !state.diagnosisSkipped) {
       return missingDiagnosis(root);
     }
     root.appendChild(createPresetCards(state));
@@ -1359,25 +1523,70 @@
   // the reader to restate it per finding added a form to fill in and
   // nothing to the request, so the row is now only the choice of whether
   // to include it.
-  function createRepairFindingRow(state, finding) {
+  // The reader decides per problem, not per place. Ticking the row takes
+  // in every occurrence behind it; opening the row shows what those
+  // occurrences are.
+  function createRepairFindingRow(state, group) {
     var row = element("div", "repair-finding-row");
     var header = element("label", "repair-finding-select");
     var checkbox = element("input", "option-checkbox");
-    var id = String(finding.number);
-    var selected = state.selectedFindings.indexOf(id) >= 0;
+    var ids = group.findings.map(function (finding) {
+      return String(finding.number);
+    });
+    var chosen = ids.filter(function (id) {
+      return state.selectedFindings.indexOf(id) >= 0;
+    });
+    var key = "repair-group-" + (group.key || "none");
+    var open = disclosureState[key] === true;
+    var panel = element("div", "group-panel");
+    var reveal = element("button", "group-reveal");
+    var panelId = "repair-panel-" + (group.key || "none");
 
     checkbox.type = "checkbox";
-    checkbox.checked = selected;
+    checkbox.checked = chosen.length === ids.length;
+    checkbox.indeterminate = chosen.length > 0 &&
+      chosen.length < ids.length;
     checkbox.disabled = state.busyAction !== null;
-    checkbox.setAttribute("data-workflow-input", "finding-select");
-    checkbox.setAttribute("data-finding-id", id);
+    checkbox.setAttribute("data-workflow-input", "finding-group-select");
+    checkbox.setAttribute("data-finding-ids", ids.join(","));
     header.appendChild(checkbox);
     header.appendChild(element("span", "class-chip class-chip--" +
-      finding.class.toLowerCase(), CLASS_LABELS[finding.class]));
-    header.appendChild(element("span", "finding-title", finding.texts.title));
+      group["class"].toLowerCase(), CLASS_LABELS[group["class"]]));
+    header.appendChild(element("span", "finding-title", group.title));
+    header.appendChild(element("span", "group-count",
+      "該当 " + ids.length + " か所"));
     row.appendChild(header);
-    appendDecisionQuotes(row, decisionQuotes(state, id));
+
+    reveal.type = "button";
+    reveal.setAttribute("data-action", "toggle-finding");
+    reveal.setAttribute("data-finding-key", key);
+    reveal.setAttribute("data-finding-toggle", "true");
+    reveal.setAttribute("aria-expanded", open ? "true" : "false");
+    reveal.setAttribute("aria-controls", panelId);
+    reveal.appendChild(icon("chevron", "flow-icon--small disclosure-chevron"));
+    reveal.appendChild(element("span", "", "該当箇所を見る"));
+    panel.id = panelId;
+    panel.hidden = !open;
+    group.findings.forEach(function (finding) {
+      panel.appendChild(createOccurrenceRow(state, finding));
+      appendDecisionQuotes(panel, decisionQuotes(state, String(finding.number)));
+    });
+    if (open) {
+      row.classList.add("is-open");
+    }
+    row.appendChild(reveal);
+    row.appendChild(panel);
     return row;
+  }
+
+  function createRepairCategorySection(state, category) {
+    var box = element("div", "category-block");
+
+    box.appendChild(element("h3", "category-label", category.label));
+    category.groups.forEach(function (group) {
+      box.appendChild(createRepairFindingRow(state, group));
+    });
+    return box;
   }
 
   function isLockedPathClass(className) {
@@ -1572,11 +1781,18 @@
     if (state.questions.length) {
       root.appendChild(createQuestionFields(state));
     }
-    var findings = section("改修する指摘", "repair-findings");
-    sortedFindings(state.diagnosis).forEach(function (finding) {
-      findings.appendChild(createRepairFindingRow(state, finding));
-    });
-    root.appendChild(findings);
+    if (state.diagnosis) {
+      var findings = section("改修する指摘", "repair-findings");
+      groupFindings(state, sortedFindings(state.diagnosis)).forEach(
+        function (category) {
+          findings.appendChild(
+            createRepairCategorySection(state, category));
+        });
+      root.appendChild(findings);
+    } else {
+      root.appendChild(intro(
+        "診断を行っていないので、直したいことを下の欄に書いてください。"));
+    }
 
     var extraContent = element("div", "extra-request-content");
     var extra = element("textarea", "form-textarea");
@@ -1588,9 +1804,10 @@
     extraContent.appendChild(extra);
     root.appendChild(createDisclosure(
       "extra-request",
-      "追加の要望",
+      "追加の要望を書く（任意）",
       extraContent,
-      decisionQuotes(state, "-").length > 0));
+      decisionQuotes(state, "-").length > 0,
+      String(state.extraRequest || "").trim() ? "記入あり" : "未記入"));
 
     if (state.splitOutputRules) {
       root.appendChild(optionRow(
@@ -1787,10 +2004,13 @@
       store.setDiagnosisConcern(target.value);
     } else if (kind === "repair-answer") {
       store.setAnswer(Number(target.getAttribute("data-question-index")), target.value);
-    } else if (kind === "finding-select") {
-      store.setFindingSelected(
-        target.getAttribute("data-finding-id"),
-        target.checked === true);
+    } else if (kind === "diagnosis-skip") {
+      store.setDiagnosisSkipped(target.checked === true);
+    } else if (kind === "finding-group-select") {
+      String(target.getAttribute("data-finding-ids") || "").split(",")
+        .filter(Boolean).forEach(function (id) {
+          store.setFindingSelected(id, target.checked === true);
+        });
     } else if (kind === "extra-request") {
       store.setExtraRequest(target.value);
     } else if (kind === "repair-split-output") {

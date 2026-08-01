@@ -482,14 +482,134 @@
 /* A template the diagnosis actually points at. The badge is only drawn
    when a finding names an environment constraint the template declares,
    so it can always be traced back to a fact on the page before. */
+/* A mark at the far edge of the card, not a sentence in its body. */
 .choice-recommended {
-  display: block;
-  margin-bottom: var(--space-1);
   color: var(--accent-text);
   font-size: var(--type-micro-size);
   font-weight: var(--type-micro-weight);
+  white-space: nowrap;
 }
 
 .choice-card.is-recommended {
   border-color: var(--accent);
+}
+
+/* ---- three tiers: kind of work, problem, place ---- */
+/* The reader is shown the kinds of work and the problems inside them.
+   The places a problem was found in are one level further down, opened
+   only by someone who wants them. */
+
+.category-block + .category-block {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.category-label {
+  margin: 0;
+  padding: var(--space-3) var(--space-3) var(--space-1);
+  color: var(--text-sub);
+  font-size: var(--type-label-size);
+  font-weight: var(--type-label-weight);
+}
+
+.group-row + .group-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.group-toggle {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  padding: var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  gap: var(--space-3);
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  text-align: left;
+}
+
+.group-toggle:hover {
+  background: var(--surface-hover);
+}
+
+.group-toggle:focus-visible,
+.occurrence-toggle:focus-visible,
+.group-reveal:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.group-row.is-open > .group-toggle .disclosure-chevron,
+.occurrence-row.is-open .disclosure-chevron,
+.repair-finding-row.is-open > .group-reveal .disclosure-chevron {
+  transform: rotate(90deg);
+}
+
+.group-title {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.group-count {
+  color: var(--text-muted);
+  font-size: var(--type-meta-size);
+  white-space: nowrap;
+}
+
+.group-panel {
+  margin: 0 var(--space-3) var(--space-3);
+  border-left: var(--rail-w) solid var(--border-subtle);
+}
+
+.occurrence-row + .occurrence-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.occurrence-toggle {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--text-sub);
+  cursor: pointer;
+  gap: var(--space-3);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  text-align: left;
+}
+
+.occurrence-toggle:hover {
+  background: var(--surface-hover);
+}
+
+.occurrence-location {
+  min-width: 0;
+  font-family: var(--font-code);
+  font-size: var(--type-meta-size);
+  overflow-wrap: break-word;
+}
+
+/* The places behind a problem the reader has ticked. */
+.group-reveal {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-3) var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--type-meta-size);
+  gap: var(--space-2);
+}
+
+.group-reveal:hover {
+  color: var(--text-sub);
+}
+
+.repair-finding-row .group-panel {
+  margin-top: 0;
 }

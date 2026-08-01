@@ -183,6 +183,7 @@ try {
     Assert-True (
         $findings.screen -eq 2 -and
         $findings.findingRows -eq 1 -and
+        $findings.occurrenceRows -eq 1 -and
         $findings.presetCards -eq 0 -and
         $findings.oldEntries -eq 0 -and
         $findings.nextReady

@@ -384,6 +384,50 @@ store.setBusyAction("writeRequestFiles");
 assert(!store.canGoBack() && !store.canGoNext(),
   "A host transaction freezes navigation.");
 
+// ---- a run that declares it wants no diagnosis ----
+// Someone who already knows what to change should not have to stage a
+// diagnosis they will not read. Skipping is a declared choice: it opens
+// the way forward and steps over the page that would have nothing on it.
+
+attach();
+store.goNext();
+commitDiagnosisRequest(DIAGNOSIS_ID_1);
+assert(current().screen === screens.diagnoseScreen && !store.canGoNext(),
+  "Without a diagnosis there is nothing to read.");
+store.setDiagnosisSkipped(true);
+assert(store.canGoNext(), "A declared skip must open the way forward.");
+assert(screens.nextIndex(current(), screens.diagnoseScreen) ===
+  screens.nextStepScreen,
+"A skipped diagnosis must step over the findings page.");
+assert(store.goNext() && current().screen === screens.nextStepScreen,
+  "The skip must land on the choice of work.");
+chooseAiPreset();
+assert(store.goNext() && current().screen === screens.repairInputScreen,
+  "A template may still be chosen without a diagnosis.");
+assert(!store.canGoNext(),
+  "With no findings and no request there is still nothing to ask for.");
+store.setExtraRequest("待ち時間の処理を標準機能へ直してください。");
+assert(!store.canGoNext(),
+  "The template's own question is still required.");
+store.setAnswer(0, "元の動作を優先");
+assert(store.canGoNext(),
+  "What the reader wrote is the whole request when there is no diagnosis.");
+assert(store.commitRepairRequest({requestId: REPAIR_ID_1, prompt: "p"}),
+  "A skipped run must still be able to mint a repair request.");
+
+// Taking a diagnosis in again cancels the skip rather than living beside it.
+attach();
+commitDiagnosisRequest(DIAGNOSIS_ID_1);
+store.setDiagnosisSkipped(true);
+assert(store.commitDiagnosis(
+  diagnosisPackage(DIAGNOSIS_ID_1), "diagnosis.md"),
+  "A diagnosis may still arrive after a skip was declared.");
+assert(!screens.isDiagnosisSkipped(current()),
+  "A run holding a diagnosis is not a skipped run.");
+assert(screens.nextIndex(current(), screens.diagnoseScreen) ===
+  screens.findingsScreen,
+"With a diagnosis present the findings page is back in the way.");
+
 console.log("test-flow-state: PASS");
 console.log("10-screen graph, single entrance, ownership snapshots, invalidation, " +
   "history and engine branch behave as specified");

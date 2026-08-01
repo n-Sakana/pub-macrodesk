@@ -414,7 +414,9 @@ namespace MacroStudio.Tests
                         "({" +
                         "screen:MacroStudioState.getState().screen," +
                         "findingRows:document.querySelectorAll(" +
-                        "'.finding-row').length," +
+                        "'.group-row').length," +
+                        "occurrenceRows:document.querySelectorAll(" +
+                        "'.occurrence-row').length," +
                         "presetCards:document.querySelectorAll(" +
                         "'[data-action=\"select-repair-preset\"]').length," +
                         "oldEntries:document.querySelectorAll(" +
@@ -556,7 +558,8 @@ namespace MacroStudio.Tests
                         "({" +
                         "screen:MacroStudioState.getState().screen," +
                         "findingChecks:document.querySelectorAll(" +
-                        "'[data-workflow-input=\"finding-select\"]').length," +
+                        "'[data-workflow-input=\"finding-group-select\"]')" +
+                        ".length," +
                         "preselected:MacroStudioState.getState()" +
                         ".selectedFindings.length," +
                         "removedForms:document.querySelectorAll(" +

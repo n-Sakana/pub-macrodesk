@@ -133,11 +133,13 @@ assert(screenText.indexOf("公開手続きを変えない") < 0,
   "The preserve list is the template's promise to the chat, not a screen.");
 assert(screenText.indexOf("補足") < 0,
   "The per-finding supplement must be gone.");
+// The reader decides per problem, not per place: one tick takes in every
+// occurrence behind it.
 assert(dom.collect(inputScreen, function (node) {
   return node.getAttribute &&
-    node.getAttribute("data-workflow-input") === "finding-select";
+    node.getAttribute("data-workflow-input") === "finding-group-select";
 }).length === 1,
-"The finding must still be selectable.");
+"The problem must still be selectable as one row.");
 store.setSplitOutputRules("モジュールごとに返す規則");
 inputScreen = workflow.createRepairInputScreen(store.getState());
 assert(dom.collect(inputScreen, function (node) {

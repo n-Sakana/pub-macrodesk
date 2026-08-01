@@ -80,26 +80,38 @@ var state = {
   }
 };
 
+// Every one of these findings names the same environment constraint, so
+// they are one problem found in five places: one row, closed, saying how
+// many places. The places are a tier further down.
 var screen = workflow.createFindingsScreen(state);
-var rows = dom.collect(screen, function (node) {
-  return node.classList && node.classList.contains("finding-row");
-});
-var rowTitles = rows.map(function (row) {
-  return dom.text(row.querySelector(".finding-title"));
+var groupRows = dom.collect(screen, function (node) {
+  return node.classList && node.classList.contains("group-row");
 });
 
-assert(JSON.stringify(rowTitles) === JSON.stringify([
-  "阻害", "不具合", "条件付き", "外部前提", "補助情報"
-]), "Findings must be rendered in the fixed class order.");
+assert(groupRows.length === 1,
+  "Findings that name the same constraint must collapse into one row: " +
+  groupRows.length);
+assert(dom.text(groupRows[0].querySelector(".group-title")) ===
+  "Excel は 64 bit",
+"The row must be named after the environment constraint, not after one " +
+  "of its occurrences.");
+assert(dom.text(groupRows[0].querySelector(".group-count")) ===
+  "該当 5 か所",
+"The row must say how many places the problem was found in.");
+assert(dom.text(groupRows[0].querySelector(".class-chip")) === "阻害",
+  "The row must carry the most severe class among its occurrences.");
+assert(groupRows[0].querySelector(".group-toggle")
+  .getAttribute("aria-expanded") === "false" &&
+  groupRows[0].querySelector(".group-panel").hidden === true,
+"The places must begin out of the page.");
 
-var infoDisclosure = dom.collect(screen, function (node) {
-  return node.getAttribute &&
-    node.getAttribute("data-disclosure-key") === "info-findings";
-})[0];
-assert(infoDisclosure && infoDisclosure.getAttribute("aria-expanded") === "false",
-  "INFO must begin collapsed as one group.");
+var occurrences = dom.collect(groupRows[0], function (node) {
+  return node.classList && node.classList.contains("occurrence-row");
+});
+assert(occurrences.length === 5,
+  "Every occurrence must still be reachable: " + occurrences.length);
 
-var details = rows[0].querySelector(".finding-detail");
+var details = occurrences[0].querySelector(".finding-detail");
 var detailText = dom.text(details);
 assert(details.hidden === true &&
   detailText.indexOf("成立条件") >= 0 &&
@@ -107,7 +119,7 @@ assert(details.hidden === true &&
   detailText.indexOf("該当箇所") >= 0 &&
   detailText.indexOf("根拠") >= 0 &&
   detailText.indexOf("Excel は 64 bit") >= 0,
-"The second layer must contain condition, impact, location, evidence and " +
+"The third tier must contain condition, impact, location, evidence and " +
   "the referenced environment constraint.");
 
 // The macro's own description sits under the headline as four rows that
@@ -130,7 +142,7 @@ assert(dom.text(screen).indexOf("帳票を作ります。") >= 0,
   "The summary bodies must still carry the section text.");
 
 var counts = dom.text(screen.querySelector(".diagnosis-counts"));
-assert(counts.indexOf("阻害 1") >= 0 && counts.indexOf("補助 1") >= 0 &&
+assert(counts.indexOf("阻害 1") >= 0 && counts.indexOf("補助 0") >= 0 &&
   dom.text(screen).indexOf("想定環境: 新しい業務端末（2026-08-01 版）") >= 0,
 "The conclusion band must show class counts and the actual environment.");
 
