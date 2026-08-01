@@ -27,7 +27,7 @@ const sandbox = {
 };
 
 vm.createContext(sandbox);
-["diff.js", "vba-highlight.js", "diff-view.js", "app.js"].forEach(
+["handover.js", "diff.js", "vba-highlight.js", "diff-view.js", "app.js"].forEach(
   function (name) {
     vm.runInContext(
       fs.readFileSync(

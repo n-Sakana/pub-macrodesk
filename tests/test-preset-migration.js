@@ -380,7 +380,7 @@ assert(
 
 // The UI may explain the workflow, but it must not carry a spare copy
 // of the rules to fall back on.
-["一字一句", "省略せず全文"].forEach(function (phrase) {
+["handover.js", "一字一句", "省略せず全文"].forEach(function (phrase) {
   assert(
     readUtf8(
       path.join(root, "assets", "js", "app.js")

@@ -727,6 +727,7 @@
       });
     }
     lines.push("");
+    lines.push(global.MacroStudioHandover.sections(state));
     lines.push("## このフォルダのファイル");
     lines.push("");
     lines.push("- diagnose-request.md … 診断のためAIへ渡した第1依頼");
@@ -1471,8 +1472,51 @@
         "result-note",
         resultNoteErrorMessage));
     }
+    // The result comes first: the workbook is built and the folder is one
+    // press away. What is left to do is real, but it is not the headline,
+    // so it opens from a line that says how much of it there is.
+    panel.appendChild(createRemainingWork(state));
     task.appendChild(panel);
     return task;
+  }
+
+  // What this run could not do, in the order a person would do it. Every
+  // line is a task, not a description: the tool has already said what it
+  // verified, and this is the rest.
+  function createRemainingWork(state) {
+    var body = createElement("div", "remaining-work");
+    var handover = global.MacroStudioHandover;
+    var human = handover.humanTasks(state);
+    var viewpoints = handover.testViewpoints(state);
+    var total = human.length;
+
+    viewpoints.forEach(function (group) {
+      total += group.items.length;
+    });
+    body.appendChild(createElement(
+      "p",
+      "remaining-note",
+      "このツールはマクロを実行しません。次の確認は行っていません。" +
+        "同じ一覧が result.md にも入っています。"));
+    [{
+      title: "コードの外にあるので、このツールでは直せないこと",
+      items: human.map(function (task) {
+        return task.title + " … " + task.reason;
+      })
+    }].concat(viewpoints).forEach(function (group) {
+      var list = createElement("ul", "remaining-list");
+
+      body.appendChild(createElement("h3", "remaining-title", group.title));
+      group.items.forEach(function (item) {
+        list.appendChild(createElement("li", "", item));
+      });
+      body.appendChild(list);
+    });
+    return createDisclosure(
+      "remaining-work",
+      "このあと人が確かめること",
+      body,
+      { note: total + " 件" });
   }
 
   // ---- shell rendering ----

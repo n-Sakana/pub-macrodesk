@@ -88,7 +88,7 @@ windowObject.hostBridge = {
   }
 };
 ["icons.js",
-  "diff.js",
+  "handover.js", "diff.js",
   "diff-view.js",
   "vba-highlight.js",
   "preset-document.js",

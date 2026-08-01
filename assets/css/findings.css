@@ -613,3 +613,34 @@
 .repair-finding-row .group-panel {
   margin-top: 0;
 }
+
+/* What is left to do after the workbook is built. It is a list of tasks,
+   folded behind a line that says how many, so the result stays the
+   headline. */
+.remaining-work {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.remaining-note {
+  margin: 0;
+  color: var(--text-sub);
+}
+
+.remaining-title {
+  margin: var(--space-3) 0 0;
+  color: var(--text);
+  font-size: var(--type-label-size);
+  font-weight: var(--type-label-weight);
+}
+
+.remaining-list {
+  margin: 0;
+  padding-left: var(--space-5);
+  color: var(--text-sub);
+}
+
+.remaining-list li {
+  margin: var(--space-1) 0;
+  overflow-wrap: break-word;
+}

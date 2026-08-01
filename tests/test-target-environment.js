@@ -202,7 +202,7 @@ actual.constraints.forEach(function (constraint) {
     /^[A-Z][A-Z0-9_]{2,39}$/.test(constraint.key),
     "Every bundled key must follow the naming rule.");
   assert(!keys[constraint.key], "Every bundled key must be unique.");
-  keys[constraint.key] = true;
+  keys["handover.js", constraint.key] = true;
   assert(
     constraint.basis === "declared" || constraint.basis === "inferred",
     "The initial profile must not claim an unperformed observation.");

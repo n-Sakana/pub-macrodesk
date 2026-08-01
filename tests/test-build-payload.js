@@ -31,7 +31,7 @@ var context = vm.createContext({
 // The build payload and the summary memo lean on the diff engine and on
 // the state's naming rules, so the real modules are loaded rather than
 // stubbed: the names in the memo have to be the names the run produces.
-[
+["handover.js",
   "diff.js",
   "screens.js",
   "state.js",

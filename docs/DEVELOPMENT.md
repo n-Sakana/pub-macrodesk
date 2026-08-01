@@ -223,6 +223,7 @@ node tests\test-diff.js
 node tests\test-environment-not-embedded.js
 node tests\test-file-drop.js
 node tests\test-findings-view.js
+node tests\test-handover.js
 node tests\test-flow-state.js
 node tests\test-host-bridge.js
 node tests\test-module-split.js
@@ -257,6 +258,11 @@ node tests\test-vba-lexer.js
   一括受理と同一の内部形式になることを固定する。
 - `tests\test-diagnosis-preset-cardinality.js` … 診断ひな形の有効ファイルが
   0 件／2 件以上なら `E-PRESET-02`、1 件ならその 1 件だけを採用することを検査する。
+- `tests\test-handover.js` … 改修ガイド §5 のテスト観点 4 区分と §6 の
+  引渡し成果物を固定する。指摘は環境キーで 1 つの問題へまとまること、観点は
+  その実行が触れた軸だけへ絞られること、コードの外にある作業（参照設定・
+  Power Query・ActiveX・バーコード）が人へ渡されること、そして**実行して
+  いない確認を実施済みと書かない**ことを検査する。
 - `tests	est-diagnosis-recovery.js` … 第 1 段階の出力契約と取り込みを 1 つの
   テストで固定する。ひな形の `## 出力指示` が「ひとつだけのコードブロック」
   「区切りの行は 1 行に 1 つだけ」「ブロックの外に書かない」を述べていることと、

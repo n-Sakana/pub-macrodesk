@@ -76,7 +76,7 @@ async function main() {
       body: {
         classList: {
           toggle: function (name, active) {
-            bodyClasses[name] = active;
+            bodyClasses["handover.js", name] = active;
           }
         }
       }

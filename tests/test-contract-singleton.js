@@ -180,7 +180,7 @@ filesBelow(path.join(root, "assets", "js"))
     source = fs.readFileSync(filePath, "utf8");
     assert(!/function\s+readSentinel\s*\(/.test(source) &&
       !/\.directive\s*===/.test(source) &&
-      !/switch\s*\([^)]*directive/i.test(source),
+      !/switch\s*\(["handover.js", ^)]*directive/i.test(source),
     path.relative(root, filePath) + " contains a second response parser.");
   });
 
